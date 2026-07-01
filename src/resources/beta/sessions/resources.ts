@@ -131,6 +131,9 @@ export class Resources extends APIResource {
   /**
    * Add Session Resource
    *
+   * Adds an existing durable Files API object to the session by `file_id`. This
+   * endpoint does not upload bytes; use `client.beta.files.upload(...)` first.
+   *
    * @example
    * ```ts
    * const betaManagedAgentsFileResource =
@@ -330,7 +333,7 @@ export interface ResourceDeleteParams {
 
 export interface ResourceAddParams {
   /**
-   * Body param: ID of a previously uploaded file.
+   * Body param: ID of a previously uploaded durable Files API object.
    */
   file_id: string;
 
@@ -340,7 +343,7 @@ export interface ResourceAddParams {
   type: 'file';
 
   /**
-   * Body param: Mount path in the container. Defaults to
+   * Body param: Mount path in the session container. Defaults to
    * `/mnt/session/uploads/<file_id>`.
    */
   mount_path?: string | null;

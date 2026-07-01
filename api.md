@@ -801,6 +801,10 @@ Methods:
 
 ### Resources
 
+Session Resources bind already-created resources into a Session. File resources
+must reference an existing durable Files API object with `file_id` and optional
+`mount_path`; `sessions.resources.add(...)` does not upload bytes.
+
 Types:
 
 - <code><a href="./src/resources/beta/sessions/resources.ts">BetaManagedAgentsDeleteSessionResource</a></code>
@@ -1055,6 +1059,14 @@ Methods:
 - <code title="post /v1/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}/redact?beta=true">client.beta.memoryStores.memoryVersions.<a href="./src/resources/beta/memory-stores/memory-versions.ts">redact</a>(memoryVersionID, { ...params }) -> BetaManagedAgentsMemoryVersion</code>
 
 ## Files
+
+The Files API is the durable upload/metadata/download surface. Use
+`client.beta.files.upload(...)` with SDK `Uploadable` multipart input to create a
+File, then pass its `file_id` to Session Resources when it should be mounted in
+a Session. Upload size failures are returned as `413 invalid_request_error`.
+If object upload succeeds but metadata commit fails, backend cleanup owns
+best-effort object deletion. `download(...)` returns durable file content; it is
+not live sandbox preview, UI diff rendering, or direct object-store access.
 
 Types:
 

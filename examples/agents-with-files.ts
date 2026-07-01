@@ -46,7 +46,7 @@ async function main() {
       {
         type: 'file',
         file_id: file.id,
-        mount_path: 'data.csv',
+        mount_path: '/uploads/data.csv',
       },
     ],
   });
