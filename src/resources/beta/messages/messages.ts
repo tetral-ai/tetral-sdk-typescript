@@ -73,6 +73,11 @@ const DEPRECATED_MODELS: {
 
 const MODELS_TO_WARN_WITH_THINKING_ENABLED: Model[] = ['claude-mythos-preview', 'claude-opus-4-6'];
 
+/**
+ * Retained upstream beta Messages compatibility resource. Tetral defers this
+ * generated route family, including hosted ToolRunner flows, in this stage; use
+ * Sessions Events `user.message` for supported Tetral session input.
+ */
 export class Messages extends APIResource {
   batches: BatchesAPI.Batches = new BatchesAPI.Batches(this._client);
 
@@ -244,6 +249,11 @@ export class Messages extends APIResource {
     options?: BetaToolRunnerRequestOptions,
   ): BetaToolRunner<true>;
   toolRunner(body: BetaToolRunnerParams, options?: BetaToolRunnerRequestOptions): BetaToolRunner<boolean>;
+  /**
+   * Retained compatibility helper for the generated beta Messages API. Tetral
+   * defers hosted ToolRunner flows in this stage; backend admission rejects the
+   * underlying Messages requests instead of the SDK adding a local preflight.
+   */
   toolRunner(body: BetaToolRunnerParams, options?: BetaToolRunnerRequestOptions): BetaToolRunner<boolean> {
     return new BetaToolRunner(this._client as Anthropic, body, options);
   }

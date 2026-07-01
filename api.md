@@ -257,6 +257,12 @@ Types:
 
 ## Models
 
+Tetral keeps this generated Models resource as a retained compatibility surface.
+Tetral model selection for supported Agent and Session flows uses canonical
+`provider/model` IDs on those requests instead. Calls to `client.beta.models`
+remain normal generated HTTP requests; Tetral backend admission rejects this
+route family with an SDK-compatible error until it is admitted.
+
 Types:
 
 - <code><a href="./src/resources/beta/models.ts">BetaCapabilitySupport</a></code>
@@ -273,6 +279,13 @@ Methods:
 - <code title="get /v1/models?beta=true">client.beta.models.<a href="./src/resources/beta/models.ts">list</a>({ ...params }) -> BetaModelInfosPage</code>
 
 ## Messages
+
+Tetral defers the generated Messages resource, including Message Batches,
+token counting, streaming helpers, and `client.beta.messages.toolRunner(...)`.
+Use `client.beta.sessions.events.send(... user.message ...)` for supported
+Tetral session input. The generated Messages methods remain importable and send
+their normal HTTP requests; Tetral backend admission rejects them with
+SDK-compatible errors rather than the SDK adding a local preflight.
 
 Types:
 
@@ -848,6 +861,12 @@ Methods:
 
 ## Deployments
 
+Deployments are retained for Anthropic-compatible SDK surface but are
+unsupported/deferred by Tetral in this stage. Supported Tetral Session DTOs keep
+`deployment_id` as `null`. Deployment lifecycle methods continue to send their
+normal generated request paths; Tetral backend admission owns the fail-closed
+`400 invalid_request_error` response.
+
 Types:
 
 - <code><a href="./src/resources/beta/deployments.ts">BetaManagedAgentsAgentArchivedDeploymentPausedReasonError</a></code>
@@ -896,6 +915,11 @@ Methods:
 - <code title="post /v1/deployments/{deployment_id}/unpause?beta=true">client.beta.deployments.<a href="./src/resources/beta/deployments.ts">unpause</a>(deploymentID, { ...params }) -> BetaManagedAgentsDeployment</code>
 
 ## DeploymentRuns
+
+Deployment Runs are retained for compatibility with the generated SDK surface
+but are unsupported/deferred by Tetral in this stage. Calls keep the generated
+request paths and Tetral backend admission returns SDK-compatible errors until
+the route family is admitted.
 
 Types:
 
@@ -1146,6 +1170,11 @@ Methods:
 
 ## Webhooks
 
+Webhook payload types and the local `unwrap` verifier are retained for
+compatibility. Tetral webhook delivery and management behavior is
+unsupported/deferred in this stage; do not treat these types as a supported
+Tetral webhook lifecycle API.
+
 Types:
 
 - <code><a href="./src/resources/beta/webhooks.ts">BetaWebhookEvent</a></code>
@@ -1180,6 +1209,11 @@ Methods:
 - <code>client.beta.webhooks.<a href="./src/resources/beta/webhooks.ts">unwrap</a>(body) -> void</code>
 
 ## UserProfiles
+
+User Profiles are retained for compatibility with the generated SDK surface but
+are unsupported/deferred by Tetral in this stage. Calls keep their generated
+request paths and Tetral backend admission returns SDK-compatible errors until
+the route family is admitted.
 
 Types:
 

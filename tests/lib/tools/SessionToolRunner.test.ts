@@ -341,6 +341,37 @@ describe('SessionToolRunner', () => {
     expect(out[0]!.isError).toBe(false);
   });
 
+  test('posted=false when Tetral rejects hosted tool-result events with invalid_request_error', async () => {
+    const tool = makeOkTool('t', 'ok');
+    const err = APIError.generate(
+      400,
+      {
+        type: 'error',
+        error: { type: 'invalid_request_error', message: 'user.tool_result is unsupported' },
+      },
+      'user.tool_result is unsupported',
+      new Headers(),
+    );
+    const { client, calls } = makeFake({
+      streams: [[toolUse('tu_tetral', 't'), TERMINATED]],
+      sendErrors: [{ at: 0, err }],
+    });
+    const runner = new SessionToolRunner('s', { client, tools: [tool], maxIdleMs: 0 });
+    const out: DispatchedToolCall[] = [];
+    for await (const c of runner) out.push(c);
+
+    expect(out).toHaveLength(1);
+    expect(out[0]!.posted).toBe(false);
+    expect(out[0]!.isError).toBe(false);
+    expect(out[0]!.result).toMatchObject({
+      type: 'user.tool_result',
+      tool_use_id: 'tu_tetral',
+      is_error: false,
+    });
+    expect(calls.send).toHaveLength(1);
+    expect(calls.send[0]).toEqual([out[0]!.result]);
+  });
+
   test('throws when iterated twice', async () => {
     const { client } = makeFake({ streams: [[TERMINATED]] });
     const runner = new SessionToolRunner('s', { client, tools: [], maxIdleMs: 0 });

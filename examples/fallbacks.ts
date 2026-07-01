@@ -1,5 +1,9 @@
 #!/usr/bin/env -S npm run tsn -T
 
+// Compatibility note: this example targets the retained upstream beta Messages
+// resource. Tetral defers generated beta Messages APIs in this stage; use
+// Sessions Events `user.message` for supported Tetral session input.
+
 import { Anthropic, BetaFallbackState, betaRefusalFallbackMiddleware } from '@anthropic-ai/sdk';
 
 async function main() {

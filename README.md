@@ -7,6 +7,8 @@ The public client class remains `Anthropic`; configure Tetral with a Tetral-issu
 
 Generated API reference is in [api.md](./api.md). Some upstream-generated route families are retained for SDK compatibility but are deferred or unsupported by Tetral until the Tetral backend admits them.
 
+Retained unsupported/deferred Tetral surfaces include Deployments, Deployment Runs, the generated beta Messages resource and Message Batches, the beta Models resource, User Profiles, Webhooks, self-host Environment work APIs, runtime custom-tool result events, and hosted ToolRunner flows. Ordinary generated resource methods keep their normal HTTP request paths; Tetral backend admission returns SDK-compatible errors for unsupported behavior. SDK-local helpers use explicit failure state, such as `posted: false`, when a synthesized helper result is rejected instead of manufacturing success.
+
 ## Installation
 
 Use this fork's package name once it is assigned. Until package metadata is renamed, this worktree keeps the upstream package name:

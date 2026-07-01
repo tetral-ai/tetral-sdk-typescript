@@ -8,6 +8,11 @@ import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
 import { path } from '../../internal/utils/path';
 
+/**
+ * Retained upstream User Profiles compatibility resource. Tetral defers this
+ * route family in this stage; calls keep normal generated request paths and
+ * backend admission returns SDK-compatible errors.
+ */
 export class UserProfiles extends APIResource {
   /**
    * Create User Profile
