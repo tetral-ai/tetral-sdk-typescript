@@ -50,6 +50,10 @@ export class MemoryStores extends APIResource {
   /**
    * Create a memory store
    *
+   * Public Memory APIs are synchronous CRUD/versioning calls. Runtime-visible
+   * stores are attached explicitly by `memory_store_id` during Session create;
+   * the SDK does not infer a workspace default Memory Store.
+   *
    * @example
    * ```ts
    * const betaManagedAgentsMemoryStore =
@@ -214,8 +218,8 @@ export interface BetaManagedAgentsDeletedMemoryStore {
 
 /**
  * A `memory_store`: a named container for agent memories, scoped to a workspace.
- * Attach a store to a session via `resources[]` to mount it as a directory the
- * agent can read and write.
+ * Attach a store to a session via `resources[]` with its explicit
+ * `memory_store_id`; public Memory APIs do not use a workspace default store.
  */
 export interface BetaManagedAgentsMemoryStore {
   /**

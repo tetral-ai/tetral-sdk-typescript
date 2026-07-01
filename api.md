@@ -1003,6 +1003,16 @@ Methods:
 
 ## MemoryStores
 
+Public Memory APIs are synchronous CRUD/versioning calls against durable Memory
+Stores. Every public Memory, Memory Version, and attachment flow is explicitly
+store-scoped by `memory_store_id`; the SDK does not infer a workspace default
+Memory Store. Runtime-visible stores are attached during Session create with
+`resources: [{ type: "memory_store", memory_store_id: "memstore_..." }]`.
+
+This public API is distinct from the Runtime Memory Tool. Public SDK calls
+return HTTP DTOs directly from the backend Memory domain; runtime memory tool
+calls produce tool results through the session/runtime path.
+
 Types:
 
 - <code><a href="./src/resources/beta/memory-stores/memory-stores.ts">BetaManagedAgentsDeletedMemoryStore</a></code>
@@ -1018,6 +1028,10 @@ Methods:
 - <code title="post /v1/memory_stores/{memory_store_id}/archive?beta=true">client.beta.memoryStores.<a href="./src/resources/beta/memory-stores/memory-stores.ts">archive</a>(memoryStoreID, { ...params }) -> BetaManagedAgentsMemoryStore</code>
 
 ### Memories
+
+Memory-specific error type exports remain as retained upstream compatibility
+types. Tetral path conflicts and precondition failures use the shared
+SDK-compatible `409 invalid_request_error` envelope in this stage.
 
 Types:
 

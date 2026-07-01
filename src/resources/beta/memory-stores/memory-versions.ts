@@ -44,6 +44,10 @@ export class MemoryVersions extends APIResource {
   /**
    * List memory versions
    *
+   * Lists immutable version rows within the explicit `{memory_store_id}` path.
+   * The optional `session_id` query filter narrows history to versions written
+   * from that Session; it does not select or imply a default Memory Store.
+   *
    * @example
    * ```ts
    * // Automatically fetches more pages as needed.
@@ -257,7 +261,8 @@ export interface BetaManagedAgentsUserActor {
 
 export interface MemoryVersionRetrieveParams {
   /**
-   * Path param: Path parameter memory_store_id
+   * Path param: Explicit Memory Store selector. The SDK does not infer a
+   * workspace default Memory Store.
    */
   memory_store_id: string;
 
@@ -316,7 +321,8 @@ export interface MemoryVersionListParams extends PageCursorParams {
 
 export interface MemoryVersionRedactParams {
   /**
-   * Path param: Path parameter memory_store_id
+   * Path param: Explicit Memory Store selector. The SDK does not infer a
+   * workspace default Memory Store.
    */
   memory_store_id: string;
 
