@@ -680,6 +680,15 @@ Types:
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsSystemContentBlock</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsSystemMessageEvent</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsUserToolResultEvent</a></code>
+- <code><a href="./src/resources/beta/sessions/sessions.ts">TetralSessionProviderSelector</a></code>
+- <code><a href="./src/resources/beta/sessions/sessions.ts">TetralSessionProviderSelectors</a></code>
+
+Tetral Session create requires explicit `vault_ids`, using `[]` when no Vaults
+are bound. Memory Stores are attached at Session create time through
+`resources: [{ type: "memory_store", memory_store_id: "memstore_..." }]`; the
+SDK does not infer a default Memory Store, and post-create
+`sessions.resources.add(...)` is for existing `file_id` resources, not byte
+upload or Memory Store attachment.
 
 Methods:
 

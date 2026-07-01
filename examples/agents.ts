@@ -24,6 +24,7 @@ async function main() {
   const session = await client.beta.sessions.create({
     environment_id: environment.id,
     agent: { type: 'agent', id: agent.id },
+    vault_ids: [],
   });
   console.log('Created session:', session.id);
 

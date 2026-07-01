@@ -9,6 +9,11 @@
 // `EnvironmentWorker`, it does NOT poll for work and does NOT manage a
 // work-item lease.
 //
+// Compatibility note: this is a retained self-host/local-helper example. Tetral
+// Cloud-hosted runtime rejects client-supplied `user.tool_result` and custom
+// tool-result event variants in this stage; supported Tetral input events are
+// `user.message`, `user.interrupt`, and live-pending `user.tool_confirmation`.
+//
 // Two scenarios, two functions in this file:
 //
 //   main() — PRIMARY. A session you created and drive yourself: no work queue,
@@ -89,6 +94,7 @@ async function main() {
     agent: agent.id,
     environment_id: environmentId,
     title: 'observe-tool-calls-example',
+    vault_ids: [],
     betas: [MANAGED_AGENTS_BETA],
   });
   console.log('created session', session.id);

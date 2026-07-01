@@ -122,7 +122,9 @@ export class Events extends APIResource {
    * result back (`user.tool_result` / `user.custom_tool_result`). The
    * sessions-side counterpart to `client.beta.messages.toolRunner`: yields one
    * entry per completed tool call so callers can observe each dispatch (and
-   * `break` to abort cleanly).
+   * `break` to abort cleanly). This is a retained self-host/local-helper
+   * compatibility helper; Tetral Cloud-hosted runtime rejects client-supplied
+   * tool-result event variants in this stage.
    *
    * @example
    * ```ts
@@ -577,7 +579,11 @@ export interface BetaManagedAgentsDocumentBlock {
 }
 
 /**
- * Union type for event parameters that can be sent to a session.
+ * Union type for event parameters that can be sent to a session. Tetral admits
+ * `user.message`, `user.interrupt`, and live-pending `user.tool_confirmation` in
+ * this stage. `user.custom_tool_result`, `user.define_outcome`,
+ * `user.tool_result`, and `system.message` remain assignable for SDK
+ * compatibility but are rejected by Tetral backend admission.
  */
 export type BetaManagedAgentsEventParams =
   | BetaManagedAgentsUserMessageEventParams

@@ -4,6 +4,11 @@
 // environment, then run an `EnvironmentWorker` locally to serve the default
 // agent_toolset_20260401 tools plus one custom tool.
 //
+// Compatibility note: this is a retained self-hosted runner example. Tetral
+// Cloud-hosted runtime rejects client-supplied `user.tool_result` and custom
+// tool-result event variants in this stage; supported Tetral input events are
+// `user.message`, `user.interrupt`, and live-pending `user.tool_confirmation`.
+//
 // Requires:
 //   ANTHROPIC_API_KEY          - your API key (read by the SDK client)
 //   ANTHROPIC_ENVIRONMENT_ID   - a self-hosted environment to poll
@@ -65,6 +70,7 @@ async function main() {
     agent: agent.id,
     environment_id: environmentId,
     title: 'self-hosted-runner-example',
+    vault_ids: [],
     betas: [MANAGED_AGENTS_BETA],
   });
   console.log('created session', session.id);
