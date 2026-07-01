@@ -909,6 +909,12 @@ Methods:
 
 ## Vaults
 
+Provider credentials stored in Vault are model-provider credentials, not Tetral
+public SDK API keys. Create `provider_api_key` or `provider_oauth` credentials
+with the credential material obtained from the provider, then select them from a
+Session through `providers: { [provider_id]: { credential_id } }`. Tetral
+public SDK request authentication still uses the client `apiKey`.
+
 Types:
 
 - <code><a href="./src/resources/beta/vaults/vaults.ts">BetaManagedAgentsDeletedVault</a></code>
@@ -944,6 +950,12 @@ Types:
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsMCPOAuthRefreshUpdateParams</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsMCPOAuthUpdateParams</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsMCPProbe</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderAPIKeyAuthResponse</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderAPIKeyCreateParams</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderAPIKeyUpdateParams</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderOAuthAuthResponse</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderOAuthCreateParams</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderOAuthUpdateParams</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsRefreshHTTPResponse</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsRefreshObject</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsStaticBearerAuthResponse</a></code>

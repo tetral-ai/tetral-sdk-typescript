@@ -1,6 +1,7 @@
 #!/usr/bin/env -S npm run tsn -T
 
 import Anthropic from '@anthropic-ai/sdk';
+import type { TetralSessionProviderSelectors } from '@anthropic-ai/sdk/resources/beta/sessions';
 import fs from 'fs';
 import path from 'path';
 
@@ -18,6 +19,7 @@ async function main() {
   if (!githubToken) {
     throw new Error('GITHUB_TOKEN is required (use a fine-grained PAT with public-repo read only)');
   }
+  const anthropicProviderAPIKey = process.env['ANTHROPIC_PROVIDER_API_KEY'];
 
   // Create an environment
   const environment = await client.beta.environments.create({
@@ -40,6 +42,21 @@ async function main() {
     },
   });
   console.log('Created credential:', credential.id);
+
+  let providers: TetralSessionProviderSelectors | undefined;
+  if (anthropicProviderAPIKey) {
+    const providerCredential = await client.beta.vaults.credentials.create(vault.id, {
+      display_name: 'anthropic-model-provider',
+      auth: {
+        type: 'provider_api_key',
+        provider_id: 'anthropic',
+        access_mode: 'model_inference',
+        token: anthropicProviderAPIKey,
+      },
+    });
+    providers = { anthropic: { credential_id: providerCredential.id } };
+    console.log('Created provider credential:', providerCredential.id);
+  }
 
   // Upload a custom skill
   const skillContent = fs.readFileSync(path.join(__dirname, 'greeting-SKILL.md'));
@@ -81,6 +98,7 @@ async function main() {
     environment_id: environment.id,
     agent: { type: 'agent', id: agent.id, version: agent.version },
     vault_ids: [vault.id],
+    ...(providers ? { providers } : {}),
   });
   console.log('Created session:', session.id);
 

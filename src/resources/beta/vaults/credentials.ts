@@ -240,6 +240,8 @@ export interface BetaManagedAgentsCredential {
   auth:
     | BetaManagedAgentsMCPOAuthAuthResponse
     | BetaManagedAgentsStaticBearerAuthResponse
+    | BetaManagedAgentsProviderAPIKeyAuthResponse
+    | BetaManagedAgentsProviderOAuthAuthResponse
     | BetaManagedAgentsEnvironmentVariableAuthResponse;
 
   /**
@@ -647,6 +649,157 @@ export interface BetaManagedAgentsRefreshObject {
 }
 
 /**
+ * API-key credential details for a model provider. Secret token values are never
+ * returned.
+ */
+export interface BetaManagedAgentsProviderAPIKeyAuthResponse {
+  /**
+   * Provider credential routing mode, for example `model_inference`.
+   */
+  access_mode: string;
+
+  /**
+   * Model provider this credential authenticates with, for example `anthropic` or
+   * `openai`.
+   */
+  provider_id: string;
+
+  type: 'provider_api_key';
+}
+
+/**
+ * Parameters for creating a model-provider API-key credential. This key is not a
+ * Tetral public SDK API key.
+ */
+export interface BetaManagedAgentsProviderAPIKeyCreateParams {
+  /**
+   * Provider credential routing mode, for example `model_inference`.
+   */
+  access_mode: string;
+
+  /**
+   * Model provider this credential authenticates with, for example `anthropic` or
+   * `openai`.
+   */
+  provider_id: string;
+
+  /**
+   * Provider API key value. Write-only; never returned in responses.
+   */
+  token: string;
+
+  type: 'provider_api_key';
+}
+
+/**
+ * Parameters for rotating a model-provider API-key credential. `provider_id` and
+ * `access_mode` are immutable.
+ */
+export interface BetaManagedAgentsProviderAPIKeyUpdateParams {
+  type: 'provider_api_key';
+
+  /**
+   * Updated provider API key value.
+   */
+  token?: string | null;
+}
+
+/**
+ * OAuth credential details for a model provider. Secret token values are never
+ * returned.
+ */
+export interface BetaManagedAgentsProviderOAuthAuthResponse {
+  /**
+   * Provider credential routing mode, for example `model_inference`.
+   */
+  access_mode: string;
+
+  /**
+   * Whether a refresh token is stored for this credential.
+   */
+  has_refresh_token: boolean;
+
+  /**
+   * Model provider this credential authenticates with, for example `anthropic` or
+   * `openai`.
+   */
+  provider_id: string;
+
+  type: 'provider_oauth';
+
+  /**
+   * Provider account identifier, when known.
+   */
+  account_id?: string | null;
+
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  expires_at?: string | null;
+}
+
+/**
+ * Parameters for creating a model-provider OAuth credential.
+ */
+export interface BetaManagedAgentsProviderOAuthCreateParams {
+  /**
+   * OAuth access token. Write-only; never returned in responses.
+   */
+  access_token: string;
+
+  /**
+   * Provider credential routing mode, for example `model_inference`.
+   */
+  access_mode: string;
+
+  /**
+   * Model provider this credential authenticates with, for example `anthropic` or
+   * `openai`.
+   */
+  provider_id: string;
+
+  type: 'provider_oauth';
+
+  /**
+   * Provider account identifier, when known.
+   */
+  account_id?: string | null;
+
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  expires_at?: string | null;
+
+  /**
+   * OAuth refresh token. Write-only; responses expose only `has_refresh_token`.
+   */
+  refresh_token?: string | null;
+}
+
+/**
+ * Parameters for rotating a model-provider OAuth credential. `provider_id`,
+ * `access_mode`, and `account_id` are immutable.
+ */
+export interface BetaManagedAgentsProviderOAuthUpdateParams {
+  type: 'provider_oauth';
+
+  /**
+   * Updated OAuth access token.
+   */
+  access_token?: string | null;
+
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  expires_at?: string | null;
+
+  /**
+   * Updated OAuth refresh token.
+   */
+  refresh_token?: string | null;
+}
+
+/**
  * Static bearer token credential details for an MCP server.
  */
 export interface BetaManagedAgentsStaticBearerAuthResponse {
@@ -788,6 +941,8 @@ export interface CredentialCreateParams {
   auth:
     | BetaManagedAgentsMCPOAuthCreateParams
     | BetaManagedAgentsStaticBearerCreateParams
+    | BetaManagedAgentsProviderAPIKeyCreateParams
+    | BetaManagedAgentsProviderOAuthCreateParams
     | BetaManagedAgentsEnvironmentVariableCreateParams;
 
   /**
@@ -831,6 +986,8 @@ export interface CredentialUpdateParams {
   auth?:
     | BetaManagedAgentsMCPOAuthUpdateParams
     | BetaManagedAgentsStaticBearerUpdateParams
+    | BetaManagedAgentsProviderAPIKeyUpdateParams
+    | BetaManagedAgentsProviderOAuthUpdateParams
     | BetaManagedAgentsEnvironmentVariableUpdateParams;
 
   /**
@@ -919,6 +1076,12 @@ export declare namespace Credentials {
     type BetaManagedAgentsMCPProbe as BetaManagedAgentsMCPProbe,
     type BetaManagedAgentsRefreshHTTPResponse as BetaManagedAgentsRefreshHTTPResponse,
     type BetaManagedAgentsRefreshObject as BetaManagedAgentsRefreshObject,
+    type BetaManagedAgentsProviderAPIKeyAuthResponse as BetaManagedAgentsProviderAPIKeyAuthResponse,
+    type BetaManagedAgentsProviderAPIKeyCreateParams as BetaManagedAgentsProviderAPIKeyCreateParams,
+    type BetaManagedAgentsProviderAPIKeyUpdateParams as BetaManagedAgentsProviderAPIKeyUpdateParams,
+    type BetaManagedAgentsProviderOAuthAuthResponse as BetaManagedAgentsProviderOAuthAuthResponse,
+    type BetaManagedAgentsProviderOAuthCreateParams as BetaManagedAgentsProviderOAuthCreateParams,
+    type BetaManagedAgentsProviderOAuthUpdateParams as BetaManagedAgentsProviderOAuthUpdateParams,
     type BetaManagedAgentsStaticBearerAuthResponse as BetaManagedAgentsStaticBearerAuthResponse,
     type BetaManagedAgentsStaticBearerCreateParams as BetaManagedAgentsStaticBearerCreateParams,
     type BetaManagedAgentsStaticBearerUpdateParams as BetaManagedAgentsStaticBearerUpdateParams,
