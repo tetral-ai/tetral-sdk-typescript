@@ -71,7 +71,7 @@ const credential = await client.beta.vaults.credentials.create(vault.id, {
 
 const agent = await client.beta.agents.create({
   name: 'tetral-agent',
-  model: 'anthropic/claude-sonnet-4-6',
+  model: 'anthropic/claude-opus-4-8',
   approval_mode: 'ask_for_approval',
   tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
 });

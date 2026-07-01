@@ -19,7 +19,7 @@ async function main() {
   // Create an agent with the built-in toolset and an always-allow permission policy
   const agent = await client.beta.agents.create({
     name: 'files-example-agent',
-    model: 'anthropic/claude-sonnet-4-6',
+    model: 'anthropic/claude-opus-4-8',
     approval_mode: 'ask_for_approval',
     tools: [
       {

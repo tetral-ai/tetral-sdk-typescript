@@ -14,7 +14,7 @@ const SESSION_RESPONSE = {
     description: null,
     mcp_servers: [],
     approval_mode: 'ask_for_approval',
-    model: { id: 'openai/gpt-5' },
+    model: { id: 'openai/gpt-5.5' },
     multiagent: null,
     name: 'Tetral Agent',
     skills: [],

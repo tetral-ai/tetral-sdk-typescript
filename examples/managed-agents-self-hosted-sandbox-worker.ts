@@ -52,7 +52,7 @@ async function main() {
   //    the implementation lives in `currentTime` above.
   const agent = await client.beta.agents.create({
     name: 'self-hosted-runner-example',
-    model: 'anthropic/claude-haiku-4-5',
+    model: 'anthropic/claude-opus-4-8',
     system: 'You are running in a self-hosted sandbox. Use the available tools to answer.',
     tools: [
       { type: 'agent_toolset_20260401' },

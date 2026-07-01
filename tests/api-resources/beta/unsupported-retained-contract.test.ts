@@ -86,7 +86,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     await expect(
       client.beta.messages.create({
         max_tokens: 1,
-        model: 'anthropic/claude-sonnet-4-6',
+        model: 'anthropic/claude-opus-4-8',
         messages: [{ role: 'user', content: 'hello' }],
       }),
     ).rejects.toMatchObject({
@@ -100,7 +100,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
             custom_id: 'req_1',
             params: {
               max_tokens: 1,
-              model: 'anthropic/claude-sonnet-4-6',
+              model: 'anthropic/claude-opus-4-8',
               messages: [{ role: 'user', content: 'hello' }],
             },
           },
@@ -127,7 +127,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     ]);
     expect(captured[0]!.body).toEqual(deployment);
     expect(captured[3]!.body).toMatchObject({
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       messages: [{ role: 'user', content: 'hello' }],
     });
     expect(captured).toHaveLength(6);
@@ -164,7 +164,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
   test('type smoke covers retained unsupported params and event variants', () => {
     const retainedMultiagent: AgentCreateParams = {
       name: 'coordinator compatibility agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
     };
     const retainedLegacyToolset: BetaManagedAgentsAgentToolset20260401Params = {
@@ -178,7 +178,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     };
     const createWithRetainedTools: AgentCreateParams = {
       name: 'retained tool compatibility agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       tools: [retainedLegacyToolset, retainedCustomTool],
     };
     const retainedUnsupportedEvents = [

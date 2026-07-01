@@ -9,7 +9,10 @@ const client = new Anthropic({
 
 describe('resource agents', () => {
   test('create: only required params', async () => {
-    const responsePromise = client.beta.agents.create({ model: 'claude-sonnet-4-6', name: 'My First Agent' });
+    const responsePromise = client.beta.agents.create({
+      model: 'anthropic/claude-opus-4-8',
+      name: 'My First Agent',
+    });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
     const response = await responsePromise;
@@ -21,7 +24,7 @@ describe('resource agents', () => {
 
   test('create: required and optional params', async () => {
     const response = await client.beta.agents.create({
-      model: 'claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       name: 'My First Agent',
       description: 'A general-purpose starter agent.',
       mcp_servers: [
@@ -109,7 +112,7 @@ describe('resource agents', () => {
         },
       ],
       metadata: { foo: 'string' },
-      model: { id: 'claude-opus-4-6', speed: 'standard' },
+      model: { id: 'anthropic/claude-opus-4-8', speed: 'standard' },
       multiagent: { agents: ['agent_011CZkYqphY8vELVzwCUpqiQ', { type: 'self' }], type: 'coordinator' },
       name: 'name',
       skills: [

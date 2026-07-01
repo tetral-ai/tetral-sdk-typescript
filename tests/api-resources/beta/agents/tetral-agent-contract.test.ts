@@ -16,7 +16,7 @@ const AGENT_RESPONSE = {
   mcp_servers: [],
   approval_mode: 'ask_for_approval',
   metadata: {},
-  model: { id: 'anthropic/claude-sonnet-4-6' },
+  model: { id: 'anthropic/claude-opus-4-8' },
   multiagent: null,
   name: 'Tetral Agent',
   skills: [],
@@ -76,7 +76,7 @@ describe('Tetral Agent SDK contract', () => {
 
     await client.beta.agents.create({
       name: 'Tetral Claude Agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       approval_mode: 'ask_for_approval',
       multiagent: null,
       tools: [
@@ -96,7 +96,7 @@ describe('Tetral Agent SDK contract', () => {
     expect(captured[0]!.beta).toContain('managed-agents-2026-04-01');
     expect(captured[0]!.body).toMatchObject({
       name: 'Tetral Claude Agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       approval_mode: 'ask_for_approval',
       multiagent: null,
       tools: [
@@ -123,7 +123,7 @@ describe('Tetral Agent SDK contract', () => {
     await client.beta.agents.update('agent_123', {
       version: 1,
       approval_mode: 'approve_for_me',
-      model: { id: 'openai/gpt-5', speed: 'standard' },
+      model: { id: 'openai/gpt-5.5', speed: 'standard' },
       tools: [
         {
           type: 'tetral_agent_toolset',
@@ -138,7 +138,7 @@ describe('Tetral Agent SDK contract', () => {
     expect(captured[0]!.body).toMatchObject({
       version: 1,
       approval_mode: 'approve_for_me',
-      model: { id: 'openai/gpt-5', speed: 'standard' },
+      model: { id: 'openai/gpt-5.5', speed: 'standard' },
       tools: [
         {
           type: 'tetral_agent_toolset',
@@ -152,15 +152,22 @@ describe('Tetral Agent SDK contract', () => {
   test('type smoke covers Tetral additions and retained unsupported compatibility shapes', () => {
     const createWithApproval: AgentCreateParams = {
       name: 'full access agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       approval_mode: 'full_access',
       tools: [{ type: 'tetral_agent_toolset', family: 'claude', configs: [{ name: 'memory' }] }],
     };
     const createOmittedApproval: AgentCreateParams = {
       name: 'default approval agent',
-      model: 'openai/gpt-5',
+      model: 'openai/gpt-5.5',
       multiagent: null,
     };
+    const approvedTetralModels: Array<AgentCreateParams['model']> = [
+      'openai/gpt-5.5',
+      'anthropic/claude-opus-4-8',
+      'deepseek/deepseek-v4-pro',
+      'moonshotai/kimi-k2.7-code',
+      'zai/glm-5.2',
+    ];
     const updateWithApproval: AgentUpdateParams = {
       version: 1,
       approval_mode: 'approve_for_me',
@@ -185,12 +192,12 @@ describe('Tetral Agent SDK contract', () => {
 
     const retainedLegacyToolset: AgentCreateParams = {
       name: 'legacy compatibility agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       tools: [{ type: 'agent_toolset_20260401' }],
     };
     const retainedCustomTool: AgentCreateParams = {
       name: 'custom compatibility agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       tools: [
         {
           type: 'custom',
@@ -203,6 +210,7 @@ describe('Tetral Agent SDK contract', () => {
 
     expect(createWithApproval.approval_mode).toBe('full_access');
     expect(createOmittedApproval.multiagent).toBeNull();
+    expect(approvedTetralModels).toHaveLength(5);
     expect(updateWithApproval.approval_mode).toBe('approve_for_me');
     expect(responseShape.approval_mode).toBe('ask_for_approval');
     expect(platformToolsInBothFamilies).toHaveLength(2);
@@ -213,7 +221,7 @@ describe('Tetral Agent SDK contract', () => {
 
 const createApprovalCannotBeNull: AgentCreateParams = {
   name: 'invalid approval',
-  model: 'anthropic/claude-sonnet-4-6',
+  model: 'anthropic/claude-opus-4-8',
   // @ts-expect-error approval_mode does not accept null.
   approval_mode: null,
 };

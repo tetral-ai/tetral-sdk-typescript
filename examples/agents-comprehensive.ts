@@ -65,7 +65,7 @@ async function main() {
   // Create v1 of the agent with the Tetral built-in toolset.
   const agentV1 = await client.beta.agents.create({
     name: 'comprehensive-example-agent',
-    model: 'anthropic/claude-sonnet-4-6',
+    model: 'anthropic/claude-opus-4-8',
     approval_mode: 'ask_for_approval',
     system: 'You are a helpful assistant.',
     tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],

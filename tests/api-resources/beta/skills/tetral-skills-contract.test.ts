@@ -126,7 +126,7 @@ describe('Tetral Skills SDK contract', () => {
   test('type smoke keeps Skills as Agent configuration instead of a tool callback surface', () => {
     const agentWithSkills: AgentCreateParams = {
       name: 'skill agent',
-      model: 'anthropic/claude-sonnet-4-6',
+      model: 'anthropic/claude-opus-4-8',
       skills: [
         { type: 'custom', skill_id: 'skill_123', version: '1759178010641129' },
         { type: 'anthropic', skill_id: 'xlsx' },
@@ -152,7 +152,7 @@ describe('Tetral Skills SDK contract', () => {
 
 const skillCannotBeModelFacingTool: AgentCreateParams = {
   name: 'invalid skill tool',
-  model: 'anthropic/claude-sonnet-4-6',
+  model: 'anthropic/claude-opus-4-8',
   tools: [
     // @ts-expect-error Skills are Agent skill refs, not entries in the tools array.
     { type: 'skill', skill_id: 'skill_123' },

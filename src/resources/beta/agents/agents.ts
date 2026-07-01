@@ -21,7 +21,7 @@ export class Agents extends APIResource {
    * ```ts
    * const betaManagedAgentsAgent =
    *   await client.beta.agents.create({
-   *     model: 'anthropic/claude-sonnet-4-6',
+   *     model: 'anthropic/claude-opus-4-8',
    *     name: 'My First Agent',
    *     approval_mode: 'ask_for_approval',
    *     tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
@@ -833,28 +833,17 @@ export interface BetaManagedAgentsMCPToolsetParams {
 /**
  * The model that will power your agent.
  *
- * Tetral model IDs use the canonical `provider/model` form, such as
- * `anthropic/claude-sonnet-4-6` or `openai/gpt-5`. Providerless Claude literals
- * are retained for upstream compatibility and are not Tetral model IDs.
+ * Tetral model IDs use the canonical `provider/model` form. The supported
+ * Tetral Agent models in this stage are `openai/gpt-5.5`,
+ * `anthropic/claude-opus-4-8`, `deepseek/deepseek-v4-pro`,
+ * `moonshotai/kimi-k2.7-code`, and `zai/glm-5.2`.
  */
 export type BetaManagedAgentsModel =
-  | 'anthropic/claude-sonnet-4-6'
-  | 'anthropic/claude-opus-4-6'
-  | 'openai/gpt-5'
-  | 'kimi/k2-coder'
-  | 'zai/glm-4.5'
-  | 'claude-fable-5'
-  | 'claude-opus-4-8'
-  | 'claude-opus-4-7'
-  | 'claude-opus-4-6'
-  | 'claude-sonnet-4-6'
-  | 'claude-haiku-4-5'
-  | 'claude-haiku-4-5-20251001'
-  | 'claude-opus-4-5'
-  | 'claude-opus-4-5-20251101'
-  | 'claude-sonnet-4-5'
-  | 'claude-sonnet-4-5-20250929'
-  | (string & {});
+  | 'openai/gpt-5.5'
+  | 'anthropic/claude-opus-4-8'
+  | 'deepseek/deepseek-v4-pro'
+  | 'moonshotai/kimi-k2.7-code'
+  | 'zai/glm-5.2';
 
 /**
  * Model identifier and configuration.
@@ -863,8 +852,10 @@ export interface BetaManagedAgentsModelConfig {
   /**
    * The model that will power your agent.
    *
-   * Tetral model IDs use the canonical `provider/model` form, such as
-   * `anthropic/claude-sonnet-4-6` or `openai/gpt-5`.
+   * Tetral model IDs use the canonical `provider/model` form. Supported IDs
+   * are `openai/gpt-5.5`, `anthropic/claude-opus-4-8`,
+   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, and
+   * `zai/glm-5.2`.
    */
   id: BetaManagedAgentsModel;
 
@@ -883,8 +874,10 @@ export interface BetaManagedAgentsModelConfigParams {
   /**
    * The model that will power your agent.
    *
-   * Tetral model IDs use the canonical `provider/model` form, such as
-   * `anthropic/claude-sonnet-4-6` or `openai/gpt-5`.
+   * Tetral model IDs use the canonical `provider/model` form. Supported IDs
+   * are `openai/gpt-5.5`, `anthropic/claude-opus-4-8`,
+   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, and
+   * `zai/glm-5.2`.
    */
   id: BetaManagedAgentsModel;
 
@@ -1003,8 +996,8 @@ export interface BetaManagedAgentsURLMCPServerParams {
 export interface AgentCreateParams {
   /**
    * Body param: Model identifier. Tetral model IDs use canonical `provider/model`
-   * form, such as `anthropic/claude-sonnet-4-6`, or a `model_config` object for
-   * additional configuration control.
+   * form and are limited to the supported Tetral Agent model set, or a
+   * `model_config` object for additional configuration control.
    */
   model: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
@@ -1126,8 +1119,9 @@ export interface AgentUpdateParams {
 
   /**
    * Body param: Model identifier. Tetral model IDs use canonical `provider/model`
-   * form, such as `anthropic/claude-sonnet-4-6`, or a `model_config` object for
-   * additional configuration control. Omit to preserve. Cannot be cleared.
+   * form and are limited to the supported Tetral Agent model set, or a
+   * `model_config` object for additional configuration control. Omit to
+   * preserve. Cannot be cleared.
    */
   model?: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
