@@ -38,7 +38,9 @@ function getHeader(init: RequestInit | undefined, name: string): string | null {
     const entry = init.headers.find(([k]) => k?.toLowerCase() === name.toLowerCase());
     return entry?.[1] ?? null;
   }
-  return (init.headers as Record<string, string>)[name] ?? null;
+  const record = init.headers as Record<string, string>;
+  const key = Object.keys(record).find((k) => k.toLowerCase() === name.toLowerCase());
+  return key !== undefined ? record[key] ?? null : null;
 }
 
 describe('copyClientForHelper', () => {
