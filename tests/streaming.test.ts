@@ -244,15 +244,20 @@ test('error handling', async () => {
   await err.toBeInstanceOf(APIError);
 });
 
-test('APIError.generate() exposes error type', () => {
+test.each([
+  [400, 'Bad request'],
+  [409, 'Conflict'],
+  [413, 'Upload too large'],
+])('APIError.generate() exposes invalid_request_error for %i', (status, message) => {
   const error = APIError.generate(
-    400,
-    { type: 'error', error: { type: 'invalid_request_error', message: 'Bad request' } },
+    status,
+    { type: 'error', error: { type: 'invalid_request_error', message } },
     undefined,
     new Headers({ 'request-id': 'req_123' }),
   );
   expect(error.type).toBe('invalid_request_error');
-  expect(error.status).toBe(400);
+  expect(error.status).toBe(status);
+  expect(error.requestID).toBe('req_123');
 });
 
 test('APIError.generate() sets type to null when absent', () => {
