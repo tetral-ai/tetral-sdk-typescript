@@ -80,7 +80,9 @@ async function main() {
   });
   console.log('Created agent v1:', agentV1.id);
 
-  // Patch the agent to v2 by adding skills; each update bumps the version
+  // Patch the agent to v2 by adding skill references. Skills are Agent
+  // configuration; Session preparation projects them read-only under
+  // /skills/<directory> rather than exposing them as model-facing tools.
   const agent = await client.beta.agents.update(agentV1.id, {
     version: agentV1.version,
     skills: [

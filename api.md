@@ -1084,6 +1084,21 @@ Methods:
 
 ## Skills
 
+The Skills API keeps the parent Skill lifecycle separate from immutable
+SkillVersion artifacts. A parent Skill is metadata plus a `latest_version`
+pointer; each created version is a package artifact validated before durable
+version creation. Skill version uploads use streamed multipart `Uploadable`
+inputs and preserve directory-qualified filenames such as
+`greeting/SKILL.md`. Upload/package validation failures return SDK-compatible
+errors from the backend, including `413 invalid_request_error` when the package
+is too large.
+
+During Session preparation, the backend resolves pinned skill references,
+verifies the expected version/hash, and projects the prepared package read-only
+under `/skills/<directory>/`. Preparation failures block runtime input before
+the Session starts. Skills are Agent configuration, not a separate
+model-facing tool type and not a custom ToolRunner callback.
+
 Types:
 
 - <code><a href="./src/resources/beta/skills/skills.ts">SkillCreateResponse</a></code>
