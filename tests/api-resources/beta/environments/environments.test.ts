@@ -25,10 +25,7 @@ describe('resource environments', () => {
       config: {
         type: 'cloud',
         networking: {
-          type: 'limited',
-          allow_mcp_servers: true,
-          allow_package_managers: true,
-          allowed_hosts: ['api.example.com'],
+          type: 'unrestricted',
         },
         packages: {
           apt: ['string'],
@@ -42,7 +39,6 @@ describe('resource environments', () => {
       },
       description: 'Python environment with data-analysis packages.',
       metadata: { foo: 'string' },
-      scope: 'organization',
       betas: ['message-batches-2024-09-24'],
     });
   });

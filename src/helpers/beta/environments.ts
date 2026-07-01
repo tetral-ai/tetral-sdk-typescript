@@ -1,5 +1,8 @@
 /**
- * Self-hosted environment runner helpers.
+ * Retained self-hosted environment runner helpers. Tetral Cloud-hosted
+ * Environments do not implement the self-host work queue in this stage; the
+ * generated work API paths remain importable/requestable and Tetral backend
+ * admission rejects them fail-closed.
  *
  * - {@link WorkPoller} (`client.beta.environments.work.poller`) — control-plane
  *   only: claims work items and yields each one.

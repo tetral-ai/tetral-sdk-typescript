@@ -210,10 +210,13 @@ import {
 } from './agents/agents';
 import * as EnvironmentsAPI from './environments/environments';
 import {
+  BetaBlockedNetwork,
+  BetaCIDRAllowListNetwork,
   BetaCloudConfig,
   BetaCloudConfigParams,
   BetaEnvironment,
   BetaEnvironmentDeleteResponse,
+  BetaEnvironmentNetworking,
   BetaEnvironmentsPageCursor,
   BetaLimitedNetwork,
   BetaLimitedNetworkParams,
@@ -988,10 +991,13 @@ export declare namespace Beta {
 
   export {
     Environments as Environments,
+    type BetaBlockedNetwork as BetaBlockedNetwork,
+    type BetaCIDRAllowListNetwork as BetaCIDRAllowListNetwork,
     type BetaCloudConfig as BetaCloudConfig,
     type BetaCloudConfigParams as BetaCloudConfigParams,
     type BetaEnvironment as BetaEnvironment,
     type BetaEnvironmentDeleteResponse as BetaEnvironmentDeleteResponse,
+    type BetaEnvironmentNetworking as BetaEnvironmentNetworking,
     type BetaLimitedNetwork as BetaLimitedNetwork,
     type BetaLimitedNetworkParams as BetaLimitedNetworkParams,
     type BetaPackages as BetaPackages,

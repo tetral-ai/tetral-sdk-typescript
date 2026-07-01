@@ -5,9 +5,10 @@
 // agent_toolset_20260401 tools plus one custom tool.
 //
 // Compatibility note: this is a retained self-hosted runner example. Tetral
-// Cloud-hosted runtime rejects client-supplied `user.tool_result` and custom
-// tool-result event variants in this stage; supported Tetral input events are
-// `user.message`, `user.interrupt`, and live-pending `user.tool_confirmation`.
+// Cloud-hosted runtime rejects self-hosted Environment work APIs and
+// client-supplied `user.tool_result` / custom tool-result event variants in
+// this stage; supported Tetral input events are `user.message`,
+// `user.interrupt`, and live-pending `user.tool_confirmation`.
 //
 // Requires:
 //   ANTHROPIC_API_KEY          - your API key (read by the SDK client)
@@ -51,7 +52,7 @@ async function main() {
   //    the implementation lives in `currentTime` above.
   const agent = await client.beta.agents.create({
     name: 'self-hosted-runner-example',
-    model: 'claude-haiku-4-5',
+    model: 'anthropic/claude-haiku-4-5',
     system: 'You are running in a self-hosted sandbox. Use the available tools to answer.',
     tools: [
       { type: 'agent_toolset_20260401' },

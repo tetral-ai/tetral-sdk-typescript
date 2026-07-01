@@ -8,6 +8,7 @@ async function main() {
   // Create an environment
   const environment = await client.beta.environments.create({
     name: 'simple-example-environment',
+    config: { type: 'cloud', networking: { type: 'unrestricted' } },
   });
   console.log('Created environment:', environment.id);
 

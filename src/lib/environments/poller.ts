@@ -82,6 +82,10 @@ export interface WorkPollerOptions {
  * each item, yields the {@link BetaSelfHostedWork} item, and posts `stop` after
  * the consumer's loop body returns (or when the consumer `break`s).
  *
+ * Retained self-hosted compatibility helper. Tetral Cloud-hosted Environments
+ * do not use the work queue in this stage; generated work API calls remain
+ * normal request paths and Tetral backend admission rejects them fail-closed.
+ *
  * @example
  * ```ts
  * for await (const work of client.beta.environments.work.poller({

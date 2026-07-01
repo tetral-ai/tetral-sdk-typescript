@@ -10,9 +10,10 @@
 // work-item lease.
 //
 // Compatibility note: this is a retained self-host/local-helper example. Tetral
-// Cloud-hosted runtime rejects client-supplied `user.tool_result` and custom
-// tool-result event variants in this stage; supported Tetral input events are
-// `user.message`, `user.interrupt`, and live-pending `user.tool_confirmation`.
+// Cloud-hosted runtime rejects self-host work APIs, client-supplied
+// `user.tool_result`, and custom tool-result event variants in this stage;
+// supported Tetral input events are `user.message`, `user.interrupt`, and
+// live-pending `user.tool_confirmation`.
 //
 // Two scenarios, two functions in this file:
 //

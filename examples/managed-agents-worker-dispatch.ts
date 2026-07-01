@@ -6,6 +6,11 @@
 // spawns a fresh sandbox per work item. It does NOT create an agent or session,
 // and it does NOT poll for work: something else did that and claimed the item.
 //
+// Compatibility note: this is a retained self-hosted runner example. Tetral
+// Cloud-hosted Environments do not implement self-host work APIs in this stage;
+// generated work API calls remain requestable but Tetral backend admission
+// rejects them fail-closed.
+//
 // `EnvironmentWorker.handleItem()` with no arguments reads the claimed item's
 // identity from the environment variables the upstream poller sets:
 //   ANTHROPIC_WORK_ID          - the claimed work item to serve

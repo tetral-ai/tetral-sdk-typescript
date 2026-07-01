@@ -608,12 +608,22 @@ Methods:
 
 ## Environments
 
+Tetral supports Cloud Environment lifecycle APIs in this stage. Cloud networking
+supports `unrestricted`, `blocked`, and `cidr_allow_list` with caller-supplied
+CIDRs in `network_allow_list`; the SDK does not translate hostnames to CIDRs.
+Self-host config, explicit Environment `scope`, host allowlists, and
+`limited` networking remain exported for compatibility but are
+unsupported/deferred Tetral shapes rejected by backend admission.
+
 Types:
 
+- <code><a href="./src/resources/beta/environments/environments.ts">BetaBlockedNetwork</a></code>
+- <code><a href="./src/resources/beta/environments/environments.ts">BetaCIDRAllowListNetwork</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaCloudConfig</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaCloudConfigParams</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaEnvironment</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaEnvironmentDeleteResponse</a></code>
+- <code><a href="./src/resources/beta/environments/environments.ts">BetaEnvironmentNetworking</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaLimitedNetwork</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaLimitedNetworkParams</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaPackages</a></code>
@@ -632,6 +642,11 @@ Methods:
 - <code title="post /v1/environments/{environment_id}/archive?beta=true">client.beta.environments.<a href="./src/resources/beta/environments/environments.ts">archive</a>(environmentID, { ...params }) -> BetaEnvironment</code>
 
 ### Work
+
+Environment work APIs and helper runners are retained self-host compatibility
+surface. Tetral Cloud Environments do not implement them in this stage; calls
+remain normal SDK request paths and Tetral backend admission rejects them
+fail-closed.
 
 Types:
 
