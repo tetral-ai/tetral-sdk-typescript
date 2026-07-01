@@ -14,7 +14,9 @@ async function main() {
   // Create an agent
   const agent = await client.beta.agents.create({
     name: 'simple-example-agent',
-    model: 'claude-sonnet-4-6',
+    model: 'anthropic/claude-sonnet-4-6',
+    approval_mode: 'ask_for_approval',
+    tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
   console.log('Created agent:', agent.id);
 

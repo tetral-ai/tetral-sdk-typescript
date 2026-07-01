@@ -11,7 +11,7 @@ const MCP_SERVER_URL = 'https://api.githubcopilot.com/mcp/';
 
 const PROMPT =
   'Hi! List every tool and skill you have access to, grouped by where they ' +
-  'came from (built-in toolset, custom tool, MCP server, skills).';
+  'came from (built-in toolset, MCP server, skills).';
 
 async function main() {
   const githubToken = process.env['GITHUB_TOKEN'];
@@ -49,25 +49,16 @@ async function main() {
   });
   console.log('Created skill:', skill.id);
 
-  // Create v1 of the agent with the built-in toolset, an MCP server, and a custom tool
+  // Create v1 of the agent with the Tetral built-in toolset and an MCP server
   const agentV1 = await client.beta.agents.create({
     name: 'comprehensive-example-agent',
-    model: 'claude-sonnet-4-6',
+    model: 'anthropic/claude-sonnet-4-6',
+    approval_mode: 'ask_for_approval',
     system: 'You are a helpful assistant.',
     mcp_servers: [{ type: 'url', name: MCP_SERVER_NAME, url: MCP_SERVER_URL }],
     tools: [
-      { type: 'agent_toolset_20260401' },
+      { type: 'tetral_agent_toolset', family: 'claude' },
       { type: 'mcp_toolset', mcp_server_name: MCP_SERVER_NAME },
-      {
-        type: 'custom',
-        name: 'get_weather',
-        description: 'Look up the current weather for a city.',
-        input_schema: {
-          type: 'object',
-          properties: { city: { type: 'string' } },
-          required: ['city'],
-        },
-      },
     ],
   });
   console.log('Created agent v1:', agentV1.id);
@@ -93,7 +84,7 @@ async function main() {
   });
   console.log('Created session:', session.id);
 
-  // Send a prompt and stream events, answering the custom tool if called
+  // Send a prompt and stream events
   console.log('Streaming events:');
   await client.beta.sessions.events.send(session.id, {
     events: [{ type: 'user.message', content: [{ type: 'text', text: PROMPT }] }],
@@ -102,17 +93,6 @@ async function main() {
   const stream = await client.beta.sessions.events.stream(session.id);
   for await (const event of stream) {
     console.log(JSON.stringify(event, null, 2));
-    if (event.type === 'agent.tool_use' && event.name === 'get_weather') {
-      await client.beta.sessions.events.send(session.id, {
-        events: [
-          {
-            type: 'user.tool_result',
-            tool_use_id: event.id,
-            content: [{ type: 'text', text: '{"temperature_c": 14}' }],
-          },
-        ],
-      });
-    }
     if (event.type === 'session.status_idle' && event.stop_reason?.type === 'end_turn') {
       break;
     }
