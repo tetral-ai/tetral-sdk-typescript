@@ -21,8 +21,10 @@ export class Agents extends APIResource {
    * ```ts
    * const betaManagedAgentsAgent =
    *   await client.beta.agents.create({
-   *     model: 'claude-sonnet-4-6',
+   *     model: 'anthropic/claude-opus-4-8',
    *     name: 'My First Agent',
+   *     approval_mode: 'ask_for_approval',
+   *     tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
    *   });
    * ```
    */
@@ -148,6 +150,8 @@ export class Agents extends APIResource {
 
 export type BetaManagedAgentsAgentsPageCursor = PageCursor<BetaManagedAgentsAgent>;
 
+export type AgentApprovalMode = 'full_access' | 'ask_for_approval' | 'approve_for_me';
+
 /**
  * A Managed Agents `agent`.
  */
@@ -168,6 +172,12 @@ export interface BetaManagedAgentsAgent {
 
   mcp_servers: Array<BetaManagedAgentsMCPServerURLDefinition>;
 
+  /**
+   * Resolved approval mode for tool use. When omitted on create, Tetral resolves
+   * the default to `ask_for_approval`.
+   */
+  approval_mode: AgentApprovalMode;
+
   metadata: { [key: string]: string };
 
   /**
@@ -187,7 +197,10 @@ export interface BetaManagedAgentsAgent {
   system: string | null;
 
   tools: Array<
-    BetaManagedAgentsAgentToolset20260401 | BetaManagedAgentsMCPToolset | BetaManagedAgentsCustomTool
+    | BetaManagedAgentsTetralAgentToolset
+    | BetaManagedAgentsAgentToolset20260401
+    | BetaManagedAgentsMCPToolset
+    | BetaManagedAgentsCustomTool
   >;
 
   type: 'agent';
@@ -281,6 +294,159 @@ export interface BetaManagedAgentsAgentToolsetDefaultConfigParams {
   permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
 }
 
+export type BetaManagedAgentsTetralPlatformToolName = 'web' | 'memory' | 'subagent';
+
+export type BetaManagedAgentsTetralClaudeToolName =
+  | 'bash'
+  | 'read'
+  | 'write'
+  | 'edit'
+  | 'glob'
+  | 'grep'
+  | BetaManagedAgentsTetralPlatformToolName;
+
+export type BetaManagedAgentsTetralGPTToolName =
+  | 'exec_command'
+  | 'write_stdin'
+  | 'view_image'
+  | 'apply_patch'
+  | BetaManagedAgentsTetralPlatformToolName;
+
+export type BetaManagedAgentsTetralAgentToolset =
+  | BetaManagedAgentsTetralClaudeAgentToolset
+  | BetaManagedAgentsTetralGPTAgentToolset;
+
+export type BetaManagedAgentsTetralAgentToolsetParams =
+  | BetaManagedAgentsTetralClaudeAgentToolsetParams
+  | BetaManagedAgentsTetralGPTAgentToolsetParams;
+
+/**
+ * Resolved Tetral built-in tool configuration for a Claude-family agent.
+ */
+export interface BetaManagedAgentsTetralClaudeToolConfig {
+  enabled: boolean;
+
+  name: BetaManagedAgentsTetralClaudeToolName;
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+}
+
+/**
+ * Tetral built-in tool configuration for a Claude-family agent.
+ */
+export interface BetaManagedAgentsTetralClaudeToolConfigParams {
+  name: BetaManagedAgentsTetralClaudeToolName;
+
+  /**
+   * Whether this tool is enabled and available to the agent.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
+}
+
+/**
+ * Resolved Tetral built-in tool configuration for a GPT-family agent.
+ */
+export interface BetaManagedAgentsTetralGPTToolConfig {
+  enabled: boolean;
+
+  name: BetaManagedAgentsTetralGPTToolName;
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+}
+
+/**
+ * Tetral built-in tool configuration for a GPT-family agent.
+ */
+export interface BetaManagedAgentsTetralGPTToolConfigParams {
+  name: BetaManagedAgentsTetralGPTToolName;
+
+  /**
+   * Whether this tool is enabled and available to the agent.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
+}
+
+export interface BetaManagedAgentsTetralClaudeAgentToolset {
+  configs: Array<BetaManagedAgentsTetralClaudeToolConfig>;
+
+  /**
+   * Resolved default configuration for Tetral built-in tools.
+   */
+  default_config: BetaManagedAgentsAgentToolsetDefaultConfig;
+
+  family: 'claude';
+
+  type: 'tetral_agent_toolset';
+}
+
+export interface BetaManagedAgentsTetralClaudeAgentToolsetParams {
+  type: 'tetral_agent_toolset';
+
+  family: 'claude';
+
+  /**
+   * Per-tool configuration overrides. Claude-family configs accept Claude built-ins
+   * plus platform built-ins.
+   */
+  configs?: Array<BetaManagedAgentsTetralClaudeToolConfigParams>;
+
+  /**
+   * Default configuration for all tools in the toolset.
+   */
+  default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
+}
+
+export interface BetaManagedAgentsTetralGPTAgentToolset {
+  configs: Array<BetaManagedAgentsTetralGPTToolConfig>;
+
+  /**
+   * Resolved default configuration for Tetral built-in tools.
+   */
+  default_config: BetaManagedAgentsAgentToolsetDefaultConfig;
+
+  family: 'gpt';
+
+  type: 'tetral_agent_toolset';
+}
+
+export interface BetaManagedAgentsTetralGPTAgentToolsetParams {
+  type: 'tetral_agent_toolset';
+
+  family: 'gpt';
+
+  /**
+   * Per-tool configuration overrides. GPT-family configs accept GPT built-ins plus
+   * platform built-ins.
+   */
+  configs?: Array<BetaManagedAgentsTetralGPTToolConfigParams>;
+
+  /**
+   * Default configuration for all tools in the toolset.
+   */
+  default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
+}
+
+/**
+ * Legacy Anthropic-managed built-in toolset retained for upstream compatibility.
+ * Tetral Agent create/update uses `tetral_agent_toolset`; Tetral rejects this
+ * legacy shape in this stage.
+ */
 export interface BetaManagedAgentsAgentToolset20260401 {
   configs: Array<BetaManagedAgentsAgentToolConfig>;
 
@@ -379,8 +545,9 @@ export interface BetaManagedAgentsAgentToolset20260401GrepInput {
 }
 
 /**
- * Configuration for built-in agent tools. Use this to enable or disable groups of
- * tools available to the agent.
+ * Legacy Anthropic-managed built-in toolset params retained for upstream
+ * compatibility. Tetral Agent create/update uses `tetral_agent_toolset`; Tetral
+ * rejects this legacy shape in this stage.
  */
 export interface BetaManagedAgentsAgentToolset20260401Params {
   type: 'agent_toolset_20260401';
@@ -500,7 +667,8 @@ export interface BetaManagedAgentsCustomSkillParams {
 }
 
 /**
- * A custom tool as returned in API responses.
+ * A custom tool as returned in API responses. Retained for upstream compatibility;
+ * Tetral rejects client-executed custom Agent tools in this stage.
  */
 export interface BetaManagedAgentsCustomTool {
   description: string;
@@ -529,10 +697,9 @@ export interface BetaManagedAgentsCustomToolInputSchema {
 }
 
 /**
- * A custom tool that is executed by the API client rather than the agent. When the
- * agent calls this tool, an `agent.custom_tool_use` event is emitted and the
- * session goes idle, waiting for the client to provide the result via a
- * `user.custom_tool_result` event.
+ * A custom tool that is executed by the API client rather than the agent. Retained
+ * for upstream compatibility; Tetral rejects this Agent tool shape in this stage
+ * instead of treating it as a local success or no-op.
  */
 export interface BetaManagedAgentsCustomToolParams {
   /**
@@ -666,22 +833,17 @@ export interface BetaManagedAgentsMCPToolsetParams {
 /**
  * The model that will power your agent.
  *
- * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
- * details and options.
+ * Tetral model IDs use the canonical `provider/model` form. The supported
+ * Tetral Agent models in this stage are `openai/gpt-5.5`,
+ * `anthropic/claude-opus-4-8`, `deepseek/deepseek-v4-pro`,
+ * `moonshotai/kimi-k2.7-code`, and `zai/glm-5.2`.
  */
 export type BetaManagedAgentsModel =
-  | 'claude-fable-5'
-  | 'claude-opus-4-8'
-  | 'claude-opus-4-7'
-  | 'claude-opus-4-6'
-  | 'claude-sonnet-4-6'
-  | 'claude-haiku-4-5'
-  | 'claude-haiku-4-5-20251001'
-  | 'claude-opus-4-5'
-  | 'claude-opus-4-5-20251101'
-  | 'claude-sonnet-4-5'
-  | 'claude-sonnet-4-5-20250929'
-  | (string & {});
+  | 'openai/gpt-5.5'
+  | 'anthropic/claude-opus-4-8'
+  | 'deepseek/deepseek-v4-pro'
+  | 'moonshotai/kimi-k2.7-code'
+  | 'zai/glm-5.2';
 
 /**
  * Model identifier and configuration.
@@ -690,8 +852,10 @@ export interface BetaManagedAgentsModelConfig {
   /**
    * The model that will power your agent.
    *
-   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
-   * details and options.
+   * Tetral model IDs use the canonical `provider/model` form. Supported IDs
+   * are `openai/gpt-5.5`, `anthropic/claude-opus-4-8`,
+   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, and
+   * `zai/glm-5.2`.
    */
   id: BetaManagedAgentsModel;
 
@@ -710,8 +874,10 @@ export interface BetaManagedAgentsModelConfigParams {
   /**
    * The model that will power your agent.
    *
-   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
-   * details and options.
+   * Tetral model IDs use the canonical `provider/model` form. Supported IDs
+   * are `openai/gpt-5.5`, `anthropic/claude-opus-4-8`,
+   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, and
+   * `zai/glm-5.2`.
    */
   id: BetaManagedAgentsModel;
 
@@ -775,6 +941,11 @@ export interface BetaManagedAgentsSessionThreadAgent {
   mcp_servers: Array<BetaManagedAgentsMCPServerURLDefinition>;
 
   /**
+   * Resolved approval mode for tool use.
+   */
+  approval_mode: AgentApprovalMode;
+
+  /**
    * Model identifier and configuration.
    */
   model: BetaManagedAgentsModelConfig;
@@ -786,7 +957,10 @@ export interface BetaManagedAgentsSessionThreadAgent {
   system: string | null;
 
   tools: Array<
-    BetaManagedAgentsAgentToolset20260401 | BetaManagedAgentsMCPToolset | BetaManagedAgentsCustomTool
+    | BetaManagedAgentsTetralAgentToolset
+    | BetaManagedAgentsAgentToolset20260401
+    | BetaManagedAgentsMCPToolset
+    | BetaManagedAgentsCustomTool
   >;
 
   type: 'agent';
@@ -821,10 +995,9 @@ export interface BetaManagedAgentsURLMCPServerParams {
 
 export interface AgentCreateParams {
   /**
-   * Body param: Model identifier. Accepts the
-   * [model string](https://platform.claude.com/docs/en/about-claude/models/overview#latest-models-comparison),
-   * e.g. `claude-opus-4-6`, or a `model_config` object for additional configuration
-   * control
+   * Body param: Model identifier. Tetral model IDs use canonical `provider/model`
+   * form and are limited to the supported Tetral Agent model set, or a
+   * `model_config` object for additional configuration control.
    */
   model: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
@@ -832,6 +1005,12 @@ export interface AgentCreateParams {
    * Body param: Human-readable name for the agent.
    */
   name: string;
+
+  /**
+   * Body param: Tool approval mode. Omit to let the backend resolve the default to
+   * `ask_for_approval`.
+   */
+  approval_mode?: AgentApprovalMode;
 
   /**
    * Body param: Description of what the agent does.
@@ -854,8 +1033,10 @@ export interface AgentCreateParams {
 
   /**
    * Body param: A coordinator topology: the session's primary thread orchestrates
-   * work by spawning session threads, each running an agent drawn from the `agents`
-   * roster.
+   * work by spawning session threads, each running an agent drawn from the
+   * `agents` roster. Tetral supports omitted or `null` in this stage; non-null
+   * coordinator topology is retained as an unsupported compatibility surface and
+   * rejected by backend admission.
    */
   multiagent?: SessionsAPI.BetaManagedAgentsMultiagentParams | null;
 
@@ -871,9 +1052,13 @@ export interface AgentCreateParams {
 
   /**
    * Body param: Tool configurations available to the agent. Maximum of 128 tools
-   * across all toolsets allowed.
+   * across all toolsets allowed. Tetral supports `tetral_agent_toolset` with an
+   * explicit `family` and supported `mcp_toolset` declarations. Legacy
+   * `agent_toolset_20260401` and `custom` tool params remain assignable for
+   * compatibility but are rejected by Tetral in this stage.
    */
   tools?: Array<
+    | BetaManagedAgentsTetralAgentToolsetParams
     | BetaManagedAgentsAgentToolset20260401Params
     | BetaManagedAgentsMCPToolsetParams
     | BetaManagedAgentsCustomToolParams
@@ -907,6 +1092,11 @@ export interface AgentUpdateParams {
   version: number;
 
   /**
+   * Body param: Tool approval mode. Omit to preserve the current approval mode.
+   */
+  approval_mode?: AgentApprovalMode;
+
+  /**
    * Body param: Description. Omit to preserve; send empty string or null to clear.
    */
   description?: string | null;
@@ -928,17 +1118,19 @@ export interface AgentUpdateParams {
   metadata?: { [key: string]: string | null } | null;
 
   /**
-   * Body param: Model identifier. Accepts the
-   * [model string](https://platform.claude.com/docs/en/about-claude/models/overview#latest-models-comparison),
-   * e.g. `claude-opus-4-6`, or a `model_config` object for additional configuration
-   * control. Omit to preserve. Cannot be cleared.
+   * Body param: Model identifier. Tetral model IDs use canonical `provider/model`
+   * form and are limited to the supported Tetral Agent model set, or a
+   * `model_config` object for additional configuration control. Omit to
+   * preserve. Cannot be cleared.
    */
   model?: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
   /**
    * Body param: A coordinator topology: the session's primary thread orchestrates
-   * work by spawning session threads, each running an agent drawn from the `agents`
-   * roster.
+   * work by spawning session threads, each running an agent drawn from the
+   * `agents` roster. Tetral supports omitted or `null` in this stage; non-null
+   * coordinator topology is retained as an unsupported compatibility surface and
+   * rejected by backend admission.
    */
   multiagent?: SessionsAPI.BetaManagedAgentsMultiagentParams | null;
 
@@ -962,9 +1154,13 @@ export interface AgentUpdateParams {
   /**
    * Body param: Tool configurations available to the agent. Full replacement. Omit
    * to preserve; send empty array or null to clear. Maximum of 128 tools across all
-   * toolsets allowed.
+   * toolsets allowed. Tetral supports `tetral_agent_toolset` with an explicit
+   * `family` and supported `mcp_toolset` declarations. Legacy
+   * `agent_toolset_20260401` and `custom` tool params remain assignable for
+   * compatibility but are rejected by Tetral in this stage.
    */
   tools?: Array<
+    | BetaManagedAgentsTetralAgentToolsetParams
     | BetaManagedAgentsAgentToolset20260401Params
     | BetaManagedAgentsMCPToolsetParams
     | BetaManagedAgentsCustomToolParams
@@ -1015,6 +1211,20 @@ export declare namespace Agents {
     type BetaManagedAgentsAgentToolConfigParams as BetaManagedAgentsAgentToolConfigParams,
     type BetaManagedAgentsAgentToolsetDefaultConfig as BetaManagedAgentsAgentToolsetDefaultConfig,
     type BetaManagedAgentsAgentToolsetDefaultConfigParams as BetaManagedAgentsAgentToolsetDefaultConfigParams,
+    type AgentApprovalMode as AgentApprovalMode,
+    type BetaManagedAgentsTetralAgentToolset as BetaManagedAgentsTetralAgentToolset,
+    type BetaManagedAgentsTetralAgentToolsetParams as BetaManagedAgentsTetralAgentToolsetParams,
+    type BetaManagedAgentsTetralClaudeAgentToolset as BetaManagedAgentsTetralClaudeAgentToolset,
+    type BetaManagedAgentsTetralClaudeAgentToolsetParams as BetaManagedAgentsTetralClaudeAgentToolsetParams,
+    type BetaManagedAgentsTetralClaudeToolConfig as BetaManagedAgentsTetralClaudeToolConfig,
+    type BetaManagedAgentsTetralClaudeToolConfigParams as BetaManagedAgentsTetralClaudeToolConfigParams,
+    type BetaManagedAgentsTetralClaudeToolName as BetaManagedAgentsTetralClaudeToolName,
+    type BetaManagedAgentsTetralGPTAgentToolset as BetaManagedAgentsTetralGPTAgentToolset,
+    type BetaManagedAgentsTetralGPTAgentToolsetParams as BetaManagedAgentsTetralGPTAgentToolsetParams,
+    type BetaManagedAgentsTetralGPTToolConfig as BetaManagedAgentsTetralGPTToolConfig,
+    type BetaManagedAgentsTetralGPTToolConfigParams as BetaManagedAgentsTetralGPTToolConfigParams,
+    type BetaManagedAgentsTetralGPTToolName as BetaManagedAgentsTetralGPTToolName,
+    type BetaManagedAgentsTetralPlatformToolName as BetaManagedAgentsTetralPlatformToolName,
     type BetaManagedAgentsAgentToolset20260401 as BetaManagedAgentsAgentToolset20260401,
     type BetaManagedAgentsAgentToolset20260401BashInput as BetaManagedAgentsAgentToolset20260401BashInput,
     type BetaManagedAgentsAgentToolset20260401EditInput as BetaManagedAgentsAgentToolset20260401EditInput,

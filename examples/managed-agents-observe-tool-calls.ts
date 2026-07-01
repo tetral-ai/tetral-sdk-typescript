@@ -9,13 +9,19 @@
 // `EnvironmentWorker`, it does NOT poll for work and does NOT manage a
 // work-item lease.
 //
+// Compatibility note: this is a retained upstream/self-host local-helper
+// example, not a Tetral Cloud-hosted example. Tetral Cloud-hosted runtime
+// rejects self-host work APIs, hosted ToolRunner flows, client-supplied
+// `user.tool_result`, and custom tool-result event variants in this stage;
+// supported Tetral input events are `user.message`, `user.interrupt`, and
+// live-pending `user.tool_confirmation`.
+//
 // Two scenarios, two functions in this file:
 //
-//   main() — PRIMARY. A session you created and drive yourself: no work queue,
-//     no lease. `toolRunner` just dispatches tools against the session's
-//     events, so it works the same whether or not the session's environment is
-//     self-hosted. Reach for this when you want per-call visibility on a
-//     session you own.
+//   main() — PRIMARY, retained upstream/self-host compatibility only. It creates
+//     and drives a self-host-compatible session without a work queue or lease.
+//     Do not use this as a Tetral Cloud-hosted flow; Tetral Cloud rejects the
+//     synthesized tool-result events that `toolRunner` posts.
 //
 //   observeAsSelfHostedWorker() — SECONDARY (not called by default). If you ARE
 //     a self-hosted worker but want per-call visibility, you have to compose the
@@ -68,10 +74,12 @@ const currentTime = betaZodTool({
 
 async function main() {
   // 1. Create an agent that exposes both the default toolset and our custom
-  //    tool, then a session and the initial prompt.
+  //    tool, then a session and the initial prompt. The legacy
+  //    `agent_toolset_20260401` and custom Agent tool shape below are retained
+  //    compatibility surfaces and are not supported Tetral Cloud Agent config.
   const agent = await client.beta.agents.create({
     name: 'observe-tool-calls-example',
-    model: 'claude-haiku-4-5',
+    model: 'anthropic/claude-opus-4-8',
     system: 'You are running in a sandbox. Use the available tools to answer.',
     tools: [
       { type: 'agent_toolset_20260401' },
@@ -89,6 +97,7 @@ async function main() {
     agent: agent.id,
     environment_id: environmentId,
     title: 'observe-tool-calls-example',
+    vault_ids: [],
     betas: [MANAGED_AGENTS_BETA],
   });
   console.log('created session', session.id);

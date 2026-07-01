@@ -3,6 +3,11 @@
 import { APIResource } from '../../core/resource';
 import { Webhook } from 'standardwebhooks';
 
+/**
+ * Retained webhook payload compatibility helpers. Tetral webhook delivery and
+ * management behavior is deferred in this stage; `unwrap` remains a local
+ * verifier/parser for compatible payloads.
+ */
 export class Webhooks extends APIResource {
   unwrap(
     body: string,

@@ -66,6 +66,9 @@ export class Files extends APIResource {
   /**
    * Download File
    *
+   * This downloads the durable Files API object content. It is not a live
+   * sandbox preview, UI diff renderer, or object-store internals exposure.
+   *
    * @example
    * ```ts
    * const response = await client.beta.files.download(
@@ -121,6 +124,11 @@ export class Files extends APIResource {
 
   /**
    * Upload File
+   *
+   * Upload uses the SDK `Uploadable` multipart path. Tetral returns
+   * `413 invalid_request_error` for upload size failures; if bytes are stored but
+   * metadata commit fails, backend cleanup is responsible for best-effort object
+   * deletion.
    *
    * @example
    * ```ts
@@ -261,7 +269,7 @@ export interface FileRetrieveMetadataParams {
 
 export interface FileUploadParams {
   /**
-   * Body param: The file to upload
+   * Body param: The durable Files API object to upload via SDK `Uploadable`.
    */
   file: Uploadable;
 

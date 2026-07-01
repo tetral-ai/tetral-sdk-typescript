@@ -2,10 +2,13 @@
 
 export {
   Environments,
+  type BetaBlockedNetwork,
+  type BetaCIDRAllowListNetwork,
   type BetaCloudConfig,
   type BetaCloudConfigParams,
   type BetaEnvironment,
   type BetaEnvironmentDeleteResponse,
+  type BetaEnvironmentNetworking,
   type BetaLimitedNetwork,
   type BetaLimitedNetworkParams,
   type BetaPackages,

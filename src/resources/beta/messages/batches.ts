@@ -12,6 +12,11 @@ import { AnthropicError } from '../../../error';
 import { path } from '../../../internal/utils/path';
 import * as MessagesApi from '../../messages/messages';
 
+/**
+ * Retained upstream Message Batches compatibility resource. Tetral defers this
+ * generated route family in this stage; calls keep normal generated request
+ * paths and backend admission returns SDK-compatible errors.
+ */
 export class Batches extends APIResource {
   /**
    * Send a batch of Message creation requests.

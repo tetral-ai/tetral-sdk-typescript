@@ -4,7 +4,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import fs from 'fs';
 import path from 'path';
 
-const client = new Anthropic();
+const client = new Anthropic({
+  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
+});
 
 async function main() {
   // Create an environment
@@ -16,10 +19,12 @@ async function main() {
   // Create an agent with the built-in toolset and an always-allow permission policy
   const agent = await client.beta.agents.create({
     name: 'files-example-agent',
-    model: 'claude-sonnet-4-6',
+    model: 'anthropic/claude-opus-4-8',
+    approval_mode: 'ask_for_approval',
     tools: [
       {
-        type: 'agent_toolset_20260401',
+        type: 'tetral_agent_toolset',
+        family: 'claude',
         default_config: {
           enabled: true,
           permission_policy: { type: 'always_allow' },
@@ -35,19 +40,20 @@ async function main() {
   });
   console.log('Uploaded file:', file.id);
 
-  // Create a session with the file mounted as a resource
+  // Create a session, then mount the uploaded file as a Session Resource.
   const session = await client.beta.sessions.create({
     environment_id: environment.id,
     agent: { type: 'agent', id: agent.id, version: agent.version },
-    resources: [
-      {
-        type: 'file',
-        file_id: file.id,
-        mount_path: 'data.csv',
-      },
-    ],
+    vault_ids: [],
   });
   console.log('Created session:', session.id);
+
+  const mountedFile = await client.beta.sessions.resources.add(session.id, {
+    type: 'file',
+    file_id: file.id,
+    mount_path: '/uploads/data.csv',
+  });
+  console.log('Mounted file resource:', mountedFile.id);
 
   const resources = await client.beta.sessions.resources.list(session.id);
   console.log('Listed session resources:', resources.data);

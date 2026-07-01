@@ -1,5 +1,10 @@
 #!/usr/bin/env -S npm run tsn -T
 
+// Compatibility note: this example targets the retained upstream beta Messages
+// helper surface. Tetral defers generated beta Messages APIs and hosted
+// ToolRunner flows in this stage; use Sessions Events `user.message` for
+// supported Tetral session input.
+
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic(); // gets API Key from environment variable ANTHROPIC_API_KEY

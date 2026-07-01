@@ -14,6 +14,11 @@ export class Versions extends APIResource {
   /**
    * Create Skill Version
    *
+   * Uploads an immutable SkillVersion package for an existing parent Skill. The
+   * backend validates the streamed multipart package before durable version
+   * creation, then advances the parent Skill's `latest_version` pointer after a
+   * successful commit.
+   *
    * @example
    * ```ts
    * const version = await client.beta.skills.versions.create(
@@ -132,6 +137,9 @@ export class Versions extends APIResource {
   /**
    * Download a skill version's content as a zip archive.
    *
+   * This returns the durable SkillVersion artifact; it is not a live sandbox
+   * projection or direct object-store access.
+   *
    * @example
    * ```ts
    * const response = await client.beta.skills.versions.download(
@@ -210,7 +218,8 @@ export interface VersionCreateResponse {
   /**
    * Version identifier for the skill.
    *
-   * Each version is identified by a Unix epoch timestamp (e.g., "1759178010641129").
+   * Each committed version is immutable and identified by a Unix epoch timestamp
+   * (e.g., "1759178010641129").
    */
   version: string;
 }
@@ -264,7 +273,8 @@ export interface VersionRetrieveResponse {
   /**
    * Version identifier for the skill.
    *
-   * Each version is identified by a Unix epoch timestamp (e.g., "1759178010641129").
+   * Each committed version is immutable and identified by a Unix epoch timestamp
+   * (e.g., "1759178010641129").
    */
   version: string;
 }
@@ -318,7 +328,8 @@ export interface VersionListResponse {
   /**
    * Version identifier for the skill.
    *
-   * Each version is identified by a Unix epoch timestamp (e.g., "1759178010641129").
+   * Each committed version is immutable and identified by a Unix epoch timestamp
+   * (e.g., "1759178010641129").
    */
   version: string;
 }
@@ -344,7 +355,9 @@ export interface VersionCreateParams {
    * Body param: Files to upload for the skill.
    *
    * All files must be in the same top-level directory and must include a SKILL.md
-   * file at the root of that directory.
+   * file at the root of that directory. Directory-qualified filenames are
+   * preserved in the multipart package so the backend can validate and prepare
+   * the read-only `/skills/<directory>/` projection.
    */
   files?: Array<Uploadable> | null;
 

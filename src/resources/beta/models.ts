@@ -8,6 +8,11 @@ import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
 import { path } from '../../internal/utils/path';
 
+/**
+ * Retained upstream Models compatibility resource. Tetral model selection for
+ * supported Agent and Session flows uses canonical `provider/model` IDs on
+ * those requests; this route family is deferred in this stage.
+ */
 export class Models extends APIResource {
   /**
    * Get a specific model.

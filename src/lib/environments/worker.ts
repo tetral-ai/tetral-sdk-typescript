@@ -122,6 +122,10 @@ type ClaimedWork = Pick<BetaSelfHostedWork, 'id' | 'environment_id' | 'data'>;
  * Construct it via `client.beta.environments.work.worker({ ... })` (or
  * `new EnvironmentWorker({ client, ... })` directly).
  *
+ * Retained self-hosted compatibility helper. Tetral Cloud-hosted Environments
+ * do not use the work queue in this stage; generated work API calls remain
+ * normal request paths and Tetral backend admission rejects them fail-closed.
+ *
  * @example
  * ```ts
  * // Long-running daemon: poll for work, serve each session, loop.

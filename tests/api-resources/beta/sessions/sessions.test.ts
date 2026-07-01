@@ -12,6 +12,7 @@ describe('resource sessions', () => {
     const responsePromise = client.beta.sessions.create({
       agent: 'agent_011CZkYpogX7uDKUyvBTophP',
       environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
+      vault_ids: [],
     });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);

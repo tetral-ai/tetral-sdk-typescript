@@ -25,6 +25,29 @@ interface ClientInternalAccess {
   _authState?: { extraHeaders?: Record<string, string> };
 }
 
+const HELPER_AUTH_HEADER_NAMES = new Set(['authorization', 'x-api-key']);
+
+function stripAuthHeaders(headers: HeadersLike): NullableHeaders | undefined {
+  if (!headers) return undefined;
+
+  const parsed = buildHeaders([headers]);
+  const safeValues = new Headers();
+  for (const [name, value] of parsed.values.entries()) {
+    if (!HELPER_AUTH_HEADER_NAMES.has(name.toLowerCase())) {
+      safeValues.append(name, value);
+    }
+  }
+
+  const safeNulls: Record<string, null> = {};
+  for (const name of parsed.nulls) {
+    if (!HELPER_AUTH_HEADER_NAMES.has(name.toLowerCase())) {
+      safeNulls[name] = null;
+    }
+  }
+
+  return buildHeaders([safeValues, safeNulls]);
+}
+
 /**
  * Return a `withOptions()` clone of `client` set up for use *by* one of the
  * runner helpers: authenticated with `authToken` as Bearer credentials, with
@@ -44,10 +67,13 @@ interface ClientInternalAccess {
  * - `credentials: undefined` — opts the clone out of any inherited
  *   credentials/config/profile so the explicit bearer is the unambiguous auth.
  * - `baseURL: client.baseURL` — pins the parent's resolved host (auth override otherwise resets it).
- * - `defaultHeaders` is rebuilt as `parent._authState.extraHeaders ⊕ parent.defaultHeaders ⊕
- *   {'x-stainless-helper': helper}`. `withOptions` *replaces* (does not
- *   merge) `defaultHeaders`, so we merge here so any custom headers the
- *   caller set on the parent client survive on the sub-client.
+ * - `defaultHeaders` is rebuilt as `safe(parent._authState.extraHeaders) ⊕
+ *   safe(parent.defaultHeaders) ⊕ {'x-stainless-helper': helper}`. Auth
+ *   headers are stripped from inherited header sources because the helper's
+ *   bearer token is the only auth that should reach the helper request.
+ *   `withOptions` *replaces* (does not merge) `defaultHeaders`, so we merge
+ *   here so any non-auth custom headers the caller set on the parent client
+ *   survive on the sub-client.
  */
 export function copyClientForHelper<T extends Anthropic>(
   client: T,
@@ -59,20 +85,10 @@ export function copyClientForHelper<T extends Anthropic>(
     );
   }
   const internal = client as unknown as ClientInternalAccess;
-  const parentDefaults = internal._options.defaultHeaders;
-  // Carry the parent's credential/profile headers; strip the auth ones (we re-auth below).
-  const parentAuthExtraHeaders = internal._authState?.extraHeaders;
-  const inheritedAuthExtraHeaders: Record<string, string> | undefined =
-    parentAuthExtraHeaders ?
-      Object.fromEntries(
-        Object.entries(parentAuthExtraHeaders).filter(([name]) => {
-          const lower = name.toLowerCase();
-          return lower !== 'authorization' && lower !== 'x-api-key';
-        }),
-      )
-    : undefined;
+  const parentDefaults = stripAuthHeaders(internal._options.defaultHeaders);
+  const parentAuthExtraHeaders = stripAuthHeaders(internal._authState?.extraHeaders);
   const defaultHeaders: NullableHeaders = buildHeaders([
-    inheritedAuthExtraHeaders,
+    parentAuthExtraHeaders,
     parentDefaults,
     { [STAINLESS_HELPER_HEADER]: helper },
   ]);

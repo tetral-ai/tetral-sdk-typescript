@@ -19,6 +19,12 @@ Types:
 
 # Messages
 
+Top-level `client.messages` and Message Batches are retained upstream
+compatibility resources. Tetral Managed Agents use
+`client.beta.sessions.events.send(... user.message ...)` for supported session
+input; generated Messages resources are not Tetral-supported messaging in this
+stage.
+
 Types:
 
 - <code><a href="./src/resources/messages/messages.ts">Base64ImageSource</a></code>
@@ -200,6 +206,9 @@ Methods:
 
 ## Batches
 
+Top-level Message Batches are retained upstream compatibility resources, not a
+Tetral-supported route family in this stage.
+
 Types:
 
 - <code><a href="./src/resources/messages/batches.ts">DeletedMessageBatch</a></code>
@@ -222,6 +231,11 @@ Methods:
 - <code title="get /v1/messages/batches/{message_batch_id}/results">client.messages.batches.<a href="./src/resources/messages/batches.ts">results</a>(messageBatchID) -> MessageBatchIndividualResponse</code>
 
 # Models
+
+Top-level `client.models` is retained upstream compatibility surface. Tetral
+model selection for supported Agent and Session flows uses canonical
+`provider/model` IDs on those requests; this generated Models resource is not a
+Tetral-supported model discovery route in this stage.
 
 Types:
 
@@ -257,6 +271,12 @@ Types:
 
 ## Models
 
+Tetral keeps this generated Models resource as a retained compatibility surface.
+Tetral model selection for supported Agent and Session flows uses canonical
+`provider/model` IDs on those requests instead. Calls to `client.beta.models`
+remain normal generated HTTP requests; Tetral backend admission rejects this
+route family with an SDK-compatible error until it is admitted.
+
 Types:
 
 - <code><a href="./src/resources/beta/models.ts">BetaCapabilitySupport</a></code>
@@ -273,6 +293,13 @@ Methods:
 - <code title="get /v1/models?beta=true">client.beta.models.<a href="./src/resources/beta/models.ts">list</a>({ ...params }) -> BetaModelInfosPage</code>
 
 ## Messages
+
+Tetral defers the generated Messages resource, including Message Batches,
+token counting, streaming helpers, and `client.beta.messages.toolRunner(...)`.
+Use `client.beta.sessions.events.send(... user.message ...)` for supported
+Tetral session input. The generated Messages methods remain importable and send
+their normal HTTP requests; Tetral backend admission rejects them with
+SDK-compatible errors rather than the SDK adding a local preflight.
 
 Types:
 
@@ -536,6 +563,15 @@ Methods:
 
 ## Agents
 
+Tetral Agent create/update uses canonical `provider/model` IDs,
+`approval_mode`, and `tetral_agent_toolset` with an explicit `family`.
+Legacy `agent_toolset_20260401`, client-executed custom Agent tools, and
+non-null `multiagent` params remain listed as retained compatibility types but
+are unsupported/deferred Tetral request shapes rejected by backend admission.
+MCP server and `mcp_toolset` declarations are retained as configuration and
+admission scaffolding; Tetral Cloud-hosted MCP connector execution is deferred
+in this stage.
+
 Types:
 
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgent</a></code>
@@ -544,6 +580,20 @@ Types:
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgentToolConfigParams</a></code>
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgentToolsetDefaultConfig</a></code>
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgentToolsetDefaultConfigParams</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">AgentApprovalMode</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralAgentToolset</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralAgentToolsetParams</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralClaudeAgentToolset</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralClaudeAgentToolsetParams</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralClaudeToolConfig</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralClaudeToolConfigParams</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralClaudeToolName</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralGPTAgentToolset</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralGPTAgentToolsetParams</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralGPTToolConfig</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralGPTToolConfigParams</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralGPTToolName</a></code>
+- <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsTetralPlatformToolName</a></code>
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgentToolset20260401</a></code>
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgentToolset20260401BashInput</a></code>
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgentToolset20260401EditInput</a></code>
@@ -594,12 +644,22 @@ Methods:
 
 ## Environments
 
+Tetral supports Cloud Environment lifecycle APIs in this stage. Cloud networking
+supports `unrestricted`, `blocked`, and `cidr_allow_list` with caller-supplied
+CIDRs in `network_allow_list`; the SDK does not translate hostnames to CIDRs.
+Self-host config, explicit Environment `scope`, host allowlists, and
+`limited` networking remain exported for compatibility but are
+unsupported/deferred Tetral shapes rejected by backend admission.
+
 Types:
 
+- <code><a href="./src/resources/beta/environments/environments.ts">BetaBlockedNetwork</a></code>
+- <code><a href="./src/resources/beta/environments/environments.ts">BetaCIDRAllowListNetwork</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaCloudConfig</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaCloudConfigParams</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaEnvironment</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaEnvironmentDeleteResponse</a></code>
+- <code><a href="./src/resources/beta/environments/environments.ts">BetaEnvironmentNetworking</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaLimitedNetwork</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaLimitedNetworkParams</a></code>
 - <code><a href="./src/resources/beta/environments/environments.ts">BetaPackages</a></code>
@@ -618,6 +678,11 @@ Methods:
 - <code title="post /v1/environments/{environment_id}/archive?beta=true">client.beta.environments.<a href="./src/resources/beta/environments/environments.ts">archive</a>(environmentID, { ...params }) -> BetaEnvironment</code>
 
 ### Work
+
+Environment work APIs and helper runners are retained self-host compatibility
+surface. Tetral Cloud Environments do not implement them in this stage; calls
+remain normal SDK request paths and Tetral backend admission rejects them
+fail-closed.
 
 Types:
 
@@ -666,6 +731,15 @@ Types:
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsSystemContentBlock</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsSystemMessageEvent</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsUserToolResultEvent</a></code>
+- <code><a href="./src/resources/beta/sessions/sessions.ts">TetralSessionProviderSelector</a></code>
+- <code><a href="./src/resources/beta/sessions/sessions.ts">TetralSessionProviderSelectors</a></code>
+
+Tetral Session create requires explicit `vault_ids`, using `[]` when no Vaults
+are bound. Memory Stores are attached at Session create time through
+`resources: [{ type: "memory_store", memory_store_id: "memstore_..." }]`; the
+SDK does not infer a default Memory Store, and post-create
+`sessions.resources.add(...)` is for existing `file_id` resources, not byte
+upload or Memory Store attachment.
 
 Methods:
 
@@ -677,6 +751,12 @@ Methods:
 - <code title="post /v1/sessions/{session_id}/archive?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">archive</a>(sessionID, { ...params }) -> BetaManagedAgentsSession</code>
 
 ### Events
+
+Tetral admits `user.message`, `user.interrupt`, and live-pending
+`user.tool_confirmation` input events in this stage. `system.message`,
+`user.custom_tool_result`, `user.define_outcome`, and `user.tool_result`
+request-param types remain listed for SDK compatibility, but Tetral backend
+admission rejects them fail-closed with `400 invalid_request_error`.
 
 Types:
 
@@ -763,6 +843,10 @@ Methods:
 
 ### Resources
 
+Session Resources bind already-created resources into a Session. File resources
+must reference an existing durable Files API object with `file_id` and optional
+`mount_path`; `sessions.resources.add(...)` does not upload bytes.
+
 Types:
 
 - <code><a href="./src/resources/beta/sessions/resources.ts">BetaManagedAgentsDeleteSessionResource</a></code>
@@ -805,6 +889,12 @@ Methods:
 - <code title="get /v1/sessions/{session_id}/threads/{thread_id}/stream?beta=true">client.beta.sessions.threads.events.<a href="./src/resources/beta/sessions/threads/events.ts">stream</a>(threadID, { ...params }) -> BetaManagedAgentsStreamSessionThreadEvents</code>
 
 ## Deployments
+
+Deployments are retained for Anthropic-compatible SDK surface but are
+unsupported/deferred by Tetral in this stage. Supported Tetral Session DTOs keep
+`deployment_id` as `null`. Deployment lifecycle methods continue to send their
+normal generated request paths; Tetral backend admission owns the fail-closed
+`400 invalid_request_error` response.
 
 Types:
 
@@ -855,6 +945,11 @@ Methods:
 
 ## DeploymentRuns
 
+Deployment Runs are retained for compatibility with the generated SDK surface
+but are unsupported/deferred by Tetral in this stage. Calls keep the generated
+request paths and Tetral backend admission returns SDK-compatible errors until
+the route family is admitted.
+
 Types:
 
 - <code><a href="./src/resources/beta/deployment-runs.ts">BetaManagedAgentsAgentArchivedRunError</a></code>
@@ -885,6 +980,12 @@ Methods:
 - <code title="get /v1/deployment_runs?beta=true">client.beta.deploymentRuns.<a href="./src/resources/beta/deployment-runs.ts">list</a>({ ...params }) -> BetaManagedAgentsDeploymentRunsPageCursor</code>
 
 ## Vaults
+
+Provider credentials stored in Vault are model-provider credentials, not Tetral
+public SDK API keys. Create `provider_api_key` or `provider_oauth` credentials
+with the credential material obtained from the provider, then select them from a
+Session through `providers: { [provider_id]: { credential_id } }`. Tetral
+public SDK request authentication still uses the client `apiKey`.
 
 Types:
 
@@ -921,6 +1022,12 @@ Types:
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsMCPOAuthRefreshUpdateParams</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsMCPOAuthUpdateParams</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsMCPProbe</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderAPIKeyAuthResponse</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderAPIKeyCreateParams</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderAPIKeyUpdateParams</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderOAuthAuthResponse</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderOAuthCreateParams</a></code>
+- <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsProviderOAuthUpdateParams</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsRefreshHTTPResponse</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsRefreshObject</a></code>
 - <code><a href="./src/resources/beta/vaults/credentials.ts">BetaManagedAgentsStaticBearerAuthResponse</a></code>
@@ -949,6 +1056,16 @@ Methods:
 
 ## MemoryStores
 
+Public Memory APIs are synchronous CRUD/versioning calls against durable Memory
+Stores. Every public Memory, Memory Version, and attachment flow is explicitly
+store-scoped by `memory_store_id`; the SDK does not infer a workspace default
+Memory Store. Runtime-visible stores are attached during Session create with
+`resources: [{ type: "memory_store", memory_store_id: "memstore_..." }]`.
+
+This public API is distinct from the Runtime Memory Tool. Public SDK calls
+return HTTP DTOs directly from the backend Memory domain; runtime memory tool
+calls produce tool results through the session/runtime path.
+
 Types:
 
 - <code><a href="./src/resources/beta/memory-stores/memory-stores.ts">BetaManagedAgentsDeletedMemoryStore</a></code>
@@ -964,6 +1081,10 @@ Methods:
 - <code title="post /v1/memory_stores/{memory_store_id}/archive?beta=true">client.beta.memoryStores.<a href="./src/resources/beta/memory-stores/memory-stores.ts">archive</a>(memoryStoreID, { ...params }) -> BetaManagedAgentsMemoryStore</code>
 
 ### Memories
+
+Memory-specific error type exports remain as retained upstream compatibility
+types. Tetral path conflicts and precondition failures use the shared
+SDK-compatible `409 invalid_request_error` envelope in this stage.
 
 Types:
 
@@ -1006,6 +1127,14 @@ Methods:
 
 ## Files
 
+The Files API is the durable upload/metadata/download surface. Use
+`client.beta.files.upload(...)` with SDK `Uploadable` multipart input to create a
+File, then pass its `file_id` to Session Resources when it should be mounted in
+a Session. Upload size failures are returned as `413 invalid_request_error`.
+If object upload succeeds but metadata commit fails, backend cleanup owns
+best-effort object deletion. `download(...)` returns durable file content; it is
+not live sandbox preview, UI diff rendering, or direct object-store access.
+
 Types:
 
 - <code><a href="./src/resources/beta/files.ts">BetaFileScope</a></code>
@@ -1021,6 +1150,21 @@ Methods:
 - <code title="post /v1/files?beta=true">client.beta.files.<a href="./src/resources/beta/files.ts">upload</a>({ ...params }) -> FileMetadata</code>
 
 ## Skills
+
+The Skills API keeps the parent Skill lifecycle separate from immutable
+SkillVersion artifacts. A parent Skill is metadata plus a `latest_version`
+pointer; each created version is a package artifact validated before durable
+version creation. Skill version uploads use streamed multipart `Uploadable`
+inputs and preserve directory-qualified filenames such as
+`greeting/SKILL.md`. Upload/package validation failures return SDK-compatible
+errors from the backend, including `413 invalid_request_error` when the package
+is too large.
+
+During Session preparation, the backend resolves pinned skill references,
+verifies the expected version/hash, and projects the prepared package read-only
+under `/skills/<directory>/`. Preparation failures block runtime input before
+the Session starts. Skills are Agent configuration, not a separate
+model-facing tool type and not a custom ToolRunner callback.
 
 Types:
 
@@ -1054,6 +1198,11 @@ Methods:
 - <code title="get /v1/skills/{skill_id}/versions/{version}/content?beta=true">client.beta.skills.versions.<a href="./src/resources/beta/skills/versions.ts">download</a>(version, { ...params }) -> Response</code>
 
 ## Webhooks
+
+Webhook payload types and the local `unwrap` verifier are retained for
+compatibility. Tetral webhook delivery and management behavior is
+unsupported/deferred in this stage; do not treat these types as a supported
+Tetral webhook lifecycle API.
 
 Types:
 
@@ -1089,6 +1238,11 @@ Methods:
 - <code>client.beta.webhooks.<a href="./src/resources/beta/webhooks.ts">unwrap</a>(body) -> void</code>
 
 ## UserProfiles
+
+User Profiles are retained for compatibility with the generated SDK surface but
+are unsupported/deferred by Tetral in this stage. Calls keep their generated
+request paths and Tetral backend admission returns SDK-compatible errors until
+the route family is admitted.
 
 Types:
 

@@ -126,9 +126,13 @@ export interface DispatchedToolCall {
   /**
    * Whether a result event for this call reached the session. `false` when the
    * post itself failed (typically a permanent 4xx or send-retry exhaustion)
-   * and also `false` — with no `result` event ever built — for a tool name
-   * this runner does not own when it deliberately posts nothing and leaves the
-   * id pending for its owner (the split-client behavior).
+   * including Tetral Cloud-hosted rejection of client-supplied
+   * `user.tool_result` / `user.custom_tool_result` variants. Treat this as an
+   * explicit local failure state, not as a successful tool-result delivery.
+   *
+   * Also `false` — with no `result` event ever built — for a tool name this
+   * runner does not own when it deliberately posts nothing and leaves the id
+   * pending for its owner (the split-client behavior).
    */
   readonly posted: boolean;
 }
@@ -157,6 +161,10 @@ function isEndTurnIdle(ev: { type?: string; stop_reason?: { type?: string } }): 
  * tool calls and runs each tool's `close()` cleanup hook. It does *not* touch
  * the work-item lease — wrap it in an `EnvironmentWorker` if you need
  * heartbeating / force-stop.
+ *
+ * Tetral Cloud-hosted runtime rejects client-supplied tool-result event
+ * variants in this stage. When such a post is rejected, yielded calls have
+ * `posted: false`; consumers must not treat that as hosted-runtime success.
  *
  * @example
  * ```ts

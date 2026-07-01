@@ -2,19 +2,25 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
+const client = new Anthropic({
+  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
+});
 
 async function main() {
   // Create an environment
   const environment = await client.beta.environments.create({
     name: 'simple-example-environment',
+    config: { type: 'cloud', networking: { type: 'unrestricted' } },
   });
   console.log('Created environment:', environment.id);
 
   // Create an agent
   const agent = await client.beta.agents.create({
     name: 'simple-example-agent',
-    model: 'claude-sonnet-4-6',
+    model: 'anthropic/claude-opus-4-8',
+    approval_mode: 'ask_for_approval',
+    tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
   console.log('Created agent:', agent.id);
 
@@ -22,6 +28,7 @@ async function main() {
   const session = await client.beta.sessions.create({
     environment_id: environment.id,
     agent: { type: 'agent', id: agent.id },
+    vault_ids: [],
   });
   console.log('Created session:', session.id);
 

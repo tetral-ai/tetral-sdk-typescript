@@ -121,6 +121,8 @@ export {
   type BetaManagedAgentsSystemContentBlock,
   type BetaManagedAgentsSystemMessageEvent,
   type BetaManagedAgentsUserToolResultEvent,
+  type TetralSessionProviderSelector,
+  type TetralSessionProviderSelectors,
   type SessionCreateParams,
   type SessionRetrieveParams,
   type SessionUpdateParams,

@@ -135,6 +135,7 @@ export class Sessions extends APIResource {
    *   await client.beta.sessions.create({
    *     agent: 'agent_011CZkYpogX7uDKUyvBTophP',
    *     environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
+   *     vault_ids: [],
    *   });
    * ```
    */
@@ -577,6 +578,11 @@ export interface BetaManagedAgentsSessionAgent {
   mcp_servers: Array<AgentsAPI.BetaManagedAgentsMCPServerURLDefinition>;
 
   /**
+   * Resolved approval mode for tool use from the agent snapshot.
+   */
+  approval_mode: AgentsAPI.AgentApprovalMode;
+
+  /**
    * Model identifier and configuration.
    */
   model: AgentsAPI.BetaManagedAgentsModelConfig;
@@ -594,6 +600,7 @@ export interface BetaManagedAgentsSessionAgent {
   system: string | null;
 
   tools: Array<
+    | AgentsAPI.BetaManagedAgentsTetralAgentToolset
     | AgentsAPI.BetaManagedAgentsAgentToolset20260401
     | AgentsAPI.BetaManagedAgentsMCPToolset
     | AgentsAPI.BetaManagedAgentsCustomTool
@@ -618,13 +625,25 @@ export interface BetaManagedAgentsSessionAgentUpdate {
 
   /**
    * Replacement tool list. Full replacement: the provided array becomes the new
-   * value. Send an empty array to clear; omit to preserve.
+   * value. Send an empty array to clear; omit to preserve. Tetral supports
+   * `tetral_agent_toolset` and supported `mcp_toolset` declarations; legacy
+   * `agent_toolset_20260401` and `custom` tool params are retained compatibility
+   * shapes and rejected by Tetral in this stage.
    */
   tools?: Array<
+    | AgentsAPI.BetaManagedAgentsTetralAgentToolsetParams
     | AgentsAPI.BetaManagedAgentsAgentToolset20260401Params
     | AgentsAPI.BetaManagedAgentsMCPToolsetParams
     | AgentsAPI.BetaManagedAgentsCustomToolParams
   >;
+}
+
+export interface TetralSessionProviderSelector {
+  credential_id: string;
+}
+
+export interface TetralSessionProviderSelectors {
+  [provider_id: string]: TetralSessionProviderSelector;
 }
 
 /**
@@ -823,7 +842,8 @@ export interface SessionCreateParams {
 
   /**
    * Body param: Resources (e.g. repositories, files) to mount into the session's
-   * container.
+   * container. Memory stores are attached explicitly here by ID; the SDK does not
+   * infer a workspace default Memory Store.
    */
   resources?: Array<
     | BetaManagedAgentsGitHubRepositoryResourceParams
@@ -837,10 +857,18 @@ export interface SessionCreateParams {
   title?: string | null;
 
   /**
-   * Body param: Vault IDs for stored credentials the agent can use during the
-   * session.
+   * Body param: Optional provider credential selector. Omit or pass `{}` to use
+   * platform-billed provider access; pass `{ [provider_id]: { credential_id } }`
+   * to select a Vault-backed provider credential.
    */
-  vault_ids?: Array<string>;
+  providers?: TetralSessionProviderSelectors;
+
+  /**
+   * Body param: Vault IDs for stored credentials the agent can use during the
+   * session. Tetral requires this field on create; pass `[]` to explicitly bind no
+   * Vaults.
+   */
+  vault_ids: Array<string>;
 
   /**
    * Header param: Optional header to specify the beta version(s) you want to use.
@@ -874,6 +902,12 @@ export interface SessionUpdateParams {
    * Body param: Human-readable session title.
    */
   title?: string | null;
+
+  /**
+   * Body param: Optional provider credential selector. Passing `{}` clears an
+   * explicit selector and returns to platform-billed provider access.
+   */
+  providers?: TetralSessionProviderSelectors;
 
   /**
    * Body param: Vault IDs (`vlt_*`) to attach to the session. Not yet supported;
@@ -995,6 +1029,8 @@ export declare namespace Sessions {
     type BetaManagedAgentsSystemContentBlock as BetaManagedAgentsSystemContentBlock,
     type BetaManagedAgentsSystemMessageEvent as BetaManagedAgentsSystemMessageEvent,
     type BetaManagedAgentsUserToolResultEvent as BetaManagedAgentsUserToolResultEvent,
+    type TetralSessionProviderSelector as TetralSessionProviderSelector,
+    type TetralSessionProviderSelectors as TetralSessionProviderSelectors,
     type BetaManagedAgentsSessionsPageCursor as BetaManagedAgentsSessionsPageCursor,
     type SessionCreateParams as SessionCreateParams,
     type SessionRetrieveParams as SessionRetrieveParams,
