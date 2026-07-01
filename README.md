@@ -35,6 +35,69 @@ for await (const agent of client.beta.agents.list()) {
 
 Do not pass Anthropic provider API keys as the Tetral SDK `apiKey`. Provider credentials belong in Vault and are selected by Tetral Sessions through `providers`; the SDK public `apiKey` is only the Tetral-issued `redacted-key-...` key. The SDK consumes public keys but does not mint, recover, or persist them.
 
+## Tetral Managed Agents Example
+
+The `examples/agents*.ts` files are the Tetral Managed Agents examples. Other examples are retained upstream Anthropic compatibility examples and may still use upstream Anthropic environment variable names.
+
+```ts
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic({
+  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
+});
+
+const environment = await client.beta.environments.create({
+  name: 'tetral-cloud',
+  config: {
+    type: 'cloud',
+    networking: {
+      type: 'cidr_allow_list',
+      network_allow_list: '10.0.0.0/24,192.168.1.10/32',
+    },
+  },
+});
+
+const vault = await client.beta.vaults.create({ display_name: 'provider-credentials' });
+const credential = await client.beta.vaults.credentials.create(vault.id, {
+  display_name: 'anthropic-provider',
+  auth: {
+    type: 'provider_api_key',
+    provider_id: 'anthropic',
+    access_mode: 'model_inference',
+    token: process.env['MODEL_PROVIDER_API_KEY'] ?? 'provider-secret',
+  },
+});
+
+const agent = await client.beta.agents.create({
+  name: 'tetral-agent',
+  model: 'anthropic/claude-sonnet-4-6',
+  approval_mode: 'ask_for_approval',
+  tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
+});
+
+const file = await client.beta.files.upload({
+  file: new File(['city,revenue\nSF,42\n'], 'data.csv', { type: 'text/csv' }),
+});
+
+const session = await client.beta.sessions.create({
+  environment_id: environment.id,
+  agent: { type: 'agent', id: agent.id, version: agent.version },
+  vault_ids: [vault.id],
+  providers: { anthropic: { credential_id: credential.id } },
+});
+
+await client.beta.sessions.resources.add(session.id, {
+  type: 'file',
+  file_id: file.id,
+  mount_path: '/uploads/data.csv',
+});
+
+await client.beta.sessions.events.send(session.id, {
+  events: [{ type: 'user.message', content: [{ type: 'text', text: 'Summarize /uploads/data.csv.' }] }],
+});
+```
+
 ## Requirements
 
 Node.js 18+

@@ -2,7 +2,10 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
+const client = new Anthropic({
+  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
+});
 
 async function main() {
   // Create an environment

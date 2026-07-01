@@ -19,6 +19,12 @@ Types:
 
 # Messages
 
+Top-level `client.messages` and Message Batches are retained upstream
+compatibility resources. Tetral Managed Agents use
+`client.beta.sessions.events.send(... user.message ...)` for supported session
+input; generated Messages resources are not Tetral-supported messaging in this
+stage.
+
 Types:
 
 - <code><a href="./src/resources/messages/messages.ts">Base64ImageSource</a></code>
@@ -200,6 +206,9 @@ Methods:
 
 ## Batches
 
+Top-level Message Batches are retained upstream compatibility resources, not a
+Tetral-supported route family in this stage.
+
 Types:
 
 - <code><a href="./src/resources/messages/batches.ts">DeletedMessageBatch</a></code>
@@ -222,6 +231,11 @@ Methods:
 - <code title="get /v1/messages/batches/{message_batch_id}/results">client.messages.batches.<a href="./src/resources/messages/batches.ts">results</a>(messageBatchID) -> MessageBatchIndividualResponse</code>
 
 # Models
+
+Top-level `client.models` is retained upstream compatibility surface. Tetral
+model selection for supported Agent and Session flows uses canonical
+`provider/model` IDs on those requests; this generated Models resource is not a
+Tetral-supported model discovery route in this stage.
 
 Types:
 
@@ -549,6 +563,15 @@ Methods:
 
 ## Agents
 
+Tetral Agent create/update uses canonical `provider/model` IDs,
+`approval_mode`, and `tetral_agent_toolset` with an explicit `family`.
+Legacy `agent_toolset_20260401`, client-executed custom Agent tools, and
+non-null `multiagent` params remain listed as retained compatibility types but
+are unsupported/deferred Tetral request shapes rejected by backend admission.
+MCP server and `mcp_toolset` declarations are retained as configuration and
+admission scaffolding; Tetral Cloud-hosted MCP connector execution is deferred
+in this stage.
+
 Types:
 
 - <code><a href="./src/resources/beta/agents/agents.ts">BetaManagedAgentsAgent</a></code>
@@ -728,6 +751,12 @@ Methods:
 - <code title="post /v1/sessions/{session_id}/archive?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">archive</a>(sessionID, { ...params }) -> BetaManagedAgentsSession</code>
 
 ### Events
+
+Tetral admits `user.message`, `user.interrupt`, and live-pending
+`user.tool_confirmation` input events in this stage. `system.message`,
+`user.custom_tool_result`, `user.define_outcome`, and `user.tool_result`
+request-param types remain listed for SDK compatibility, but Tetral backend
+admission rejects them fail-closed with `400 invalid_request_error`.
 
 Types:
 

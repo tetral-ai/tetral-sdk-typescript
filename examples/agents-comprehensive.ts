@@ -5,58 +5,54 @@ import type { TetralSessionProviderSelectors } from '@anthropic-ai/sdk/resources
 import fs from 'fs';
 import path from 'path';
 
-const client = new Anthropic();
-
-const MCP_SERVER_NAME = 'github';
-const MCP_SERVER_URL = 'https://api.githubcopilot.com/mcp/';
+const client = new Anthropic({
+  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
+});
 
 const PROMPT =
   'Hi! List every tool and skill you have access to, grouped by where they ' +
-  'came from (built-in toolset, MCP server, skills).';
+  'came from (built-in toolset and skills).';
 
 async function main() {
-  const githubToken = process.env['GITHUB_TOKEN'];
-  if (!githubToken) {
-    throw new Error('GITHUB_TOKEN is required (use a fine-grained PAT with public-repo read only)');
+  const modelProviderAPIKey = process.env['MODEL_PROVIDER_API_KEY'];
+  if (!modelProviderAPIKey) {
+    throw new Error('MODEL_PROVIDER_API_KEY is required for the provider credential example');
   }
-  const anthropicProviderAPIKey = process.env['ANTHROPIC_PROVIDER_API_KEY'];
 
   // Create an environment
   const environment = await client.beta.environments.create({
     name: 'comprehensive-example-environment',
+    config: {
+      type: 'cloud',
+      networking: {
+        type: 'cidr_allow_list',
+        network_allow_list: '10.0.0.0/24,192.168.1.10/32',
+      },
+    },
   });
   console.log('Created environment:', environment.id);
 
-  // Create a vault and store the MCP server credential in it
+  // Create a vault and store the model provider credential in it. This is not
+  // the Tetral public SDK apiKey; Sessions select it through `providers`.
   const vault = await client.beta.vaults.create({
     display_name: 'comprehensive-example-vault',
   });
   console.log('Created vault:', vault.id);
 
-  const credential = await client.beta.vaults.credentials.create(vault.id, {
-    display_name: 'github-mcp',
+  const providerCredential = await client.beta.vaults.credentials.create(vault.id, {
+    display_name: 'anthropic-model-provider',
     auth: {
-      type: 'static_bearer',
-      mcp_server_url: MCP_SERVER_URL,
-      token: githubToken,
+      type: 'provider_api_key',
+      provider_id: 'anthropic',
+      access_mode: 'model_inference',
+      token: modelProviderAPIKey,
     },
   });
-  console.log('Created credential:', credential.id);
-
-  let providers: TetralSessionProviderSelectors | undefined;
-  if (anthropicProviderAPIKey) {
-    const providerCredential = await client.beta.vaults.credentials.create(vault.id, {
-      display_name: 'anthropic-model-provider',
-      auth: {
-        type: 'provider_api_key',
-        provider_id: 'anthropic',
-        access_mode: 'model_inference',
-        token: anthropicProviderAPIKey,
-      },
-    });
-    providers = { anthropic: { credential_id: providerCredential.id } };
-    console.log('Created provider credential:', providerCredential.id);
-  }
+  const providers: TetralSessionProviderSelectors = {
+    anthropic: { credential_id: providerCredential.id },
+  };
+  console.log('Created provider credential:', providerCredential.id);
 
   // Upload a custom skill
   const skillContent = fs.readFileSync(path.join(__dirname, 'greeting-SKILL.md'));
@@ -66,17 +62,13 @@ async function main() {
   });
   console.log('Created skill:', skill.id);
 
-  // Create v1 of the agent with the Tetral built-in toolset and an MCP server
+  // Create v1 of the agent with the Tetral built-in toolset.
   const agentV1 = await client.beta.agents.create({
     name: 'comprehensive-example-agent',
     model: 'anthropic/claude-sonnet-4-6',
     approval_mode: 'ask_for_approval',
     system: 'You are a helpful assistant.',
-    mcp_servers: [{ type: 'url', name: MCP_SERVER_NAME, url: MCP_SERVER_URL }],
-    tools: [
-      { type: 'tetral_agent_toolset', family: 'claude' },
-      { type: 'mcp_toolset', mcp_server_name: MCP_SERVER_NAME },
-    ],
+    tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
   console.log('Created agent v1:', agentV1.id);
 
@@ -95,12 +87,12 @@ async function main() {
   const versions = await client.beta.agents.versions.list(agent.id);
   console.log('Agent versions:', versions.data);
 
-  // Create a session pinned to v2; the vault supplies the MCP credential
+  // Create a session pinned to v2; the vault supplies the provider credential.
   const session = await client.beta.sessions.create({
     environment_id: environment.id,
     agent: { type: 'agent', id: agent.id, version: agent.version },
     vault_ids: [vault.id],
-    ...(providers ? { providers } : {}),
+    providers,
   });
   console.log('Created session:', session.id);
 
