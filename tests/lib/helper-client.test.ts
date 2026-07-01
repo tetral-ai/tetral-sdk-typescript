@@ -113,6 +113,49 @@ describe('copyClientForHelper', () => {
 });
 
 describe('copyClientForHelper — auth state inheritance', () => {
+  test('does not leak a Tetral public API key into helper wire requests', async () => {
+    const captured: {
+      url: string;
+      auth: string | null;
+      helper: string | null;
+      apiKey: string | null;
+      tenant: string | null;
+    }[] = [];
+    const parent = new Anthropic({
+      apiKey: 'redacted-key-parent',
+      baseURL: 'https://api.tetral.example',
+      defaultHeaders: {
+        Authorization: 'Bearer parent-default-token',
+        'X-Api-Key': 'redacted-key-default_header',
+        'X-Custom-Tenant': 'acme',
+      },
+      fetch: async (url: any, init?: RequestInit) => {
+        captured.push({
+          url: String(url),
+          auth: getHeader(init, 'authorization'),
+          helper: getHeader(init, 'x-stainless-helper'),
+          apiKey: getHeader(init, 'x-api-key'),
+          tenant: getHeader(init, 'x-custom-tenant'),
+        });
+        return jsonResponse({ ok: true });
+      },
+    });
+
+    const helper = copyClientForHelper(parent, {
+      authToken: 'env-scoped-bearer',
+      helper: 'session-tool-runner',
+    });
+
+    await helper.request({ path: '/unit-test-helper', method: 'get' });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0]!.url).toBe('https://api.tetral.example/unit-test-helper');
+    expect(captured[0]!.auth).toBe('Bearer env-scoped-bearer');
+    expect(captured[0]!.helper).toBe('session-tool-runner');
+    expect(captured[0]!.apiKey).toBeNull();
+    expect(captured[0]!.tenant).toBe('acme');
+  });
+
   test('inherits workspace header from parent auth state but uses its own bearer token', async () => {
     const captured: {
       auth: string | null;

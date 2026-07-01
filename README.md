@@ -1,36 +1,37 @@
-# <img src=".github/logo.svg" alt="" width="32"> Claude SDK for TypeScript
+# Tetral Engine SDK for TypeScript
 
-[![NPM version](https://img.shields.io/npm/v/@anthropic-ai/sdk.svg)](https://npmjs.org/package/@anthropic-ai/sdk)
-
-The Claude SDK for TypeScript provides access to the [Claude API](https://docs.anthropic.com/en/api/) from server-side TypeScript or JavaScript applications.
+This fork keeps the Anthropic-compatible TypeScript SDK entrypoint while targeting Tetral public APIs.
+The public client class remains `Anthropic`; configure Tetral with a Tetral-issued public API key and Tetral `baseURL`.
 
 ## Documentation
 
-Full documentation is available at **[platform.claude.com/docs/en/api/sdks/typescript](https://platform.claude.com/docs/en/api/sdks/typescript)**.
+Generated API reference is in [api.md](./api.md). Some upstream-generated route families are retained for SDK compatibility but are deferred or unsupported by Tetral until the Tetral backend admits them.
 
 ## Installation
+
+Use this fork's package name once it is assigned. Until package metadata is renamed, this worktree keeps the upstream package name:
 
 ```sh
 npm install @anthropic-ai/sdk
 ```
 
-## Getting started
+## Getting Started With Tetral
 
 ```js
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
-  apiKey: process.env['ANTHROPIC_API_KEY'], // This is the default and can be omitted
+  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
 });
 
-const message = await client.messages.create({
-  max_tokens: 1024,
-  messages: [{ role: 'user', content: 'Hello, Claude' }],
-  model: 'claude-opus-4-6',
-});
-
-console.log(message.content);
+for await (const agent of client.beta.agents.list()) {
+  console.log(agent.id);
+  break;
+}
 ```
+
+Do not pass Anthropic provider API keys as the Tetral SDK `apiKey`. Provider credentials belong in Vault and are selected by Tetral Sessions through `providers`; the SDK public `apiKey` is only the Tetral-issued `redacted-key-...` key. The SDK consumes public keys but does not mint, recover, or persist them.
 
 ## Requirements
 
