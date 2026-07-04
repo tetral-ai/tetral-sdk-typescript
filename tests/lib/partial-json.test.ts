@@ -1,4 +1,4 @@
-import { partialParse } from '@anthropic-ai/sdk/_vendor/partial-json-parser/parser';
+import { partialParse } from '@tetral-ai/sdk/_vendor/partial-json-parser/parser';
 
 describe('partialParse', () => {
   test('a valid complete JSON string', () => {

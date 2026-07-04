@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsCredential,
   BetaManagedAgentsMCPOAuthCreateParams,
@@ -13,8 +13,9 @@ import type {
   BetaManagedAgentsStaticBearerUpdateParams,
   CredentialCreateParams,
   CredentialUpdateParams,
-} from '@anthropic-ai/sdk/resources/beta/vaults';
-import type { SessionCreateParams } from '@anthropic-ai/sdk/resources/beta/sessions';
+} from '@tetral-ai/sdk/resources/beta/vaults';
+import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
+import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 
 const PROVIDER_API_KEY_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
   id: 'vcrd_provider_api_key',
@@ -51,25 +52,11 @@ const PROVIDER_OAUTH_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
   vault_id: 'vlt_123',
 };
 
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
-
 describe('Tetral Vault credential SDK contract', () => {
   test('create serializes provider_api_key secrets and parses redacted provider metadata', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -109,7 +96,7 @@ describe('Tetral Vault credential SDK contract', () => {
   test('update serializes provider_oauth rotation fields and parses redacted provider metadata', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -148,6 +135,57 @@ describe('Tetral Vault credential SDK contract', () => {
     });
     expect('access_token' in credential.auth).toBe(false);
     expect('refresh_token' in credential.auth).toBe(false);
+  });
+
+  test('environment_variable credential create reaches the mock server and parses backend 400', async () => {
+    const captured: { url: string; body: unknown }[] = [];
+    const client = new Anthropic({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url: any, init?: RequestInit) => {
+        captured.push({ url: String(url), body: parseJSONBody(init) });
+        return jsonResponse(
+          {
+            type: 'error',
+            error: {
+              type: 'invalid_request_error',
+              message: 'environment_variable credentials are not supported by Tetral',
+            },
+          },
+          400,
+        );
+      },
+    });
+
+    await expect(
+      client.beta.vaults.credentials.create('vlt_123', {
+        display_name: 'retained unsupported env credential',
+        auth: {
+          type: 'environment_variable',
+          networking: { type: 'unrestricted' },
+          secret_name: 'MODEL_PROVIDER_API_KEY',
+          secret_value: 'provider-secret-value',
+        },
+      }),
+    ).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+    });
+
+    expect(captured).toEqual([
+      {
+        url: 'https://api.tetral.example/v1/vaults/vlt_123/credentials?beta=true',
+        body: {
+          display_name: 'retained unsupported env credential',
+          auth: {
+            type: 'environment_variable',
+            networking: { type: 'unrestricted' },
+            secret_name: 'MODEL_PROVIDER_API_KEY',
+            secret_value: 'provider-secret-value',
+          },
+        },
+      },
+    ]);
   });
 
   test('type smoke covers supported auth variants, redacted responses, and session provider selection', () => {

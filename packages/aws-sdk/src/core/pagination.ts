@@ -1,1 +1,1 @@
-export * from '@anthropic-ai/sdk/core/pagination';
+export * from '@tetral-ai/sdk/core/pagination';

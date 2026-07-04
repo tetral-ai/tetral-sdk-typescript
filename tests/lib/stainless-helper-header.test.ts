@@ -7,7 +7,7 @@ import {
   STAINLESS_HELPER_HEADER,
 } from '../../src/internal/stainless-helper-header';
 import { APPEND_HEADERS } from '../../src/internal/headers';
-import type { BetaMessageParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta';
+import type { BetaMessageParam, BetaToolUnion } from '@tetral-ai/sdk/resources/beta';
 
 type WithHelper<T> = T & { [SDK_HELPER_SYMBOL]: string };
 

@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -26,30 +26,6 @@ describe('resource resources', () => {
   test.skip('retrieve: required and optional params', async () => {
     const response = await client.beta.sessions.resources.retrieve('sesrsc_011CZkZBJq5dWxk9fVLNcPht', {
       session_id: 'sesn_011CZkZAtmR3yMPDzynEDxu7',
-      betas: ['message-batches-2024-09-24'],
-    });
-  });
-
-  // prism can't find endpoint with beta only tag
-  test.skip('update: only required params', async () => {
-    const responsePromise = client.beta.sessions.resources.update('sesrsc_011CZkZBJq5dWxk9fVLNcPht', {
-      session_id: 'sesn_011CZkZAtmR3yMPDzynEDxu7',
-      authorization_token: 'ghp_exampletoken',
-    });
-    const rawResponse = await responsePromise.asResponse();
-    expect(rawResponse).toBeInstanceOf(Response);
-    const response = await responsePromise;
-    expect(response).not.toBeInstanceOf(Response);
-    const dataAndResponse = await responsePromise.withResponse();
-    expect(dataAndResponse.data).toBe(response);
-    expect(dataAndResponse.response).toBe(rawResponse);
-  });
-
-  // prism can't find endpoint with beta only tag
-  test.skip('update: required and optional params', async () => {
-    const response = await client.beta.sessions.resources.update('sesrsc_011CZkZBJq5dWxk9fVLNcPht', {
-      session_id: 'sesn_011CZkZAtmR3yMPDzynEDxu7',
-      authorization_token: 'ghp_exampletoken',
       betas: ['message-batches-2024-09-24'],
     });
   });

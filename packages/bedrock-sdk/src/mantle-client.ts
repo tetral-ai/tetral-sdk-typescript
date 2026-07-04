@@ -2,8 +2,8 @@ import type { NullableHeaders } from './internal/headers';
 import { buildHeaders } from './internal/headers';
 import * as Errors from './core/error';
 import { readEnv } from './internal/utils/env';
-import { APIRequest, BaseAnthropic, ClientOptions } from '@anthropic-ai/sdk/client';
-import * as Resources from '@anthropic-ai/sdk/resources/index';
+import { APIRequest, BaseAnthropic, ClientOptions } from '@tetral-ai/sdk/client';
+import * as Resources from '@tetral-ai/sdk/resources/index';
 import { AwsCredentialIdentityProvider } from '@smithy/types';
 import { getAuthHeaders } from './core/aws-auth';
 import type { Middleware } from './core/middleware';
@@ -80,6 +80,10 @@ export interface BedrockMantleClientOptions extends ClientOptions {
  * Only the `messages` and `beta.messages` resources are supported.
  */
 export class AnthropicBedrockMantle extends BaseAnthropic {
+  // Auth is injected per-request (SigV4/bearer); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   messages: Resources.Messages = new Resources.Messages(this);
   beta: MantleBetaResource = makeMantleBetaResource(this);
 

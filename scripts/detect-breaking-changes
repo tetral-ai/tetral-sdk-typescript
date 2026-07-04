@@ -4,6 +4,12 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+if [ -z "${1:-}" ]; then
+	echo "usage: $0 <base-ref>   (e.g. ./scripts/detect-breaking-changes origin/main)" >&2
+	echo "Without a base ref nothing is checked out and the run passes vacuously." >&2
+	exit 1
+fi
+
 echo "==> Detecting breaking changes"
 
 TEST_PATHS=(

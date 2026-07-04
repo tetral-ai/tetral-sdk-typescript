@@ -24,7 +24,7 @@ export type CredentialResult = {
   /**
    * The `base_url` from the resolved config/profile, if any. The client
    * applies this to outbound API requests when no explicit `baseURL` (constructor
-   * option or `ANTHROPIC_BASE_URL` env) was given, so a profile pointing at a
+   * option or `TETRAL_BASE_URL` env) was given, so a profile pointing at a
    * non-default API host both mints its token against that host AND sends
    * subsequent API requests there.
    */

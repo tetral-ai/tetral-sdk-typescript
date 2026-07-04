@@ -56,7 +56,7 @@ export interface SessionToolRunnerOptions {
    * Tools to expose to the session, in the same {@link BetaRunnableTool} shape
    * `client.beta.messages.toolRunner` accepts. Use
    * `betaAgentToolset20260401({ workdir })` from
-   * `@anthropic-ai/sdk/tools/agent-toolset/node` for the standard
+   * `@tetral-ai/sdk/tools/agent-toolset/node` for the standard
    * `agent_toolset_20260401` set; filter or extend the array to customise.
    */
   tools: Array<BetaRunnableTool>;
@@ -168,7 +168,7 @@ function isEndTurnIdle(ev: { type?: string; stop_reason?: { type?: string } }): 
  *
  * @example
  * ```ts
- * import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
+ * import { betaAgentToolset20260401 } from '@tetral-ai/sdk/tools/agent-toolset/node';
  *
  * for await (const call of client.beta.sessions.events.toolRunner(work.data.id, {
  *   tools: [...betaAgentToolset20260401({ workdir }), myTool],

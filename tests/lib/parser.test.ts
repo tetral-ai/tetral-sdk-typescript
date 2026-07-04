@@ -1,5 +1,5 @@
-import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
+import { betaZodOutputFormat } from '@tetral-ai/sdk/helpers/beta/zod';
+import { zodOutputFormat } from '@tetral-ai/sdk/helpers/zod';
 import { z } from 'zod/v4';
 import { AnthropicError } from '../../src/core/error';
 import {
@@ -10,7 +10,7 @@ import {
 import { ParseableMessageCreateParams, maybeParseMessage, parseMessage } from '../../src/lib/parser';
 import type { BetaMessage } from '../../src/resources/beta/messages/messages';
 import type { Message } from '../../src/resources/messages/messages';
-import { Logger } from '@anthropic-ai/sdk/client';
+import { Logger } from '@tetral-ai/sdk/client';
 
 const opts: { logger: Logger } = { logger: console };
 

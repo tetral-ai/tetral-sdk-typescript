@@ -1,5 +1,5 @@
-import { APIPromise } from '@anthropic-ai/sdk/api-promise';
-import Anthropic from '@anthropic-ai/sdk/index';
+import { APIPromise } from '@tetral-ai/sdk/api-promise';
+import Anthropic from '@tetral-ai/sdk/index';
 import { compareType } from './utils/typing';
 
 const client = new Anthropic({ apiKey: 'dummy' });

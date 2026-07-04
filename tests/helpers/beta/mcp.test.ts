@@ -1,5 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk';
-import type { BetaMessageParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta';
+import Anthropic from '@tetral-ai/sdk';
+import type { BetaMessageParam, BetaToolUnion } from '@tetral-ai/sdk/resources/beta';
 import type {
   Tool,
   TextContent,

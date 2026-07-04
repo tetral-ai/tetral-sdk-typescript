@@ -1,9 +1,9 @@
-import Anthropic, { BetaFallbackState, type Middleware } from '@anthropic-ai/sdk';
+import Anthropic, { BetaFallbackState, type Middleware } from '@tetral-ai/sdk';
 import { mockFetch } from '../../lib/mock-fetch';
-import { BetaMessage, BetaContentBlock, BetaToolResultBlockParam } from '@anthropic-ai/sdk/resources/beta';
-import { BetaRunnableTool, BetaToolRunContext } from '@anthropic-ai/sdk/lib/tools/BetaRunnableTool';
-import { BetaRawMessageStreamEvent, ToolError } from '@anthropic-ai/sdk/resources/beta/messages';
-import { Fetch } from '@anthropic-ai/sdk/internal/builtin-types';
+import { BetaMessage, BetaContentBlock, BetaToolResultBlockParam } from '@tetral-ai/sdk/resources/beta';
+import { BetaRunnableTool, BetaToolRunContext } from '@tetral-ai/sdk/lib/tools/BetaRunnableTool';
+import { BetaRawMessageStreamEvent, ToolError } from '@tetral-ai/sdk/resources/beta/messages';
+import { Fetch } from '@tetral-ai/sdk/internal/builtin-types';
 import { SDK_HELPER_SYMBOL } from '../../../src/internal/stainless-helper-header';
 
 const weatherTool: BetaRunnableTool<{ location: string }> = {

@@ -305,7 +305,7 @@ export interface ClientOptions {
    * API key used for authentication.
    *
    * - Accepts either a static string or an async function that resolves to a string.
-   * - Defaults to process.env['ANTHROPIC_API_KEY'].
+   * - Defaults to process.env['TETRAL_API_KEY'].
    * - When a function is provided, it is invoked before each request so you can rotate
    *   or refresh credentials at runtime.
    * - The function must return a non-empty string; otherwise an AnthropicError is thrown.
@@ -315,7 +315,7 @@ export interface ClientOptions {
   apiKey?: string | ApiKeySetter | null | undefined;
 
   /**
-   * Defaults to process.env['ANTHROPIC_AUTH_TOKEN'].
+   * No environment default is used by the Tetral SDK fork.
    */
   authToken?: string | null | undefined;
 
@@ -346,10 +346,11 @@ export interface ClientOptions {
   /**
    * Name of a profile to load from `<config_dir>/configs/<profile>.json`.
    *
-   * Equivalent to setting the `ANTHROPIC_PROFILE` environment variable, but
-   * scoped to this client instance. As an explicit constructor argument it
-   * takes precedence over `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` in the
-   * environment. Mutually exclusive with `credentials` and `config`.
+   * Explicit profile selection. The Tetral SDK never reads `ANTHROPIC_PROFILE`
+   * or the config-dir `active_config` implicitly; a profile is used only when
+   * named here. As an explicit constructor argument it takes precedence over
+   * `TETRAL_API_KEY` in the environment. Mutually exclusive with `credentials`
+   * and `config`.
    */
   profile?: string | null | undefined;
 
@@ -361,7 +362,7 @@ export interface ClientOptions {
   /**
    * Override the default base URL for the API, e.g., "https://api.example.com/v2/"
    *
-   * Defaults to process.env['ANTHROPIC_BASE_URL'].
+   * Defaults to process.env['TETRAL_BASE_URL'].
    */
   baseURL?: string | null | undefined;
 
@@ -487,12 +488,19 @@ export class BaseAnthropic {
   protected _options: ClientOptions;
 
   /**
+   * Platform subclass clients (Bedrock/Vertex/AWS/Foundry) inject auth after
+   * construction, so the Tetral missing-key construction guard must not fire
+   * for them; they override this to `false`.
+   */
+  protected static tetralMissingKeyGuard: boolean = true;
+
+  /**
    * API Client for interfacing with the Anthropic API.
    *
-   * @param {string | null | undefined} [opts.apiKey=process.env['ANTHROPIC_API_KEY'] ?? null]
-   * @param {string | null | undefined} [opts.authToken=process.env['ANTHROPIC_AUTH_TOKEN'] ?? null]
+   * @param {string | null | undefined} [opts.apiKey=process.env['TETRAL_API_KEY'] ?? null]
+   * @param {string | null | undefined} [opts.authToken=null]
    * @param {string | null | undefined} [opts.webhookKey=process.env['ANTHROPIC_WEBHOOK_SIGNING_KEY'] ?? null]
-   * @param {string} [opts.baseURL=process.env['ANTHROPIC_BASE_URL'] ?? https://api.anthropic.com] - Override the default base URL for the API.
+   * @param {string} [opts.baseURL=process.env['TETRAL_BASE_URL'] ?? https://api.tetral.example] - Override the default base URL for the API.
    * @param {number} [opts.timeout=10 minutes] - The maximum amount of time (in milliseconds) the client will wait for a response before timing out.
    * @param {MergedRequestInit} [opts.fetchOptions] - Additional `RequestInit` options to be passed to `fetch` calls.
    * @param {Fetch} [opts.fetch] - Specify a custom `fetch` function implementation.
@@ -502,19 +510,40 @@ export class BaseAnthropic {
    * @param {boolean} [opts.dangerouslyAllowBrowser=false] - By default, client-side use of this library is not allowed, as it risks exposing your secret API credentials to attackers.
    */
   constructor({
-    baseURL = readEnv('ANTHROPIC_BASE_URL'),
+    baseURL = readEnv('TETRAL_BASE_URL'),
     apiKey,
     authToken,
     webhookKey = readEnv('ANTHROPIC_WEBHOOK_SIGNING_KEY') ?? null,
     ...opts
   }: ClientOptions = {}) {
     // An explicit `profile` is a constructor-level credential choice; when set,
-    // do not let env ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN shadow it.
+    // do not let env TETRAL_API_KEY shadow it.
+    const tetralAPIKey = readEnv('TETRAL_API_KEY') ?? null;
+    const anthropicAPIKey = readEnv('ANTHROPIC_API_KEY') ?? null;
+    const anthropicAuthToken = readEnv('ANTHROPIC_AUTH_TOKEN') ?? null;
+    // `apiKey: null` is the bring-your-own-auth escape hatch (auth supplied via
+    // explicit headers); it must stay distinguishable from "not provided".
+    const apiKeyExplicitlyNull = apiKey === null;
     if (apiKey === undefined) {
-      apiKey = opts.profile != null ? null : readEnv('ANTHROPIC_API_KEY') ?? null;
+      apiKey = opts.profile != null ? null : tetralAPIKey;
     }
     if (authToken === undefined) {
-      authToken = opts.profile != null ? null : readEnv('ANTHROPIC_AUTH_TOKEN') ?? null;
+      authToken = null;
+    }
+    if (
+      (new.target as typeof BaseAnthropic).tetralMissingKeyGuard !== false &&
+      !apiKeyExplicitlyNull &&
+      apiKey == null &&
+      authToken == null &&
+      opts.profile == null &&
+      opts.credentials == null &&
+      opts.config == null &&
+      tetralAPIKey == null &&
+      (anthropicAPIKey != null || anthropicAuthToken != null)
+    ) {
+      throw new Errors.AnthropicError(
+        "Could not resolve authentication method. Set process.env['TETRAL_API_KEY'] or pass `apiKey`; ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN are not used by the Tetral SDK.",
+      );
     }
     if (opts.profile != null && (opts.credentials != null || opts.config != null)) {
       throw new TypeError('Pass at most one of `profile`, `credentials`, or `config`.');
@@ -524,7 +553,7 @@ export class BaseAnthropic {
       authToken,
       webhookKey,
       ...opts,
-      baseURL: baseURL || `https://api.anthropic.com`,
+      baseURL: baseURL || `https://api.tetral.example`,
     };
 
     if (!options.dangerouslyAllowBrowser && isRunningInBrowser()) {
@@ -535,7 +564,7 @@ export class BaseAnthropic {
 
     this.baseURL = options.baseURL!;
     // After destructuring, `baseURL` is the constructor arg or
-    // ANTHROPIC_BASE_URL — both count as an explicit choice that a profile
+    // TETRAL_BASE_URL — both count as an explicit choice that a profile
     // base_url must not override. A falsy value means we fell through to the
     // hardcoded default above and a profile may supply the host. withOptions()
     // propagates the parent's flag via __baseURLIsExplicit so a non-overriding
@@ -603,12 +632,12 @@ export class BaseAnthropic {
           this._applyCredentialBaseURL(result.baseURL);
         } else if (options.profile != null) {
           this._authState.resolution = this._resolveDefaultCredentials(options.profile);
-        } else {
-          // No explicit auth provided — lazily resolve from the credential
-          // chain on first request. Errors are captured into _auth.error and
-          // surfaced on first use rather than as an unhandled rejection.
-          this._authState.resolution = this._resolveDefaultCredentials();
         }
+        // No explicit auth: the Tetral fork never falls back to the implicit
+        // Anthropic credential chain (ANTHROPIC_PROFILE / active_config /
+        // config-dir profiles / OIDC env synthesis) and never adopts a
+        // profile-supplied base_url. Requests fail with the missing-auth
+        // error instead.
       }
     }
   }
@@ -703,8 +732,13 @@ export class BaseAnthropic {
       // credentials: this.credentials is a no-op when __auth is shared (the
       // ctor takes the inherited path and ignores options.credentials); when
       // overridesAuth is true via apiKey/authToken only, it lets the clone
-      // build a fresh TokenCache around the parent's provider.
-      credentials: this.credentials,
+      // build a fresh TokenCache around the parent's provider. Skipped when
+      // the parent's provider came from a structured option (profile/config):
+      // that option flows through ...this._options and re-resolves, and
+      // seeding both would trip the mutual-exclusion check.
+      ...(this._options.profile == null && this._options.config == null ?
+        { credentials: this.credentials }
+      : {}),
       // When the caller passes a structured-credential override, drop inherited
       // structured-credential options so only `...options` supplies them —
       // otherwise an inherited `credentials`/`config`/`profile` would trip the
@@ -757,7 +791,7 @@ export class BaseAnthropic {
    * one does.
    */
   #baseURLOverridden(): boolean {
-    return this.baseURL !== 'https://api.anthropic.com';
+    return this.baseURL !== 'https://api.tetral.example';
   }
 
   protected defaultQuery(): Record<string, string | undefined> | undefined {
@@ -790,7 +824,7 @@ export class BaseAnthropic {
     }
 
     throw new Error(
-      'Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted',
+      'Could not resolve authentication method. Set process.env[\'TETRAL_API_KEY\'], or pass one of apiKey, authToken, credentials, config, or profile. Or explicitly omit the "X-Api-Key" or "Authorization" header',
     );
   }
 

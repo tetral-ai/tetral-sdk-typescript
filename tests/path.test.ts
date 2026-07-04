@@ -1,4 +1,4 @@
-import { createPathTagFunction, encodeURIPath } from '@anthropic-ai/sdk/internal/utils/path';
+import { createPathTagFunction, encodeURIPath } from '@tetral-ai/sdk/internal/utils/path';
 import { inspect } from 'node:util';
 import { runInNewContext } from 'node:vm';
 

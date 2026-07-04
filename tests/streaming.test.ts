@@ -1,7 +1,7 @@
 import assert from 'assert';
-import { Stream, _iterSSEMessages } from '@anthropic-ai/sdk/core/streaming';
-import { APIError } from '@anthropic-ai/sdk/core/error';
-import { ReadableStreamFrom } from '@anthropic-ai/sdk/internal/shims';
+import { Stream, _iterSSEMessages } from '@tetral-ai/sdk/core/streaming';
+import { APIError } from '@tetral-ai/sdk/core/error';
+import { ReadableStreamFrom } from '@tetral-ai/sdk/internal/shims';
 
 describe('streaming decoding', () => {
   test('basic', async () => {

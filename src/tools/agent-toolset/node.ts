@@ -3,7 +3,7 @@
  * `write`, `edit`, `glob`, `grep` — plus the workdir/skills
  * {@link AgentToolContext}.
  *
- * This mirrors `@anthropic-ai/sdk/tools/memory/node`: it is the explicit,
+ * This mirrors `@tetral-ai/sdk/tools/memory/node`: it is the explicit,
  * Node-only entry point for these implementations. Importing it pulls in
  * `node:child_process`, `node:fs`, etc., so it is kept separate from the rest of
  * the SDK — depending on it is an opt-in.
@@ -18,7 +18,7 @@
  * for a managed-agents session:
  *
  * ```ts
- * import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
+ * import { betaAgentToolset20260401 } from '@tetral-ai/sdk/tools/agent-toolset/node';
  *
  * const tools = betaAgentToolset20260401({ workdir: '/work' });
  * const tools2 = betaAgentToolset20260401({ workdir: '/work' }).filter((t) => t.name !== 'bash');
@@ -111,8 +111,8 @@ export interface AgentToolContext {
   sessionId?: string;
   /**
    * Optional environment for the bash subprocess. When unset, the bash tool
-   * inherits the process environment with the runner's `ANTHROPIC_*`
-   * credentials scrubbed. When provided, it FULLY REPLACES that default
+   * inherits the process environment with SDK credential namespaces scrubbed.
+   * When provided, it FULLY REPLACES that default
    * environment — the mapping is used verbatim and is NOT merged with or added
    * to the scrubbed process environment. To keep the defaults plus extra vars,
    * build the combined mapping yourself before passing it.
@@ -181,11 +181,11 @@ export function resolvePath(ctx: AgentToolContext, p: string): Promise<string> {
 // ---- bash ----------------------------------------------------------------
 
 /**
- * Build the environment for the spawned bash shell. The runner process holds
- * Anthropic credentials in `ANTHROPIC_*` env vars — the API key, the auth token,
- * and the per-work session token among them. `bash` runs an unrestricted shell,
- * so any command the agent runs could read those straight out of `process.env`;
- * strip the whole `ANTHROPIC_*` namespace from the child's environment.
+ * Build the environment for the spawned bash shell. The runner process may hold
+ * credentials in Anthropic-compatible `ANTHROPIC_*` env vars and Tetral public
+ * `TETRAL_*` env vars. `bash` runs an unrestricted shell, so any command the
+ * agent runs could read those straight out of `process.env`; strip both
+ * namespaces from the child's environment.
  * Everything else (PATH, HOME, locale, …) is passed through unchanged.
  *
  * Passing an explicit `env` to {@link AgentToolContext} does NOT add to this
@@ -196,7 +196,7 @@ export function resolvePath(ctx: AgentToolContext, p: string): Promise<string> {
 function scrubbedShellEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {};
   for (const [key, value] of Object.entries(process.env)) {
-    if (key.startsWith('ANTHROPIC_')) continue;
+    if (key.startsWith('ANTHROPIC_') || key.startsWith('TETRAL_')) continue;
     env[key] = value;
   }
   return env;

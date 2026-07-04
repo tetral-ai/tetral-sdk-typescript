@@ -1,6 +1,7 @@
-import Anthropic, { toFile } from '@anthropic-ai/sdk';
-import type { ResourceAddParams } from '@anthropic-ai/sdk/resources/beta/sessions/resources';
+import Anthropic, { toFile } from '@tetral-ai/sdk';
+import type { ResourceAddParams } from '@tetral-ai/sdk/resources/beta/sessions/resources';
 import { SDK_HELPER_SYMBOL } from '../../../src/internal/stainless-helper-header';
+import { jsonResponse, parseJSONBody, getHeader } from './tetral-contract-helpers';
 
 const FILE_METADATA_RESPONSE = {
   id: 'file_123',
@@ -21,35 +22,11 @@ const SESSION_FILE_RESOURCE_RESPONSE = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function getHeader(init: RequestInit | undefined, name: string): string | null {
-  if (!init?.headers) return null;
-  if (init.headers instanceof Headers) return init.headers.get(name);
-  if (Array.isArray(init.headers)) {
-    const entry = init.headers.find(([k]) => k?.toLowerCase() === name.toLowerCase());
-    return entry?.[1] ?? null;
-  }
-  return (init.headers as Record<string, string>)[name] ?? null;
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
-
 describe('Tetral Files and Session Resources SDK contract', () => {
   test('files.upload sends multipart Uploadable input and helper telemetry headers', async () => {
     const captured: { url: string; helper: string | null; body: string }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         if (String(url).includes('/v1/files') && init?.body != null) {
@@ -79,7 +56,7 @@ describe('Tetral Files and Session Resources SDK contract', () => {
 
   test('files.upload parses backend 413 invalid_request_error for upload size failures', async () => {
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async () =>
         jsonResponse(
@@ -104,7 +81,7 @@ describe('Tetral Files and Session Resources SDK contract', () => {
   test('sessions.resources.add references an existing file_id and never uploads bytes', async () => {
     const captured: { url: string; body: unknown; contentType: string | null }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({

@@ -203,18 +203,18 @@ export interface BetaManagedAgentsMemoryVersion {
    * responsible. Look up session provenance separately via the
    * [Sessions API](/en/api/sessions-retrieve).
    */
-  created_by?: BetaManagedAgentsActor;
+  created_by: BetaManagedAgentsActor;
 
   /**
    * The memory's path at the time of this write. `null` if and only if `redacted_at`
    * is set.
    */
-  path?: string | null;
+  path: string | null;
 
   /**
    * A timestamp in RFC 3339 format
    */
-  redacted_at?: string | null;
+  redacted_at: string | null;
 
   /**
    * Identifies who performed a write or redact operation. Captured at write time on
@@ -223,7 +223,7 @@ export interface BetaManagedAgentsMemoryVersion {
    * responsible. Look up session provenance separately via the
    * [Sessions API](/en/api/sessions-retrieve).
    */
-  redacted_by?: BetaManagedAgentsActor;
+  redacted_by: BetaManagedAgentsActor | null;
 }
 
 /**

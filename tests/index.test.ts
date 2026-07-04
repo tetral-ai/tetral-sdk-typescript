@@ -1,11 +1,11 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import { APIPromise } from '@anthropic-ai/sdk/core/api-promise';
-import { APIError } from '@anthropic-ai/sdk/core/error';
+import { APIPromise } from '@tetral-ai/sdk/core/api-promise';
+import { APIError } from '@tetral-ai/sdk/core/error';
 
 import util from 'node:util';
-import Anthropic from '@anthropic-ai/sdk';
-import { APIUserAbortError } from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
+import { APIUserAbortError } from '@tetral-ai/sdk';
 const defaultFetch = fetch;
 
 describe('instantiate client', () => {
@@ -312,7 +312,7 @@ describe('instantiate client', () => {
     });
 
     afterEach(() => {
-      process.env['ANTHROPIC_BASE_URL'] = undefined;
+      process.env['TETRAL_BASE_URL'] = undefined;
     });
 
     test('explicit option', () => {
@@ -321,21 +321,21 @@ describe('instantiate client', () => {
     });
 
     test('env variable', () => {
-      process.env['ANTHROPIC_BASE_URL'] = 'https://example.com/from_env';
+      process.env['TETRAL_BASE_URL'] = 'https://example.com/from_env';
       const client = new Anthropic({ apiKey: 'my-anthropic-api-key' });
       expect(client.baseURL).toEqual('https://example.com/from_env');
     });
 
     test('empty env variable', () => {
-      process.env['ANTHROPIC_BASE_URL'] = ''; // empty
+      process.env['TETRAL_BASE_URL'] = ''; // empty
       const client = new Anthropic({ apiKey: 'my-anthropic-api-key' });
-      expect(client.baseURL).toEqual('https://api.anthropic.com');
+      expect(client.baseURL).toEqual('https://api.tetral.example');
     });
 
     test('blank env variable', () => {
-      process.env['ANTHROPIC_BASE_URL'] = '  '; // blank
+      process.env['TETRAL_BASE_URL'] = '  '; // blank
       const client = new Anthropic({ apiKey: 'my-anthropic-api-key' });
-      expect(client.baseURL).toEqual('https://api.anthropic.com');
+      expect(client.baseURL).toEqual('https://api.tetral.example');
     });
 
     test('in request options', () => {
@@ -356,7 +356,7 @@ describe('instantiate client', () => {
     });
 
     test('in request options overridden by env variable', () => {
-      process.env['ANTHROPIC_BASE_URL'] = 'http://localhost:5000/env';
+      process.env['TETRAL_BASE_URL'] = 'http://localhost:5000/env';
       const client = new Anthropic({ apiKey: 'my-anthropic-api-key' });
       expect(client.buildURL('/foo', null, 'http://localhost:5000/option')).toEqual(
         'http://localhost:5000/env/foo',
@@ -451,14 +451,30 @@ describe('instantiate client', () => {
 
   test('with environment variable arguments', () => {
     // set options via env var
-    process.env['ANTHROPIC_API_KEY'] = 'my-anthropic-api-key';
+    process.env['TETRAL_API_KEY'] = 'my-tetral-api-key';
     const client = new Anthropic();
-    expect(client.apiKey).toBe('my-anthropic-api-key');
+    expect(client.apiKey).toBe('my-tetral-api-key');
+  });
+
+  test('ANTHROPIC_API_KEY alone is rejected as a Tetral SDK default', () => {
+    process.env['ANTHROPIC_API_KEY'] = 'anthropic-provider-key';
+    expect(() => new Anthropic()).toThrow(/TETRAL_API_KEY/);
+  });
+
+  test('ANTHROPIC_AUTH_TOKEN alone is rejected as a Tetral SDK default', () => {
+    process.env['ANTHROPIC_AUTH_TOKEN'] = 'anthropic-bearer-token';
+    expect(() => new Anthropic()).toThrow(/TETRAL_API_KEY/);
+  });
+
+  test('explicit apiKey: null bypasses the migration guard (bring-your-own-auth)', () => {
+    process.env['ANTHROPIC_API_KEY'] = 'anthropic-provider-key';
+    const client = new Anthropic({ apiKey: null, defaultHeaders: { authorization: 'Bearer my-token' } });
+    expect(client.apiKey).toBeNull();
   });
 
   test('with overridden environment variable arguments', () => {
     // set options via env var
-    process.env['ANTHROPIC_API_KEY'] = 'another my-anthropic-api-key';
+    process.env['TETRAL_API_KEY'] = 'another my-tetral-api-key';
     const client = new Anthropic({ apiKey: 'my-anthropic-api-key' });
     expect(client.apiKey).toBe('my-anthropic-api-key');
   });

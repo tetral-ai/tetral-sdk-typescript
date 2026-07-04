@@ -98,8 +98,6 @@ import {
   ResourceListParams,
   ResourceRetrieveParams,
   ResourceRetrieveResponse,
-  ResourceUpdateParams,
-  ResourceUpdateResponse,
   Resources,
 } from './resources';
 import * as ThreadsAPI from './threads/threads';
@@ -367,11 +365,6 @@ export interface BetaManagedAgentsFileResourceParams {
  * Mount a GitHub repository into the session's container.
  */
 export interface BetaManagedAgentsGitHubRepositoryResourceParams {
-  /**
-   * GitHub authorization token used to clone the repository.
-   */
-  authorization_token: string;
-
   type: 'github_repository';
 
   /**
@@ -612,11 +605,17 @@ export interface BetaManagedAgentsSessionAgent {
 }
 
 /**
- * Mid-session agent configuration update. Only `tools` and `mcp_servers` are
- * updatable. Full replacement: the provided array becomes the new value. To
- * preserve existing entries, GET the session, modify the array, and POST it back.
+ * Mid-session agent configuration update. `tools` and `mcp_servers` are full
+ * replacements: the provided array becomes the new value. To preserve existing
+ * entries, GET the session, modify the array, and POST it back. `approval_mode`
+ * updates the session's agent snapshot from the next turn onward.
  */
 export interface BetaManagedAgentsSessionAgentUpdate {
+  /**
+   * Approval mode to apply to this session's agent snapshot from the next turn.
+   */
+  approval_mode?: AgentsAPI.AgentApprovalMode;
+
   /**
    * Replacement MCP server list. Full replacement: the provided array becomes the
    * new value. Send an empty array to clear; omit to preserve.
@@ -735,6 +734,26 @@ export interface BetaManagedAgentsSessionUsage {
    * Total output tokens generated across all turns.
    */
   output_tokens?: number;
+
+  /**
+   * Usage counters for server-executed tools.
+   */
+  server_tool_use?: BetaManagedAgentsSessionServerToolUse;
+}
+
+/**
+ * Server-executed tool usage counters for a session.
+ */
+export interface BetaManagedAgentsSessionServerToolUse {
+  /**
+   * Number of web fetch tool requests.
+   */
+  web_fetch_requests?: number;
+
+  /**
+   * Number of web search tool requests.
+   */
+  web_search_requests?: number;
 }
 
 /**
@@ -859,7 +878,9 @@ export interface SessionCreateParams {
   /**
    * Body param: Optional provider credential selector. Omit or pass `{}` to use
    * platform-billed provider access; pass `{ [provider_id]: { credential_id } }`
-   * to select a Vault-backed provider credential.
+   * to select a Vault-backed provider credential. The provider key must match
+   * the provider parsed from the agent snapshot's canonical `provider/model`
+   * ID, and the credential must belong to a Session-bound Vault.
    */
   providers?: TetralSessionProviderSelectors;
 
@@ -885,10 +906,7 @@ export interface SessionRetrieveParams {
 
 export interface SessionUpdateParams {
   /**
-   * Body param: Mid-session agent configuration update. Only `tools` and
-   * `mcp_servers` are updatable. Full replacement: the provided array becomes the
-   * new value. To preserve existing entries, GET the session, modify the array, and
-   * POST it back.
+   * Body param: Mid-session agent configuration update.
    */
   agent?: BetaManagedAgentsSessionAgentUpdate;
 
@@ -905,7 +923,10 @@ export interface SessionUpdateParams {
 
   /**
    * Body param: Optional provider credential selector. Passing `{}` clears an
-   * explicit selector and returns to platform-billed provider access.
+   * explicit selector and returns to platform-billed provider access. The
+   * provider key must match the provider parsed from the agent snapshot's
+   * canonical `provider/model` ID, and the credential must belong to a
+   * Session-bound Vault.
    */
   providers?: TetralSessionProviderSelectors;
 
@@ -1023,6 +1044,7 @@ export declare namespace Sessions {
     type BetaManagedAgentsSessionAgent as BetaManagedAgentsSessionAgent,
     type BetaManagedAgentsSessionAgentUpdate as BetaManagedAgentsSessionAgentUpdate,
     type BetaManagedAgentsSessionMultiagentCoordinator as BetaManagedAgentsSessionMultiagentCoordinator,
+    type BetaManagedAgentsSessionServerToolUse as BetaManagedAgentsSessionServerToolUse,
     type BetaManagedAgentsSessionStats as BetaManagedAgentsSessionStats,
     type BetaManagedAgentsSessionUpdatedEvent as BetaManagedAgentsSessionUpdatedEvent,
     type BetaManagedAgentsSessionUsage as BetaManagedAgentsSessionUsage,
@@ -1130,10 +1152,8 @@ export declare namespace Sessions {
     type BetaManagedAgentsMemoryStoreResource as BetaManagedAgentsMemoryStoreResource,
     type BetaManagedAgentsSessionResource as BetaManagedAgentsSessionResource,
     type ResourceRetrieveResponse as ResourceRetrieveResponse,
-    type ResourceUpdateResponse as ResourceUpdateResponse,
     type BetaManagedAgentsSessionResourcesPageCursor as BetaManagedAgentsSessionResourcesPageCursor,
     type ResourceRetrieveParams as ResourceRetrieveParams,
-    type ResourceUpdateParams as ResourceUpdateParams,
     type ResourceListParams as ResourceListParams,
     type ResourceDeleteParams as ResourceDeleteParams,
     type ResourceAddParams as ResourceAddParams,

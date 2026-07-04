@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -35,7 +35,6 @@ describe('resource agents', () => {
         },
       ],
       metadata: { foo: 'bar' },
-      multiagent: { agents: ['agent_011CZkYqphY8vELVzwCUpqiQ', { type: 'self' }], type: 'coordinator' },
       skills: [
         {
           skill_id: 'xlsx',
@@ -47,7 +46,8 @@ describe('resource agents', () => {
         "You are a general-purpose agent that can research, write code, run commands, and use connected tools to complete the user's task end to end.",
       tools: [
         {
-          type: 'agent_toolset_20260401',
+          type: 'mcp_toolset',
+          mcp_server_name: 'example-mcp',
           configs: [
             {
               name: 'bash',
@@ -113,7 +113,6 @@ describe('resource agents', () => {
       ],
       metadata: { foo: 'string' },
       model: { id: 'anthropic/claude-opus-4-8', speed: 'standard' },
-      multiagent: { agents: ['agent_011CZkYqphY8vELVzwCUpqiQ', { type: 'self' }], type: 'coordinator' },
       name: 'name',
       skills: [
         {
@@ -126,7 +125,8 @@ describe('resource agents', () => {
         "You are a general-purpose agent that can research, write code, run commands, and use connected tools to complete the user's task end to end.",
       tools: [
         {
-          type: 'agent_toolset_20260401',
+          type: 'mcp_toolset',
+          mcp_server_name: 'example-mcp',
           configs: [
             {
               name: 'bash',

@@ -16,6 +16,18 @@ jest.mock('google-auth-library', () => ({
 }));
 
 describe('AnthropicVertex', () => {
+  test('constructs with ANTHROPIC_API_KEY set and no Tetral key (guard exemption)', () => {
+    const prev = process.env['ANTHROPIC_API_KEY'];
+    process.env['ANTHROPIC_API_KEY'] = 'anthropic-provider-key';
+    try {
+      const client = new AnthropicVertex({ region: 'us-east5', projectId: 'test-project' });
+      expect(client).toBeInstanceOf(AnthropicVertex);
+    } finally {
+      if (prev === undefined) delete process.env['ANTHROPIC_API_KEY'];
+      else process.env['ANTHROPIC_API_KEY'] = prev;
+    }
+  });
+
   describe('baseURL configuration', () => {
     test('global region uses correct base URL', () => {
       const client = new AnthropicVertex({

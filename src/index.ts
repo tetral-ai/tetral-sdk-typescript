@@ -14,6 +14,7 @@ export {
 export {
   BaseAnthropic,
   Anthropic,
+  Anthropic as Tetral,
   type APIRequest,
   type ClientOptions,
   HUMAN_PROMPT,

@@ -1,10 +1,10 @@
-export * from '@anthropic-ai/sdk/streaming';
+export * from '@tetral-ai/sdk/streaming';
 
 import { EventStreamMarshaller } from '@smithy/eventstream-serde-node';
 import { fromBase64, toBase64 } from '@smithy/util-base64';
 import { streamCollector } from '@smithy/fetch-http-handler';
 import { EventStreamSerdeContext, SerdeContext } from '@smithy/types';
-import { AnthropicError } from '@anthropic-ai/sdk/error';
+import { AnthropicError } from '@tetral-ai/sdk/error';
 import { de_ResponseStream } from '../AWS_restJson1';
 import type { BodyInit } from '../internal/builtin-types';
 import { ReadableStreamFrom, ReadableStreamToAsyncIterable } from '../internal/shims';

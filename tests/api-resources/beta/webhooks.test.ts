@@ -2,7 +2,7 @@
 
 import { Webhook } from 'standardwebhooks';
 
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',

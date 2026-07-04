@@ -1,5 +1,5 @@
-import { multipartFormRequestOptions, createForm } from '@anthropic-ai/sdk/internal/uploads';
-import { toFile } from '@anthropic-ai/sdk/core/uploads';
+import { multipartFormRequestOptions, createForm } from '@tetral-ai/sdk/internal/uploads';
+import { toFile } from '@tetral-ai/sdk/core/uploads';
 
 describe('form data validation', () => {
   test('valid values do not error', async () => {

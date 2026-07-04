@@ -1,5 +1,5 @@
-import { APIRequest, BaseAnthropic, ClientOptions as CoreClientOptions } from '@anthropic-ai/sdk/client';
-import * as Resources from '@anthropic-ai/sdk/resources/index';
+import { APIRequest, BaseAnthropic, ClientOptions as CoreClientOptions } from '@tetral-ai/sdk/client';
+import * as Resources from '@tetral-ai/sdk/resources/index';
 import { AwsCredentialIdentityProvider } from '@smithy/types';
 import { getAuthHeaders } from './core/auth';
 import { eventStreamToSSEResponse } from './core/streaming';
@@ -12,7 +12,7 @@ import { buildHeaders } from './internal/headers';
 import { path } from './internal/utils/path';
 import { loggerFor } from './internal/utils/log';
 
-export { BaseAnthropic } from '@anthropic-ai/sdk/client';
+export { BaseAnthropic } from '@tetral-ai/sdk/client';
 
 const DEFAULT_VERSION = 'bedrock-2023-05-31';
 const MODEL_ENDPOINTS = new Set<string>(['/v1/complete', '/v1/messages', '/v1/messages?beta=true']);
@@ -63,6 +63,10 @@ type SecretOnly = {
 
 /** API Client for interfacing with the Anthropic Bedrock API. */
 export class AnthropicBedrock extends BaseAnthropic {
+  // Auth is injected per-request (SigV4/bearer); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   awsSecretKey: string | null;
   awsAccessKey: string | null;
   awsRegion: string;

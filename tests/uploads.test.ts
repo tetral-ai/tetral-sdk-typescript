@@ -1,6 +1,6 @@
 import fs from 'fs';
-import type { ResponseLike } from '@anthropic-ai/sdk/internal/to-file';
-import { toFile } from '@anthropic-ai/sdk/core/uploads';
+import type { ResponseLike } from '@tetral-ai/sdk/internal/to-file';
+import { toFile } from '@tetral-ai/sdk/core/uploads';
 
 class MyClass {
   name: string = 'foo';
@@ -124,7 +124,7 @@ describe('missing File error message', () => {
   });
 
   test('is thrown', async () => {
-    const uploads = await import('@anthropic-ai/sdk/core/uploads');
+    const uploads = await import('@tetral-ai/sdk/core/uploads');
     await expect(
       uploads.toFile(mockResponse({ url: 'https://example.com/my/audio.mp3' })),
     ).rejects.toMatchInlineSnapshot(

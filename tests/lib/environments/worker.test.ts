@@ -1,5 +1,5 @@
-import { EnvironmentWorker } from '@anthropic-ai/sdk/lib/environments';
-import type { BetaRunnableTool } from '@anthropic-ai/sdk/lib/tools/BetaRunnableTool';
+import { EnvironmentWorker } from '@tetral-ai/sdk/lib/environments';
+import type { BetaRunnableTool } from '@tetral-ai/sdk/lib/tools/BetaRunnableTool';
 
 // =====
 // Test fakes

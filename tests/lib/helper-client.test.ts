@@ -5,9 +5,9 @@
 // parent not mutated — without re-exercising `withOptions`'s own inheritance
 // contract (which is the SDK's job to keep working).
 
-import Anthropic from '@anthropic-ai/sdk';
-import { copyClientForHelper } from '@anthropic-ai/sdk/lib/helper-client';
-import { AnthropicError } from '@anthropic-ai/sdk/core/error';
+import Anthropic from '@tetral-ai/sdk';
+import { copyClientForHelper } from '@tetral-ai/sdk/lib/helper-client';
+import { AnthropicError } from '@tetral-ai/sdk/core/error';
 
 const VALID_MSG_RESPONSE = {
   id: 'msg_1',
@@ -124,11 +124,11 @@ describe('copyClientForHelper — auth state inheritance', () => {
       tenant: string | null;
     }[] = [];
     const parent = new Anthropic({
-      apiKey: 'redacted-key-parent',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       defaultHeaders: {
         Authorization: 'Bearer parent-default-token',
-        'X-Api-Key': 'redacted-key-default_header',
+        'X-Api-Key': 'test-tetral-key',
         'X-Custom-Tenant': 'acme',
       },
       fetch: async (url: any, init?: RequestInit) => {

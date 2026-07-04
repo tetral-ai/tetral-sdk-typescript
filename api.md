@@ -565,12 +565,16 @@ Methods:
 
 Tetral Agent create/update uses canonical `provider/model` IDs,
 `approval_mode`, and `tetral_agent_toolset` with an explicit `family`.
-Legacy `agent_toolset_20260401`, client-executed custom Agent tools, and
-non-null `multiagent` params remain listed as retained compatibility types but
-are unsupported/deferred Tetral request shapes rejected by backend admission.
-MCP server and `mcp_toolset` declarations are retained as configuration and
-admission scaffolding; Tetral Cloud-hosted MCP connector execution is deferred
-in this stage.
+Legacy Anthropic agent toolsets, client-executed custom Agent tools, and
+non-null `multiagent` params remain retained compatibility types but are
+unsupported/deferred Tetral request shapes rejected by backend admission.
+MCP server and `mcp_toolset` declarations are supported as credential-free
+curated-catalog configuration. Tetral admission accepts catalog entries and
+rejects non-catalog URLs.
+
+Allowed Tetral Managed Agent model IDs are `openai/gpt-5.5`,
+`anthropic/claude-opus-4-8`, `deepseek/deepseek-v4-pro`,
+`moonshotai/kimi-k2.7-code`, and `zai/glm-5.2`.
 
 Types:
 
@@ -846,6 +850,8 @@ Methods:
 Session Resources bind already-created resources into a Session. File resources
 must reference an existing durable Files API object with `file_id` and optional
 `mount_path`; `sessions.resources.add(...)` does not upload bytes.
+Session usage responses may include `usage.server_tool_use` with
+`web_search_requests` and `web_fetch_requests`.
 
 Types:
 
@@ -855,12 +861,10 @@ Types:
 - <code><a href="./src/resources/beta/sessions/resources.ts">BetaManagedAgentsMemoryStoreResource</a></code>
 - <code><a href="./src/resources/beta/sessions/resources.ts">BetaManagedAgentsSessionResource</a></code>
 - <code><a href="./src/resources/beta/sessions/resources.ts">ResourceRetrieveResponse</a></code>
-- <code><a href="./src/resources/beta/sessions/resources.ts">ResourceUpdateResponse</a></code>
 
 Methods:
 
 - <code title="get /v1/sessions/{session_id}/resources/{resource_id}?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">retrieve</a>(resourceID, { ...params }) -> ResourceRetrieveResponse</code>
-- <code title="post /v1/sessions/{session_id}/resources/{resource_id}?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">update</a>(resourceID, { ...params }) -> ResourceUpdateResponse</code>
 - <code title="get /v1/sessions/{session_id}/resources?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">list</a>(sessionID, { ...params }) -> BetaManagedAgentsSessionResourcesPageCursor</code>
 - <code title="delete /v1/sessions/{session_id}/resources/{resource_id}?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">delete</a>(resourceID, { ...params }) -> BetaManagedAgentsDeleteSessionResource</code>
 - <code title="post /v1/sessions/{session_id}/resources?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">add</a>(sessionID, { ...params }) -> BetaManagedAgentsFileResource</code>
@@ -984,8 +988,11 @@ Methods:
 Provider credentials stored in Vault are model-provider credentials, not Tetral
 public SDK API keys. Create `provider_api_key` or `provider_oauth` credentials
 with the credential material obtained from the provider, then select them from a
-Session through `providers: { [provider_id]: { credential_id } }`. Tetral
-public SDK request authentication still uses the client `apiKey`.
+Session through `providers: { [provider_id]: { credential_id } }`. The provider
+key must match the provider parsed from the Agent snapshot's canonical
+`provider/model` ID (for example `anthropic` for `anthropic/claude-opus-4-8`),
+and the credential must live in a Session-bound Vault. Tetral public SDK
+request authentication still uses the client `apiKey`.
 
 Types:
 

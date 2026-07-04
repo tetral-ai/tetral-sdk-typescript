@@ -2,8 +2,8 @@ import type { NullableHeaders } from './internal/headers';
 import { buildHeaders } from './internal/headers';
 import * as Errors from './core/error';
 import { readEnv } from './internal/utils';
-import { Anthropic, APIRequest, ClientOptions } from '@anthropic-ai/sdk/client';
-export { BaseAnthropic } from '@anthropic-ai/sdk/client';
+import { Anthropic, APIRequest, ClientOptions } from '@tetral-ai/sdk/client';
+export { BaseAnthropic } from '@tetral-ai/sdk/client';
 import { AwsCredentialIdentityProvider } from '@smithy/types';
 import { loadConfig } from '@smithy/node-config-provider';
 import { NODE_REGION_CONFIG_OPTIONS, NODE_REGION_CONFIG_FILE_OPTIONS } from '@smithy/config-resolver';
@@ -96,6 +96,10 @@ const noRegionError = () =>
 
 /** API Client for interfacing with the Anthropic AWS API. */
 export class AnthropicAws extends Anthropic {
+  // Auth is injected per-request (SigV4/bearer); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   awsRegion: string | undefined;
   awsAccessKey: string | null;
   awsSecretAccessKey: string | null;
