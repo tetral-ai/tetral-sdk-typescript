@@ -545,8 +545,8 @@ describeIntegration('Tetral live integration suite', () => {
     const { environment, agent } = await createEnvironmentAndAgent(client);
 
     // Reject cases target real parent resources: a missing session or vault
-    // returns 404 not_found_error per the session plan's status mapping, which
-    // would mask the documented 400 invalid_request_error.
+    // returns 404 not_found_error, which would mask the documented 400
+    // invalid_request_error.
     const session = await client.beta.sessions.create({
       environment_id: environment.id,
       agent: { type: 'agent', id: agent.id, version: agent.version },
