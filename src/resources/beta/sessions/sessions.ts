@@ -114,7 +114,11 @@ import {
   Threads,
 } from './threads/threads';
 import { APIPromise } from '../../../core/api-promise';
-import { PageCursor, type PageCursorParams, PagePromise } from '../../../core/pagination';
+import {
+  BidirectionalPageCursor,
+  type BidirectionalPageCursorParams,
+  PagePromise,
+} from '../../../core/pagination';
 import { buildHeaders } from '../../../internal/headers';
 import { RequestOptions } from '../../../internal/request-options';
 import { path } from '../../../internal/utils/path';
@@ -216,16 +220,20 @@ export class Sessions extends APIResource {
   list(
     params: SessionListParams | null | undefined = {},
     options?: RequestOptions,
-  ): PagePromise<BetaManagedAgentsSessionsPageCursor, BetaManagedAgentsSession> {
+  ): PagePromise<BetaManagedAgentsSessionsBidirectionalPageCursor, BetaManagedAgentsSession> {
     const { betas, ...query } = params ?? {};
-    return this._client.getAPIList('/v1/sessions?beta=true', PageCursor<BetaManagedAgentsSession>, {
-      query,
-      ...options,
-      headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
-        options?.headers,
-      ]),
-    });
+    return this._client.getAPIList(
+      '/v1/sessions?beta=true',
+      BidirectionalPageCursor<BetaManagedAgentsSession>,
+      {
+        query,
+        ...options,
+        headers: buildHeaders([
+          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          options?.headers,
+        ]),
+      },
+    );
   }
 
   /**
@@ -281,7 +289,8 @@ export class Sessions extends APIResource {
   }
 }
 
-export type BetaManagedAgentsSessionsPageCursor = PageCursor<BetaManagedAgentsSession>;
+export type BetaManagedAgentsSessionsBidirectionalPageCursor =
+  BidirectionalPageCursor<BetaManagedAgentsSession>;
 
 /**
  * Specification for an Agent. Provide a specific `version` or use the short-form
@@ -942,7 +951,7 @@ export interface SessionUpdateParams {
   betas?: Array<BetaAPI.AnthropicBeta>;
 }
 
-export interface SessionListParams extends PageCursorParams {
+export interface SessionListParams extends BidirectionalPageCursorParams {
   /**
    * Query param: Filter sessions created with this agent ID.
    */
@@ -1053,7 +1062,7 @@ export declare namespace Sessions {
     type BetaManagedAgentsUserToolResultEvent as BetaManagedAgentsUserToolResultEvent,
     type TetralSessionProviderSelector as TetralSessionProviderSelector,
     type TetralSessionProviderSelectors as TetralSessionProviderSelectors,
-    type BetaManagedAgentsSessionsPageCursor as BetaManagedAgentsSessionsPageCursor,
+    type BetaManagedAgentsSessionsBidirectionalPageCursor as BetaManagedAgentsSessionsBidirectionalPageCursor,
     type SessionCreateParams as SessionCreateParams,
     type SessionRetrieveParams as SessionRetrieveParams,
     type SessionUpdateParams as SessionUpdateParams,

@@ -750,7 +750,7 @@ Methods:
 - <code title="post /v1/sessions?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">create</a>({ ...params }) -> BetaManagedAgentsSession</code>
 - <code title="get /v1/sessions/{session_id}?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">retrieve</a>(sessionID, { ...params }) -> BetaManagedAgentsSession</code>
 - <code title="post /v1/sessions/{session_id}?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">update</a>(sessionID, { ...params }) -> BetaManagedAgentsSession</code>
-- <code title="get /v1/sessions?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">list</a>({ ...params }) -> BetaManagedAgentsSessionsPageCursor</code>
+- <code title="get /v1/sessions?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">list</a>({ ...params }) -> BetaManagedAgentsSessionsBidirectionalPageCursor</code>
 - <code title="delete /v1/sessions/{session_id}?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">delete</a>(sessionID, { ...params }) -> BetaManagedAgentsDeletedSession</code>
 - <code title="post /v1/sessions/{session_id}/archive?beta=true">client.beta.sessions.<a href="./src/resources/beta/sessions/sessions.ts">archive</a>(sessionID, { ...params }) -> BetaManagedAgentsSession</code>
 

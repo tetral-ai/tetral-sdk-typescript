@@ -213,6 +213,42 @@ describe('Tetral Session SDK contract', () => {
     expect(updateClearingProviders.providers).toEqual({});
     expect(retainedVaultUpdateCompatibility.vault_ids).toEqual(['vlt_123']);
   });
+
+  test('list forward pagination is unchanged under BidirectionalPageCursor and prev_page degrades to null', async () => {
+    const captured: string[] = [];
+    const pages = [
+      { data: [SESSION_RESPONSE], next_page: 'cursor_page_2' },
+      { data: [SESSION_RESPONSE], next_page: null },
+    ];
+    const client = new Anthropic({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url: any) => {
+        const urlStr = String(url);
+        captured.push(urlStr);
+        return jsonResponse(urlStr.includes('page=') ? pages[1]! : pages[0]!);
+      },
+    });
+
+    const firstPage = await client.beta.sessions.list({ limit: 1 });
+    // Engine responses carry only next_page; the reverse direction stays
+    // retained-unsupported and must degrade to null, not throw.
+    expect(firstPage.prev_page).toBeNull();
+    expect(firstPage.next_page).toBe('cursor_page_2');
+
+    const items = [];
+    for await (const session of client.beta.sessions.list({ limit: 1 })) {
+      items.push(session);
+    }
+    expect(items).toHaveLength(2);
+
+    // Forward iteration sends the same wire shape as the previous PageCursor:
+    // the follow-up request carries the next_page cursor as the `page` query.
+    expect(captured[0]).toBe('https://api.tetral.example/v1/sessions?beta=true&limit=1');
+    expect(captured[captured.length - 1]).toBe(
+      'https://api.tetral.example/v1/sessions?beta=true&limit=1&page=cursor_page_2',
+    );
+  });
 });
 
 // @ts-expect-error Tetral Session create requires explicit vault_ids, even [].

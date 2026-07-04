@@ -47,23 +47,24 @@ Supported or Tetral-extended surfaces include:
 
 These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; unsupported requests are rejected by Tetral backend admission with SDK-compatible errors.
 
-| Surface                                                                  | Tetral status                                                                               |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                        |
-| Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                              |
-| Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.            |
-| Generated Messages API resource and Message Batches                      | Retained unsupported/deferred. Use Session Events `user.message` instead.                   |
-| Host allowlists, `limited`, `scope`, and self-host Environment work APIs | Retained unsupported/deferred.                                                              |
-| Vault `environment_variable` credentials                                 | Retained unsupported. The SDK transmits generated requests; backend admission rejects them. |
-| Deployments and Deployment Runs                                          | Retained unsupported/deferred.                                                              |
-| Models resource                                                          | Retained unsupported/deferred. Use the Agent `model` field instead.                         |
-| User Profiles                                                            | Retained unsupported/deferred.                                                              |
-| Webhooks                                                                 | Deferred.                                                                                   |
-| SDK ToolRunner and SessionToolRunner flows                               | Retained unsupported/deferred for Tetral Cloud-hosted runtime.                              |
-| `user.tool_result`                                                       | Retained unsupported/deferred.                                                              |
-| `user.custom_tool_result`                                                | Retained unsupported/deferred.                                                              |
-| `user.define_outcome`                                                    | Retained unsupported/deferred.                                                              |
-| `system.message`                                                         | Retained unsupported/deferred.                                                              |
+| Surface                                                                  | Tetral status                                                                                                                                                                      |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                                                                                                               |
+| Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
+| Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
+| Session list reverse pagination                                          | Retained unsupported. `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged, and `prev_page` stays `null` until the engine implements reverse cursors. |
+| Generated Messages API resource and Message Batches                      | Retained unsupported/deferred. Use Session Events `user.message` instead.                                                                                                          |
+| Host allowlists, `limited`, `scope`, and self-host Environment work APIs | Retained unsupported/deferred.                                                                                                                                                     |
+| Vault `environment_variable` credentials                                 | Retained unsupported. The SDK transmits generated requests; backend admission rejects them.                                                                                        |
+| Deployments and Deployment Runs                                          | Retained unsupported/deferred.                                                                                                                                                     |
+| Models resource                                                          | Retained unsupported/deferred. Use the Agent `model` field instead.                                                                                                                |
+| User Profiles                                                            | Retained unsupported/deferred.                                                                                                                                                     |
+| Webhooks                                                                 | Deferred.                                                                                                                                                                          |
+| SDK ToolRunner and SessionToolRunner flows                               | Retained unsupported/deferred for Tetral Cloud-hosted runtime.                                                                                                                     |
+| `user.tool_result`                                                       | Retained unsupported/deferred.                                                                                                                                                     |
+| `user.custom_tool_result`                                                | Retained unsupported/deferred.                                                                                                                                                     |
+| `user.define_outcome`                                                    | Retained unsupported/deferred.                                                                                                                                                     |
+| `system.message`                                                         | Retained unsupported/deferred.                                                                                                                                                     |
 
 ## 5. Authentication And Upstream Sync
 
