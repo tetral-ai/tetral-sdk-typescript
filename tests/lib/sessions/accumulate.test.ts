@@ -1,9 +1,9 @@
-import { accumulateManagedAgentsEvent } from '@anthropic-ai/sdk/lib/sessions/accumulate';
-import type { BetaManagedAgentsAgentMessageEvent } from '@anthropic-ai/sdk/resources/beta/sessions/events';
+import { accumulateManagedAgentsEvent } from '@tetral-ai/sdk/lib/sessions/accumulate';
+import type { BetaManagedAgentsAgentMessageEvent } from '@tetral-ai/sdk/resources/beta/sessions/events';
 import type {
   BetaManagedAgentsDeltaEvent,
   BetaManagedAgentsStartEvent,
-} from '@anthropic-ai/sdk/resources/beta/sessions/sessions';
+} from '@tetral-ai/sdk/resources/beta/sessions/sessions';
 
 function start(eventId: string): BetaManagedAgentsStartEvent {
   return { type: 'event_start', event: { id: eventId, type: 'agent.message' } };

@@ -22,7 +22,11 @@ import type {
   BetaManagedAgentsSession,
   BetaManagedAgentsSendSessionEvents,
 } from '@tetral-ai/sdk/resources/beta/sessions';
-import type { BetaManagedAgentsSessionEvent } from '@tetral-ai/sdk/resources/beta/sessions/events';
+import type {
+  BetaManagedAgentsSessionEvent,
+  BetaManagedAgentsStreamSessionEvents,
+} from '@tetral-ai/sdk/resources/beta/sessions/events';
+import type { BetaManagedAgentsStreamSessionThreadEvents } from '@tetral-ai/sdk/resources/beta/sessions/threads';
 import type { BetaManagedAgentsSessionThread } from '@tetral-ai/sdk/resources/beta/sessions/threads';
 import type { SkillCreateResponse } from '@tetral-ai/sdk/resources/beta/skills';
 import type { VersionCreateResponse } from '@tetral-ai/sdk/resources/beta/skills/versions';
@@ -151,7 +155,12 @@ function assertSendSessionEvents(events: BetaManagedAgentsSendSessionEvents): vo
   if (events.data) expect(Array.isArray(events.data)).toBe(true);
 }
 
-function assertSessionEvent(event: BetaManagedAgentsSessionEvent): void {
+function assertSessionEvent(
+  event:
+    | BetaManagedAgentsSessionEvent
+    | BetaManagedAgentsStreamSessionEvents
+    | BetaManagedAgentsStreamSessionThreadEvents,
+): void {
   expectField(event.type, 'type');
 }
 

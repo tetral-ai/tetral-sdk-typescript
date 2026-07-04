@@ -471,6 +471,17 @@ export interface MemoryListParams extends PageCursorParams {
   path_prefix?: string;
 
   /**
+   * Query param: Sort field for the listing. Tetral supports ordering by `path`,
+   * `created_at`, or `updated_at`.
+   */
+  order_by?: 'path' | 'created_at' | 'updated_at';
+
+  /**
+   * Query param: Sort direction.
+   */
+  order?: 'asc' | 'desc';
+
+  /**
    * Query param: Which projection of each `memory` to return. Defaults to `basic`
    * (content omitted). `full` populates `content` on each item and caps `limit` at
    * 20; use this as the bulk-read path for export and sync.
