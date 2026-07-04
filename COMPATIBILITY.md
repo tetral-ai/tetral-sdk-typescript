@@ -23,25 +23,25 @@ Pinned upstream baseline:
 
 Supported or Tetral-extended surfaces include:
 
-| Surface                                  | Tetral behavior                                                                                                                              |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Agents lifecycle and `versions.list`     | Supported. Agent create/update/list/retrieve/archive use Tetral Managed Agents with canonical `provider/model` IDs.                          |
-| `approval_mode`                          | Supported on Agents and as a Session-local `agent.approval_mode` update. Values are `full_access`, `ask_for_approval`, and `approve_for_me`. |
-| `tetral_agent_toolset.family`            | Required on Tetral toolset declarations. Supported families are `claude` and `gpt`.                                                          |
-| MCP declarations                         | Supported as credential-free curated-catalog declarations. Admission accepts the curated catalog and rejects non-catalog URLs.               |
-| Agent skill references                   | Supported as configuration. Skills are projected as read-only guidance, not as model-facing tools.                                           |
-| Sessions lifecycle                       | Supported. Session create requires explicit `vault_ids`, using `[]` when no Vault is bound.                                                  |
-| Session `providers`                      | Supported as `{ [provider_id]: { credential_id } }` on create/update. Provider credentials must come from a Session-bound Vault.             |
-| `usage.server_tool_use`                  | Supported response usage sub-block with `web_search_requests` and `web_fetch_requests`.                                                      |
-| Session resources                        | Supported subset: file add/list/retrieve/delete, memory-store attachment, and credential-free GitHub repository params.                      |
-| Threads and thread events                | Supported for public Session threads and thread events.                                                                                      |
-| Events                                   | Supported for `user.message`, `user.interrupt`, `user.tool_confirmation` with its live-pending-approval precondition, list, and stream.      |
-| Files API                                | Supported for upload/list/retrieve/delete/download where implemented. Uploads use streamed multipart inputs.                                 |
-| Skills API                               | Supported for parent Skills and Skill Versions. Uploads use SDK upload primitives.                                                           |
-| Cloud Environments                       | Supported for cloud environments with `unrestricted`, `blocked`, or `cidr_allow_list` networking.                                            |
-| Vaults and Credentials                   | Supported. Credential responses redact secrets.                                                                                              |
-| Provider credentials in Vault            | Supported through `provider_api_key` and `provider_oauth`.                                                                                   |
-| Memory Stores, Memories, Memory Versions | Supported through the store-scoped resource tree.                                                                                            |
+| Surface                                  | Tetral behavior                                                                                                                                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agents lifecycle and `versions.list`     | Supported. Agent create/update/list/retrieve/archive use Tetral Managed Agents with canonical `provider/model` IDs.                                                                                  |
+| `approval_mode`                          | Supported on Agents and as a Session-local `agent.approval_mode` update. Values are `full_access`, `ask_for_approval`, and `approve_for_me`.                                                         |
+| `tetral_agent_toolset.family`            | Required on Tetral toolset declarations. Supported families are `claude` and `gpt`.                                                                                                                  |
+| MCP declarations                         | Supported as credential-free curated-catalog declarations. Admission accepts the curated catalog and rejects non-catalog URLs.                                                                       |
+| Agent skill references                   | Supported for workspace `custom` skill references (created via `/v1/skills`). Read-only guidance, not model-facing tools.                                                                            |
+| Sessions lifecycle                       | Supported. Session create requires explicit `vault_ids`, using `[]` when no Vault is bound.                                                                                                          |
+| Session `providers`                      | Supported as `{ [provider_id]: { credential_id } }` on create/update. The provider key must match the agent's canonical `provider/model` provider; credentials must come from a Session-bound Vault. |
+| `usage.server_tool_use`                  | Supported response usage sub-block with `web_search_requests` and `web_fetch_requests`.                                                                                                              |
+| Session resources                        | Supported subset: file add/list/retrieve/delete, memory-store attachment, and credential-free GitHub repository params.                                                                              |
+| Threads and thread events                | Supported for public Session threads and thread events.                                                                                                                                              |
+| Events                                   | Supported for `user.message`, `user.interrupt`, `user.tool_confirmation` with its live-pending-approval precondition, list, and stream.                                                              |
+| Files API                                | Supported for upload/list/retrieve/delete/download where implemented. Uploads use streamed multipart inputs.                                                                                         |
+| Skills API                               | Supported for parent Skills and Skill Versions. Uploads use SDK upload primitives.                                                                                                                   |
+| Cloud Environments                       | Supported for cloud environments with `unrestricted`, `blocked`, or `cidr_allow_list` networking.                                                                                                    |
+| Vaults and Credentials                   | Supported. Credential responses redact secrets.                                                                                                                                                      |
+| Provider credentials in Vault            | Supported through `provider_api_key` and `provider_oauth`.                                                                                                                                           |
+| Memory Stores, Memories, Memory Versions | Supported through the store-scoped resource tree.                                                                                                                                                    |
 
 ## 4. Retained Unsupported Or Deferred Surface
 
@@ -51,6 +51,7 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                        |
 | Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                              |
+| Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.            |
 | Generated Messages API resource and Message Batches                      | Retained unsupported/deferred. Use Session Events `user.message` instead.                   |
 | Host allowlists, `limited`, `scope`, and self-host Environment work APIs | Retained unsupported/deferred.                                                              |
 | Vault `environment_variable` credentials                                 | Retained unsupported. The SDK transmits generated requests; backend admission rejects them. |

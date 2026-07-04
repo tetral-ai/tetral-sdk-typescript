@@ -988,8 +988,11 @@ Methods:
 Provider credentials stored in Vault are model-provider credentials, not Tetral
 public SDK API keys. Create `provider_api_key` or `provider_oauth` credentials
 with the credential material obtained from the provider, then select them from a
-Session through `providers: { [provider_id]: { credential_id } }`. Tetral
-public SDK request authentication still uses the client `apiKey`.
+Session through `providers: { [provider_id]: { credential_id } }`. The provider
+key must match the provider parsed from the Agent snapshot's canonical
+`provider/model` ID (for example `anthropic` for `anthropic/claude-opus-4-8`),
+and the credential must live in a Session-bound Vault. Tetral public SDK
+request authentication still uses the client `apiKey`.
 
 Types:
 

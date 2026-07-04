@@ -878,7 +878,9 @@ export interface SessionCreateParams {
   /**
    * Body param: Optional provider credential selector. Omit or pass `{}` to use
    * platform-billed provider access; pass `{ [provider_id]: { credential_id } }`
-   * to select a Vault-backed provider credential.
+   * to select a Vault-backed provider credential. The provider key must match
+   * the provider parsed from the agent snapshot's canonical `provider/model`
+   * ID, and the credential must belong to a Session-bound Vault.
    */
   providers?: TetralSessionProviderSelectors;
 
@@ -921,7 +923,10 @@ export interface SessionUpdateParams {
 
   /**
    * Body param: Optional provider credential selector. Passing `{}` clears an
-   * explicit selector and returns to platform-billed provider access.
+   * explicit selector and returns to platform-billed provider access. The
+   * provider key must match the provider parsed from the agent snapshot's
+   * canonical `provider/model` ID, and the credential must belong to a
+   * Session-bound Vault.
    */
   providers?: TetralSessionProviderSelectors;
 
