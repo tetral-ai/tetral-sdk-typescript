@@ -1,4 +1,4 @@
-# Tetral Engine SDK for TypeScript
+# Cloud Agent SDK for TypeScript
 
 This package is an Anthropic-compatible TypeScript SDK fork for the Tetral Engine public API. It keeps the familiar `new Anthropic(...)` client entrypoint and also exports `Tetral` as an alias for projects that prefer Tetral naming.
 

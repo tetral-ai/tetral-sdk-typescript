@@ -82,9 +82,9 @@ Create returns the raw API key once. List and retrieve-style responses expose on
 
 Provider credentials belong in Vault and are selected by Sessions through `providers`; the SDK does not mint, recover, derive, or persist raw public API keys.
 
-Upstream sync policy is on demand:
+Upstream sync runs as small rolling merges — on each upstream release or biweekly, whichever comes first (adopted 2026-07-04; the cadence starts after live integration):
 
 1. Merge the upstream SDK changes.
 2. Run full CI.
-3. Classify every new surface as retained unsupported by default until a Tetral plan explicitly supports it.
+3. Classify every new surface as retained unsupported by default until Tetral explicitly supports it.
 4. Run the integration suite when a Tetral engine is available.
