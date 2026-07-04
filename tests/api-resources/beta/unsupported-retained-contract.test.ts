@@ -15,26 +15,12 @@ import type { Models } from '@tetral-ai/sdk/resources/beta/models';
 import type { BetaManagedAgentsEventParams } from '@tetral-ai/sdk/resources/beta/sessions';
 import type { UserProfiles } from '@tetral-ai/sdk/resources/beta/user-profiles';
 import type { Webhooks } from '@tetral-ai/sdk/resources/beta/webhooks';
+import { jsonResponse, parseMaybeJSONBody } from './tetral-contract-helpers';
 
 interface CapturedRequest {
   url: string;
   method: string | undefined;
   body: unknown;
-}
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function parseMaybeJSONBody(init: RequestInit | undefined): unknown {
-  if (init?.body == null) return undefined;
-  if (typeof init.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init.body}`);
-  }
-  return JSON.parse(init.body);
 }
 
 function makeUnsupportedClient(captured: CapturedRequest[]): Anthropic {

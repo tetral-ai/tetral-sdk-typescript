@@ -7,6 +7,7 @@ import type {
   EnvironmentCreateParams,
   EnvironmentUpdateParams,
 } from '@tetral-ai/sdk/resources/beta/environments';
+import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 
 const ENVIRONMENT_RESPONSE: BetaEnvironment = {
   id: 'env_123',
@@ -34,20 +35,6 @@ const ENVIRONMENT_RESPONSE: BetaEnvironment = {
   type: 'environment',
   updated_at: '2026-01-01T00:00:00Z',
 };
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
 
 describe('Tetral Environment SDK contract', () => {
   test('create serializes cidr_allow_list networking without hostname translation', async () => {

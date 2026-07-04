@@ -318,18 +318,22 @@ describeBash('betaBashTool', () => {
     expect(await tool.run({ command: 'echo recovered' })).toBe('recovered');
   });
 
-  test('the spawned shell does not inherit Tetral credential env vars', async () => {
-    // The runner process holds Tetral credentials in TETRAL_* env vars;
-    // an unrestricted shell must not be able to read them back out.
+  test('the spawned shell does not inherit Tetral or Anthropic credential env vars', async () => {
+    // The runner process may hold credentials in both the TETRAL_* and the
+    // Anthropic-compatible ANTHROPIC_* namespaces; an unrestricted shell must
+    // not be able to read either back out.
     process.env['TETRAL_API_KEY'] = 'provider-secret-should-not-leak';
+    process.env['ANTHROPIC_API_KEY'] = 'sk-provider-secret-should-not-leak';
     const scoped = betaBashTool({ workdir: dir });
     try {
       expect(await scoped.run({ command: 'echo "[$TETRAL_API_KEY]"' })).toBe('[]');
+      expect(await scoped.run({ command: 'echo "[$ANTHROPIC_API_KEY]"' })).toBe('[]');
       // Non-credential vars (PATH etc.) still pass through.
       expect(await scoped.run({ command: 'test -n "$PATH" && echo has-path' })).toBe('has-path');
     } finally {
       scoped.close?.();
       delete process.env['TETRAL_API_KEY'];
+      delete process.env['ANTHROPIC_API_KEY'];
     }
   });
 

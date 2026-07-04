@@ -1,7 +1,10 @@
 import Anthropic, { toFile } from '@tetral-ai/sdk';
 import type { APIError } from '@tetral-ai/sdk/core/error';
 import type { BetaManagedAgentsAgent } from '@tetral-ai/sdk/resources/beta/agents';
-import type { BetaEnvironment } from '@tetral-ai/sdk/resources/beta/environments';
+import type {
+  BetaEnvironment,
+  BetaEnvironmentDeleteResponse,
+} from '@tetral-ai/sdk/resources/beta/environments';
 import type { FileMetadata } from '@tetral-ai/sdk/resources/beta/files';
 import type {
   BetaManagedAgentsMemory,
@@ -15,6 +18,7 @@ import type {
   BetaManagedAgentsSessionResource,
 } from '@tetral-ai/sdk/resources/beta/sessions/resources';
 import type {
+  BetaManagedAgentsDeletedSession,
   BetaManagedAgentsSession,
   BetaManagedAgentsSendSessionEvents,
 } from '@tetral-ai/sdk/resources/beta/sessions';
@@ -39,8 +43,30 @@ function integrationClient(): Anthropic {
 }
 
 function expectField<T>(value: T, field: string): asserts value is Exclude<T, undefined> {
-  expect(value).not.toBeUndefined();
-  expect(field.length).toBeGreaterThan(0);
+  if (value === undefined) {
+    throw new Error(`Expected required field \`${field}\` to be defined`);
+  }
+}
+
+async function waitFor<T>(what: string, poll: () => Promise<T | null>, timeoutMs = 90_000): Promise<T> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const result = await poll();
+    if (result !== null) return result;
+    if (Date.now() > deadline) throw new Error(`Timed out waiting for ${what}`);
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+}
+
+async function waitForSessionStatus(
+  client: Anthropic,
+  sessionID: string,
+  statuses: Array<BetaManagedAgentsSession['status']>,
+): Promise<BetaManagedAgentsSession> {
+  return waitFor(`session ${sessionID} status in [${statuses.join(', ')}]`, async () => {
+    const session = await client.beta.sessions.retrieve(sessionID);
+    return statuses.includes(session.status) ? session : null;
+  });
 }
 
 async function firstPageItem<T>(items: AsyncIterable<T>): Promise<T> {
@@ -183,6 +209,16 @@ function assertSessionResource(resource: BetaManagedAgentsSessionResource): void
 function assertDeletedSessionResource(resource: BetaManagedAgentsDeleteSessionResource): void {
   expectField(resource.id, 'id');
   expect(resource.type).toBe('session_resource_deleted');
+}
+
+function assertDeletedSession(deleted: BetaManagedAgentsDeletedSession): void {
+  expectField(deleted.id, 'id');
+  expect(deleted.type).toBe('session_deleted');
+}
+
+function assertDeletedEnvironment(deleted: BetaEnvironmentDeleteResponse): void {
+  expectField(deleted.id, 'id');
+  expect(deleted.type).toBe('environment_deleted');
 }
 
 function assertSkill(skill: SkillCreateResponse): void {
@@ -368,7 +404,12 @@ describeIntegration('Tetral live integration suite', () => {
       break;
     }
 
-    const thread = await firstPageItem(client.beta.sessions.threads.list(session.id, { limit: 1 }));
+    const thread = await waitFor('first public session thread', async () => {
+      for await (const item of client.beta.sessions.threads.list(session.id, { limit: 1 })) {
+        return item;
+      }
+      return null;
+    });
     assertThread(thread);
     assertThread(await client.beta.sessions.threads.retrieve(thread.id, { session_id: session.id }));
     assertSessionEvent(
@@ -403,8 +444,11 @@ describeIntegration('Tetral live integration suite', () => {
     assertDeletedSessionResource(
       await client.beta.sessions.resources.delete(resource.id, { session_id: session.id }),
     );
+    // Archive conflicts with running/rescheduling states (409); wait for the
+    // turn to settle before archiving.
+    await waitForSessionStatus(client, session.id, ['idle', 'terminated']);
     assertSession(await client.beta.sessions.archive(session.id));
-    await client.beta.sessions.delete(session.id);
+    assertDeletedSession(await client.beta.sessions.delete(session.id));
   });
 
   test('skills including versions', async () => {
@@ -466,7 +510,6 @@ describeIntegration('Tetral live integration suite', () => {
     const version = await firstPageItem(
       client.beta.memoryStores.memoryVersions.list(store.id, {
         memory_id: memory.id,
-        session_id: 'sesn_integration_filter',
         limit: 1,
       }),
     );
@@ -494,12 +537,24 @@ describeIntegration('Tetral live integration suite', () => {
     );
     assertEnvironment(await firstPageItem(client.beta.environments.list({ limit: 1 })));
     assertEnvironment(await client.beta.environments.archive(environment.id));
-    await client.beta.environments.delete(environment.id);
+    assertDeletedEnvironment(await client.beta.environments.delete(environment.id));
   });
 
   test('must-reject retained unsupported request shapes', async () => {
     const client = integrationClient();
     const { environment, agent } = await createEnvironmentAndAgent(client);
+
+    // Reject cases target real parent resources: a missing session or vault
+    // returns 404 not_found_error per the session plan's status mapping, which
+    // would mask the documented 400 invalid_request_error.
+    const session = await client.beta.sessions.create({
+      environment_id: environment.id,
+      agent: { type: 'agent', id: agent.id, version: agent.version },
+      vault_ids: [],
+    });
+    assertSession(session);
+    const vault = await client.beta.vaults.create({ display_name: `reject-case-vault-${Date.now()}` });
+    assertVault(vault);
 
     for (const event of [
       { type: 'user.custom_tool_result' as const, custom_tool_use_id: 'ctu_123' },
@@ -512,14 +567,14 @@ describeIntegration('Tetral live integration suite', () => {
       { type: 'system.message' as const, content: [{ type: 'text' as const, text: 'internal context' }] },
     ]) {
       await expectInvalidRequest(
-        client.beta.sessions.events.send('sesn_reject_case', {
+        client.beta.sessions.events.send(session.id, {
           events: [event],
         }),
       );
     }
 
     await expectInvalidRequest(
-      client.beta.vaults.credentials.create('vlt_reject_case', {
+      client.beta.vaults.credentials.create(vault.id, {
         display_name: 'unsupported env var credential',
         auth: {
           type: 'environment_variable',
@@ -531,17 +586,29 @@ describeIntegration('Tetral live integration suite', () => {
     );
 
     await expectInvalidRequest(
-      client.beta.sessions.update('sesn_reject_case', {
-        vault_ids: ['vlt_123'],
+      client.beta.sessions.update(session.id, {
+        vault_ids: [vault.id],
       }),
     );
 
+    // Provider selector mismatch: a live openai credential in a session-bound
+    // vault, selected for an anthropic-model agent, isolates the mismatch as
+    // the only rejection cause.
+    const wrongProviderCredential = await client.beta.vaults.credentials.create(vault.id, {
+      display_name: 'wrong provider credential',
+      auth: {
+        type: 'provider_api_key',
+        provider_id: 'openai',
+        access_mode: 'model_inference',
+        token: 'provider-api-key',
+      },
+    });
     await expectInvalidRequest(
       client.beta.sessions.create({
         environment_id: environment.id,
         agent: { type: 'agent', id: agent.id, version: agent.version },
-        vault_ids: ['vlt_mismatch'],
-        providers: { openai: { credential_id: 'vcrd_wrong_provider' } },
+        vault_ids: [vault.id],
+        providers: { openai: { credential_id: wrongProviderCredential.id } },
       }),
     );
 

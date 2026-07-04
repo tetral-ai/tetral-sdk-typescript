@@ -5,6 +5,7 @@ import type {
   SessionUpdateParams,
   TetralSessionProviderSelectors,
 } from '@tetral-ai/sdk/resources/beta/sessions';
+import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 
 const SESSION_RESPONSE = {
   id: 'sesn_123',
@@ -51,20 +52,6 @@ const SESSION_RESPONSE = {
   vault_ids: [],
   deployment_id: null,
 };
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
 
 describe('Tetral Session SDK contract', () => {
   test('create serializes explicit vault_ids and provider selectors', async () => {

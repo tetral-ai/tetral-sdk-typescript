@@ -7,6 +7,7 @@ import type {
   BetaManagedAgentsTetralClaudeAgentToolsetParams,
   BetaManagedAgentsTetralGPTAgentToolsetParams,
 } from '@tetral-ai/sdk/resources/beta/agents';
+import { jsonResponse, parseJSONBody, getHeader } from '../tetral-contract-helpers';
 
 const AGENT_RESPONSE = {
   id: 'agent_123',
@@ -33,30 +34,6 @@ const AGENT_RESPONSE = {
   updated_at: '2026-01-01T00:00:00Z',
   version: 1,
 };
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function getHeader(init: RequestInit | undefined, name: string): string | null {
-  if (!init?.headers) return null;
-  if (init.headers instanceof Headers) return init.headers.get(name);
-  if (Array.isArray(init.headers)) {
-    const entry = init.headers.find(([k]) => k?.toLowerCase() === name.toLowerCase());
-    return entry?.[1] ?? null;
-  }
-  return (init.headers as Record<string, string>)[name] ?? null;
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
 
 describe('Tetral Agent SDK contract', () => {
   test('create serializes Tetral approval mode, canonical model IDs, and Claude tool family', async () => {

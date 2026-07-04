@@ -15,6 +15,7 @@ import type {
   CredentialUpdateParams,
 } from '@tetral-ai/sdk/resources/beta/vaults';
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
+import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 
 const PROVIDER_API_KEY_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
   id: 'vcrd_provider_api_key',
@@ -50,20 +51,6 @@ const PROVIDER_OAUTH_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
   updated_at: '2026-01-01T00:00:00Z',
   vault_id: 'vlt_123',
 };
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
 
 describe('Tetral Vault credential SDK contract', () => {
   test('create serializes provider_api_key secrets and parses redacted provider metadata', async () => {

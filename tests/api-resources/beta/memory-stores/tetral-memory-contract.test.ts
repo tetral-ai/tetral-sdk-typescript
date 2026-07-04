@@ -17,6 +17,7 @@ import type {
   MemoryVersionRedactParams,
 } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
+import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 
 const MEMORY_STORE: BetaManagedAgentsMemoryStore = {
   id: 'memstore_123',
@@ -57,20 +58,6 @@ const MEMORY_VERSION: BetaManagedAgentsMemoryVersion = {
   redacted_at: null,
   redacted_by: null,
 };
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
-
-function parseJSONBody(init: RequestInit | undefined): unknown {
-  if (typeof init?.body !== 'string') {
-    throw new Error(`Expected JSON string body, got ${typeof init?.body}`);
-  }
-  return JSON.parse(init.body);
-}
 
 function requestMethod(init: RequestInit | undefined): string {
   return String(init?.method ?? 'GET').toUpperCase();

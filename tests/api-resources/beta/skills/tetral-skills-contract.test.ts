@@ -5,6 +5,7 @@ import type {
   VersionCreateResponse,
   VersionRetrieveResponse,
 } from '@tetral-ai/sdk/resources/beta/skills/versions';
+import { jsonResponse } from '../tetral-contract-helpers';
 
 const SKILL_RESPONSE: SkillCreateResponse = {
   id: 'skill_123',
@@ -26,13 +27,6 @@ const VERSION_RESPONSE: VersionCreateResponse = {
   type: 'skill_version',
   version: '1759178010641129',
 };
-
-function jsonResponse(body: object, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'request-id': 'req_123' },
-  });
-}
 
 async function multipartBody(init: RequestInit | undefined): Promise<string> {
   if (init?.body == null) {
@@ -124,15 +118,21 @@ describe('Tetral Skills SDK contract', () => {
   });
 
   test('type smoke keeps Skills as Agent configuration instead of a tool callback surface', () => {
+    // Workspace `custom` skill references are the only skill shape presented
+    // as working Tetral configuration. The upstream `anthropic` catalog
+    // variant stays assignable purely as a retained-unsupported compatibility
+    // shape that Tetral backend admission rejects.
     const agentWithSkills: AgentCreateParams = {
       name: 'skill agent',
       model: 'anthropic/claude-opus-4-8',
-      skills: [
-        { type: 'custom', skill_id: 'skill_123', version: '1759178010641129' },
-        { type: 'anthropic', skill_id: 'xlsx' },
-      ],
+      skills: [{ type: 'custom', skill_id: 'skill_123', version: '1759178010641129' }],
       tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
     };
+    const retainedUnsupportedCatalogReference: NonNullable<AgentCreateParams['skills']>[number] = {
+      type: 'anthropic',
+      skill_id: 'xlsx',
+    };
+    expect(retainedUnsupportedCatalogReference.type).toBe('anthropic');
     const parentProjection: Pick<SkillListResponse, 'id' | 'latest_version' | 'type'> = {
       id: 'skill_123',
       latest_version: '1759178010641129',
@@ -144,7 +144,7 @@ describe('Tetral Skills SDK contract', () => {
       version: '1759178010641129',
     };
 
-    expect(agentWithSkills.skills).toHaveLength(2);
+    expect(agentWithSkills.skills).toHaveLength(1);
     expect(agentWithSkills.tools?.[0]?.type).toBe('tetral_agent_toolset');
     expect(parentProjection.latest_version).toBe(immutableVersionProjection.version);
   });
