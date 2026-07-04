@@ -23,15 +23,16 @@ export class Versions extends APIResource {
    * ```ts
    * const version = await client.beta.skills.versions.create(
    *   'skill_id',
+   *   { files: [fs.createReadStream('path/to/file')] },
    * );
    * ```
    */
   create(
     skillID: string,
-    params: VersionCreateParams | null | undefined = {},
+    params: VersionCreateParams,
     options?: RequestOptions,
   ): APIPromise<VersionCreateResponse> {
-    const { betas, ...body } = params ?? {};
+    const { betas, ...body } = params;
     return this._client.post(
       path`/v1/skills/${skillID}/versions?beta=true`,
       multipartFormRequestOptions(
@@ -359,7 +360,7 @@ export interface VersionCreateParams {
    * preserved in the multipart package so the backend can validate and prepare
    * the read-only `/skills/<directory>/` projection.
    */
-  files?: Array<Uploadable> | null;
+  files: Array<Uploadable>;
 
   /**
    * Header param: Optional header to specify the beta version(s) you want to use.

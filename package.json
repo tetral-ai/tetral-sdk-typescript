@@ -1,6 +1,6 @@
 {
   "name": "@tetral-ai/sdk",
-  "version": "0.106.0",
+  "version": "0.110.0",
   "description": "Cloud Agent SDK — an Anthropic-compatible TypeScript SDK for the Tetral Engine API",
   "author": "Tetral AI",
   "types": "dist/index.d.ts",
