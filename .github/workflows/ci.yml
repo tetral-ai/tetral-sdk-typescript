@@ -165,7 +165,8 @@ jobs:
           # upstream sync) may be acknowledged explicitly: a commit in this
           # range carrying an [accept-breaking] marker turns the failure into
           # a logged acknowledgment instead of a red check.
-          if git log --format=%B "$BASE_SHA"..HEAD | grep -q '\[accept-breaking\]'; then
+          RANGE_MESSAGES=$(git log --format=%B "$BASE_SHA"..HEAD)
+          if printf '%s' "$RANGE_MESSAGES" | grep -q '\[accept-breaking\]'; then
             echo "Breaking changes detected and explicitly acknowledged via [accept-breaking] marker."
             exit 0
           fi
