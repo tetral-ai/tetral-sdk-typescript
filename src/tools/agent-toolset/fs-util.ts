@@ -92,7 +92,10 @@ export async function confineToRoot(
   const abs = path.resolve(realRoot, p);
   if (allowOutside) return abs;
   const real = await canonicalize(abs);
-  if (real !== realRoot && !real.startsWith(realRoot + path.sep)) {
+  // A filesystem root (or Windows drive root) already ends with the
+  // separator; appending another would reject every in-root path.
+  const rootSep = realRoot.endsWith(path.sep) ? realRoot : realRoot + path.sep;
+  if (real !== realRoot && !real.startsWith(rootSep)) {
     throw new ToolError(`path ${JSON.stringify(p)} escapes workdir`);
   }
   return real;

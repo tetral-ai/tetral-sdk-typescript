@@ -31,7 +31,7 @@ export class Skills extends APIResource {
    * Create Skill
    *
    * Creates parent Skill metadata and uploads the initial immutable version
-   * package when files are provided. The backend validates the package before
+   * package from the required files. The backend validates the package before
    * durable version creation and advances `latest_version` only after the
    * version is committed.
    *
@@ -310,7 +310,9 @@ export interface SkillCreateParams {
    * Body param: Files to upload for the skill.
    *
    * All files must be in the same top-level directory and must include a SKILL.md
-   * file at the root of that directory.
+   * file at the root of that directory. Directory-qualified filenames are
+   * preserved in the multipart package so the backend can validate and prepare
+   * the read-only `/skills/<directory>/` projection.
    */
   files: Array<Uploadable>;
 

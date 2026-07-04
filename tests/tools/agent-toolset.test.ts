@@ -489,3 +489,12 @@ describeBash('BashSession (direct)', () => {
     expect(r.exitCode).toBe(0);
   });
 });
+
+describe('confineToRoot at a filesystem root workdir', () => {
+  test('in-root absolute paths are allowed when the workdir is the filesystem root', async () => {
+    const { confineToRoot } = await import('@tetral-ai/sdk/tools/agent-toolset/fs-util');
+    // A root workdir already ends with the separator; containment must not
+    // double-append it and reject every in-root path.
+    await expect(confineToRoot('/', '/etc/hosts')).resolves.toBe('/etc/hosts');
+  });
+});

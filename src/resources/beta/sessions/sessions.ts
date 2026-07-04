@@ -351,8 +351,9 @@ export interface BetaManagedAgentsAgentWithOverridesParams {
   mcp_servers?: Array<AgentsAPI.BetaManagedAgentsURLMCPServerParams>;
 
   /**
-   * Replacement model. Accepts the model string, e.g. `claude-opus-4-6`, or a
-   * `model_config` object. Omit to use the agent's model.
+   * Replacement model. Accepts a canonical `provider/model` ID from the
+   * supported model set, or a `model_config` object. Omit to use the agent's
+   * model.
    */
   model?: AgentsAPI.BetaManagedAgentsModel | AgentsAPI.BetaManagedAgentsModelConfigParams;
 
@@ -997,7 +998,7 @@ export interface SessionCreateParams {
    * latest version for the session, or an `agent` object with both id and version
    * specified.
    */
-  agent: string | BetaManagedAgentsAgentParams | BetaManagedAgentsAgentWithOverridesParams;
+  agent: string | BetaManagedAgentsAgentParams;
 
   /**
    * Body param: ID of the `environment` defining the container configuration for
