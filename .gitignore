@@ -11,3 +11,7 @@ dist-deno
 .eslintcache
 oidc
 .plan/
+
+# local development artifacts (not part of the shipped repository)
+closeout-report.md
+.claude/
