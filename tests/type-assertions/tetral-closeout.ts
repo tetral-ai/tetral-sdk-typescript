@@ -89,3 +89,11 @@ const unsupportedCredentialAuth: CredentialCreateParams['auth'] = {
   type: 'shell_command',
 };
 void unsupportedCredentialAuth;
+
+const retainedAgentWithOverridesCreate: SessionCreateParams = {
+  environment_id: 'env_123',
+  vault_ids: [],
+  // @ts-expect-error agent_with_overrides is retained-unsupported; session create accepts only the plain agent forms.
+  agent: { type: 'agent_with_overrides', id: 'agent_123' },
+};
+void retainedAgentWithOverridesCreate;

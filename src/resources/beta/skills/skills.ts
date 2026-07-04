@@ -31,20 +31,19 @@ export class Skills extends APIResource {
    * Create Skill
    *
    * Creates parent Skill metadata and uploads the initial immutable version
-   * package when files are provided. The backend validates the package before
+   * package from the required files. The backend validates the package before
    * durable version creation and advances `latest_version` only after the
    * version is committed.
    *
    * @example
    * ```ts
-   * const skill = await client.beta.skills.create();
+   * const skill = await client.beta.skills.create({
+   *   files: [fs.createReadStream('path/to/file')],
+   * });
    * ```
    */
-  create(
-    params: SkillCreateParams | null | undefined = {},
-    options?: RequestOptions,
-  ): APIPromise<SkillCreateResponse> {
-    const { betas, ...body } = params ?? {};
+  create(params: SkillCreateParams, options?: RequestOptions): APIPromise<SkillCreateResponse> {
+    const { betas, ...body } = params;
     return this._client.post(
       '/v1/skills?beta=true',
       multipartFormRequestOptions(
@@ -308,14 +307,6 @@ export interface SkillDeleteResponse {
 
 export interface SkillCreateParams {
   /**
-   * Body param: Display title for the skill.
-   *
-   * This is a human-readable label that is not included in the prompt sent to the
-   * model.
-   */
-  display_title?: string | null;
-
-  /**
    * Body param: Files to upload for the skill.
    *
    * All files must be in the same top-level directory and must include a SKILL.md
@@ -323,7 +314,15 @@ export interface SkillCreateParams {
    * preserved in the multipart package so the backend can validate and prepare
    * the read-only `/skills/<directory>/` projection.
    */
-  files?: Array<Uploadable> | null;
+  files: Array<Uploadable>;
+
+  /**
+   * Body param: Display title for the skill.
+   *
+   * This is a human-readable label that is not included in the prompt sent to the
+   * model.
+   */
+  display_title?: string | null;
 
   /**
    * Header param: Optional header to specify the beta version(s) you want to use.

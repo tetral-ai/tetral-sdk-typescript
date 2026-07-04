@@ -69,7 +69,7 @@ export class MemoryStores extends APIResource {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
         options?.headers,
       ]),
     });
@@ -95,7 +95,7 @@ export class MemoryStores extends APIResource {
     return this._client.get(path`/v1/memory_stores/${memoryStoreID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
         options?.headers,
       ]),
     });
@@ -120,7 +120,7 @@ export class MemoryStores extends APIResource {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
         options?.headers,
       ]),
     });
@@ -146,7 +146,7 @@ export class MemoryStores extends APIResource {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
         options?.headers,
       ]),
     });
@@ -170,7 +170,7 @@ export class MemoryStores extends APIResource {
     return this._client.delete(path`/v1/memory_stores/${memoryStoreID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
         options?.headers,
       ]),
     });
@@ -194,7 +194,7 @@ export class MemoryStores extends APIResource {
     return this._client.post(path`/v1/memory_stores/${memoryStoreID}/archive?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
         options?.headers,
       ]),
     });
