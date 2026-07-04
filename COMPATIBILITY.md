@@ -6,10 +6,10 @@ The Tetral SDK is an Anthropic-compatible fork of `anthropic-sdk-typescript`. Th
 
 Pinned upstream baseline:
 
-| Item                     | Value                                      |
-| ------------------------ | ------------------------------------------ |
-| Upstream package version | `0.106.0`                                  |
-| Fork baseline commit     | `0ffdbfa41186434824e98c90473b5c4ba5501045` |
+| Item                        | Value                                                              |
+| --------------------------- | ------------------------------------------------------------------ |
+| Upstream package version    | `0.110.0`                                                          |
+| Last synced upstream commit | `4f2eb807` (fork point `0ffdbfa41186434824e98c90473b5c4ba5501045`) |
 
 ## 2. Type-Level Divergences
 
@@ -52,6 +52,9 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 | Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                                                                                                               |
 | Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
 | Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
+| Session event delta streaming                                            | Retained unsupported. `event_deltas` previews and the accumulate helper are inert until the engine emits delta events.                                                             |
+| Session create `agent_with_overrides`                                    | Retained unsupported. Use the plain agent reference forms; override variants are rejected by admission.                                                                            |
+| Agent and deployment webhook event types                                 | Deferred with the Webhooks resource.                                                                                                                                               |
 | Session list reverse pagination                                          | Retained unsupported. `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged, and `prev_page` stays `null` until the engine implements reverse cursors. |
 | Generated Messages API resource and Message Batches                      | Retained unsupported/deferred. Use Session Events `user.message` instead.                                                                                                          |
 | Host allowlists, `limited`, `scope`, and self-host Environment work APIs | Retained unsupported/deferred.                                                                                                                                                     |
