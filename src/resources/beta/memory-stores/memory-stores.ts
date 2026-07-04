@@ -255,9 +255,9 @@ export interface BetaManagedAgentsMemoryStore {
   /**
    * Free-text description of what the store contains, up to 1024 characters.
    * Included in the agent's system prompt when the store is attached, so word it to
-   * be useful to the agent. Empty string when unset.
+   * be useful to the agent. `null` when unset.
    */
-  description: string;
+  description: string | null;
 
   /**
    * Arbitrary key-value tags for your own bookkeeping (such as the end user a store
