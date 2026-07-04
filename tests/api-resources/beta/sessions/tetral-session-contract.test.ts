@@ -1,10 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsEventParams,
   SessionCreateParams,
   SessionUpdateParams,
   TetralSessionProviderSelectors,
-} from '@anthropic-ai/sdk/resources/beta/sessions';
+} from '@tetral-ai/sdk/resources/beta/sessions';
 
 const SESSION_RESPONSE = {
   id: 'sesn_123',
@@ -40,7 +40,14 @@ const SESSION_RESPONSE = {
   stats: {},
   status: 'idle',
   title: null,
-  usage: {},
+  usage: {
+    input_tokens: 12,
+    output_tokens: 7,
+    server_tool_use: {
+      web_fetch_requests: 1,
+      web_search_requests: 2,
+    },
+  },
   vault_ids: [],
   deployment_id: null,
 };
@@ -63,7 +70,7 @@ describe('Tetral Session SDK contract', () => {
   test('create serializes explicit vault_ids and provider selectors', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -107,7 +114,7 @@ describe('Tetral Session SDK contract', () => {
   test('update serializes providers clearing without mutating vault_ids locally', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -117,6 +124,9 @@ describe('Tetral Session SDK contract', () => {
 
     await client.beta.sessions.update('sesn_123', {
       providers: {},
+      agent: {
+        approval_mode: 'approve_for_me',
+      },
       title: 'updated title',
     });
 
@@ -124,7 +134,25 @@ describe('Tetral Session SDK contract', () => {
     expect(captured[0]!.url).toBe('https://api.tetral.example/v1/sessions/sesn_123?beta=true');
     expect(captured[0]!.body).toEqual({
       providers: {},
+      agent: {
+        approval_mode: 'approve_for_me',
+      },
       title: 'updated title',
+    });
+  });
+
+  test('parses session usage.server_tool_use counters from response fixtures', async () => {
+    const client = new Anthropic({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async () => jsonResponse(SESSION_RESPONSE),
+    });
+
+    const session = await client.beta.sessions.retrieve('sesn_123');
+
+    expect(session.usage.server_tool_use).toEqual({
+      web_fetch_requests: 1,
+      web_search_requests: 2,
     });
   });
 
@@ -144,7 +172,7 @@ describe('Tetral Session SDK contract', () => {
     async (event) => {
       const captured: unknown[] = [];
       const client = new Anthropic({
-        apiKey: 'redacted-key-test',
+        apiKey: 'test-tetral-key',
         baseURL: 'https://api.tetral.example',
         fetch: async (_url: any, init?: RequestInit) => {
           captured.push(parseJSONBody(init));

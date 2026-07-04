@@ -2,14 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import type { Fetch } from '@anthropic-ai/sdk/internal/builtin-types';
-import { userOAuthProvider } from '@anthropic-ai/sdk/lib/credentials/user-oauth';
+import type { Fetch } from '@tetral-ai/sdk/internal/builtin-types';
+import { userOAuthProvider } from '@tetral-ai/sdk/lib/credentials/user-oauth';
 import {
   WorkloadIdentityError,
   OAUTH_API_BETA_HEADER,
   FEDERATION_BETA_HEADER,
   writeCredentialsFileAtomic,
-} from '@anthropic-ai/sdk/lib/credentials/types';
+} from '@tetral-ai/sdk/lib/credentials/types';
 
 const NOW_IN_SECONDS = 1700000000;
 

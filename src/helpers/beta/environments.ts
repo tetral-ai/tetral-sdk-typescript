@@ -19,7 +19,7 @@
  *
  * The tool implementations themselves (`betaAgentToolset20260401` and the
  * per-tool factories) live in their own Node-only module — import them directly
- * from `@anthropic-ai/sdk/tools/agent-toolset/node`.
+ * from `@tetral-ai/sdk/tools/agent-toolset/node`.
  */
 export {
   WorkPoller,

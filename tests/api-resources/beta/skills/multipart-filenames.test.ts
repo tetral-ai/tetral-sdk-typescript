@@ -8,7 +8,7 @@
 // "SKILL.md must be exactly in the top-level folder", so each endpoint passes
 // `stripFilenames=false`. This test guards against that flag being dropped.
 
-import Anthropic, { toFile } from '@anthropic-ai/sdk';
+import Anthropic, { toFile } from '@tetral-ai/sdk';
 
 /** Run `call`, intercepting the outgoing request, and return every
  *  `filename="..."` value present in the serialized multipart body. */

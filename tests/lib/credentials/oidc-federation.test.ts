@@ -1,11 +1,11 @@
-import type { Fetch } from '@anthropic-ai/sdk/internal/builtin-types';
-import { oidcFederationProvider } from '@anthropic-ai/sdk/lib/credentials/oidc-federation';
+import type { Fetch } from '@tetral-ai/sdk/internal/builtin-types';
+import { oidcFederationProvider } from '@tetral-ai/sdk/lib/credentials/oidc-federation';
 import {
   WorkloadIdentityError,
   OAUTH_API_BETA_HEADER,
   FEDERATION_BETA_HEADER,
   redactSensitive,
-} from '@anthropic-ai/sdk/lib/credentials/types';
+} from '@tetral-ai/sdk/lib/credentials/types';
 
 const NOW_IN_SECONDS = 1700000000;
 

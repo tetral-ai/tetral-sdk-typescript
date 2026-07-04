@@ -1,5 +1,5 @@
-import { backoff, jitter, isStatus, is4xx } from '@anthropic-ai/sdk/lib/environments';
-import { APIError } from '@anthropic-ai/sdk/core/error';
+import { backoff, jitter, isStatus, is4xx } from '@tetral-ai/sdk/lib/environments';
+import { APIError } from '@tetral-ai/sdk/core/error';
 
 describe('backoff', () => {
   const cases: { description: string; attempt: number; want: number }[] = [

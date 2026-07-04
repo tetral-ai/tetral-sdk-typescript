@@ -2,9 +2,9 @@ import type { NullableHeaders } from './internal/headers';
 import { buildHeaders } from './internal/headers';
 import * as Errors from './core/error';
 import { readEnv } from './internal/utils';
-import { Anthropic, ClientOptions } from '@anthropic-ai/sdk/client';
-export { BaseAnthropic } from '@anthropic-ai/sdk/client';
-import * as Resources from '@anthropic-ai/sdk/resources/index';
+import { Anthropic, ClientOptions } from '@tetral-ai/sdk/client';
+export { BaseAnthropic } from '@tetral-ai/sdk/client';
+import * as Resources from '@tetral-ai/sdk/resources/index';
 
 /** API Client for interfacing with the Anthropic Foundry API. */
 export interface FoundryClientOptions extends ClientOptions {

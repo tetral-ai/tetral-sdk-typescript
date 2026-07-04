@@ -1,1 +1,1 @@
-export * from '@anthropic-ai/sdk/core/middleware';
+export * from '@tetral-ai/sdk/core/middleware';

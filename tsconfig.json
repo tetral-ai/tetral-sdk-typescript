@@ -8,8 +8,8 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "paths": {
-      "@anthropic-ai/sdk/*": ["./src/*"],
-      "@anthropic-ai/sdk": ["./src/index.ts"]
+      "@tetral-ai/sdk/*": ["./src/*"],
+      "@tetral-ai/sdk": ["./src/index.ts"]
     },
     "noEmit": true,
 

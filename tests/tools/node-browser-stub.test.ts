@@ -1,8 +1,8 @@
-import * as realToolset from '@anthropic-ai/sdk/tools/agent-toolset/node';
-import * as stubToolset from '@anthropic-ai/sdk/tools/agent-toolset/node.browser';
-import * as realMemory from '@anthropic-ai/sdk/tools/memory/node';
-import * as stubMemory from '@anthropic-ai/sdk/tools/memory/node.browser';
-import { AnthropicError } from '@anthropic-ai/sdk/core/error';
+import * as realToolset from '@tetral-ai/sdk/tools/agent-toolset/node';
+import * as stubToolset from '@tetral-ai/sdk/tools/agent-toolset/node.browser';
+import * as realMemory from '@tetral-ai/sdk/tools/memory/node';
+import * as stubMemory from '@tetral-ai/sdk/tools/memory/node.browser';
+import { AnthropicError } from '@tetral-ai/sdk/core/error';
 
 // The browser stubs are substituted for the Node-only modules via the
 // `browser` field in package.json. They must export the same value surface as

@@ -1,22 +1,22 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsDeletedMemoryStore,
   BetaManagedAgentsMemoryStore,
   MemoryStoreListParams,
-} from '@anthropic-ai/sdk/resources/beta/memory-stores/memory-stores';
+} from '@tetral-ai/sdk/resources/beta/memory-stores/memory-stores';
 import type {
   BetaManagedAgentsDeletedMemory,
   BetaManagedAgentsMemory,
   MemoryDeleteParams,
   MemoryRetrieveParams,
   MemoryUpdateParams,
-} from '@anthropic-ai/sdk/resources/beta/memory-stores/memories';
+} from '@tetral-ai/sdk/resources/beta/memory-stores/memories';
 import type {
   BetaManagedAgentsMemoryVersion,
   MemoryVersionListParams,
   MemoryVersionRedactParams,
-} from '@anthropic-ai/sdk/resources/beta/memory-stores/memory-versions';
-import type { SessionCreateParams } from '@anthropic-ai/sdk/resources/beta/sessions';
+} from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
+import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
 
 const MEMORY_STORE: BetaManagedAgentsMemoryStore = {
   id: 'memstore_123',
@@ -55,6 +55,7 @@ const MEMORY_VERSION: BetaManagedAgentsMemoryVersion = {
   created_by: { type: 'session_actor', session_id: 'sesn_123' },
   path: '/notes/hello.md',
   redacted_at: null,
+  redacted_by: null,
 };
 
 function jsonResponse(body: object, status = 200): Response {
@@ -80,7 +81,7 @@ describe('Tetral Memory SDK contract', () => {
     const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
     let listCalls = 0;
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         const parsedURL = new URL(String(url));
@@ -145,7 +146,7 @@ describe('Tetral Memory SDK contract', () => {
     const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
     let listCalls = 0;
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         const method = requestMethod(init);
@@ -236,7 +237,7 @@ describe('Tetral Memory SDK contract', () => {
     const requests: Array<{ method: string; url: URL }> = [];
     let listCalls = 0;
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         const parsedURL = new URL(String(url));
@@ -309,7 +310,7 @@ describe('Tetral Memory SDK contract', () => {
   test('memory write conflicts parse backend 409 invalid_request_error without SDK preflight', async () => {
     const captured: unknown[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       maxRetries: 0,
       fetch: async (_url: any, init?: RequestInit) => {

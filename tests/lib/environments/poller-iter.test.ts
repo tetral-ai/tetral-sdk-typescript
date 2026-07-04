@@ -1,5 +1,5 @@
-import { WorkPoller, POLL_BLOCK_MS } from '@anthropic-ai/sdk/lib/environments';
-import { APIError } from '@anthropic-ai/sdk/core/error';
+import { WorkPoller, POLL_BLOCK_MS } from '@tetral-ai/sdk/lib/environments';
+import { APIError } from '@tetral-ai/sdk/core/error';
 
 // Minimal fake `client.beta.environments.work` resource. Tests script
 // poll/ack/stop responses; we record how each was called for assertions.

@@ -1,5 +1,5 @@
-import { APIRequest, BaseAnthropic, ClientOptions as CoreClientOptions } from '@anthropic-ai/sdk/client';
-import * as Resources from '@anthropic-ai/sdk/resources/index';
+import { APIRequest, BaseAnthropic, ClientOptions as CoreClientOptions } from '@tetral-ai/sdk/client';
+import * as Resources from '@tetral-ai/sdk/resources/index';
 import { GoogleAuth, AuthClient } from 'google-auth-library';
 import { APIConnectionError } from './core/error';
 import type { Middleware } from './core/middleware';
@@ -9,7 +9,7 @@ import { FinalRequestOptions } from './internal/request-options';
 import { isObj, safeJSON } from './internal/utils/values';
 import { buildHeaders } from './internal/headers';
 
-export { BaseAnthropic } from '@anthropic-ai/sdk/client';
+export { BaseAnthropic } from '@tetral-ai/sdk/client';
 
 const DEFAULT_VERSION = 'vertex-2023-10-16';
 const MODEL_ENDPOINTS = new Set<string>(['/v1/messages', '/v1/messages?beta=true']);

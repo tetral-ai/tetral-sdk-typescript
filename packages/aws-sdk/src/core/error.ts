@@ -1,1 +1,1 @@
-export * from '@anthropic-ai/sdk/core/error';
+export * from '@tetral-ai/sdk/core/error';

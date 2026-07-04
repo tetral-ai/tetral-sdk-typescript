@@ -1,12 +1,10 @@
 #!/usr/bin/env -S npm run tsn -T
 
-import Anthropic from '@anthropic-ai/sdk';
-import type { TetralSessionProviderSelectors } from '@anthropic-ai/sdk/resources/beta/sessions';
-import fs from 'fs';
-import path from 'path';
+import Anthropic from '@tetral-ai/sdk';
+import type { TetralSessionProviderSelectors } from '@tetral-ai/sdk/resources/beta/sessions';
 
 const client = new Anthropic({
-  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  apiKey: process.env['TETRAL_API_KEY'],
   baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
 });
 
@@ -54,14 +52,6 @@ async function main() {
   };
   console.log('Created provider credential:', providerCredential.id);
 
-  // Upload a custom skill
-  const skillContent = fs.readFileSync(path.join(__dirname, 'greeting-SKILL.md'));
-  const skill = await client.beta.skills.create({
-    display_title: `comprehensive-greeting-${Date.now()}`,
-    files: [new File([skillContent], 'greeting/SKILL.md', { type: 'text/markdown' })],
-  });
-  console.log('Created skill:', skill.id);
-
   // Create v1 of the agent with the Tetral built-in toolset.
   const agentV1 = await client.beta.agents.create({
     name: 'comprehensive-example-agent',
@@ -72,15 +62,12 @@ async function main() {
   });
   console.log('Created agent v1:', agentV1.id);
 
-  // Patch the agent to v2 by adding skill references. Skills are Agent
+  // Patch the agent to v2 by adding a skill reference. Skills are Agent
   // configuration; Session preparation projects them read-only under
   // /skills/<directory> rather than exposing them as model-facing tools.
   const agent = await client.beta.agents.update(agentV1.id, {
     version: agentV1.version,
-    skills: [
-      { type: 'custom', skill_id: skill.id },
-      { type: 'anthropic', skill_id: 'xlsx' },
-    ],
+    skills: [{ type: 'anthropic', skill_id: 'xlsx' }],
   });
   console.log('Patched agent to v2:', agent.id);
 

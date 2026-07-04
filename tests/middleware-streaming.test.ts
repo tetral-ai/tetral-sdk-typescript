@@ -1,15 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { APIRequest } from '@anthropic-ai/sdk/core/api';
-import type { MiddlewareContext } from '@anthropic-ai/sdk/core/middleware';
-import { Stream } from '@anthropic-ai/sdk/core/streaming';
+import type { APIRequest } from '@tetral-ai/sdk/core/api';
+import type { MiddlewareContext } from '@tetral-ai/sdk/core/middleware';
+import { Stream } from '@tetral-ai/sdk/core/streaming';
 import {
   betaRefusalFallbackMiddleware,
   BetaFallbackState,
   type BetaRefusalFallbackOptions,
-} from '@anthropic-ai/sdk/lib/middleware';
-import type { BetaFallbackParam } from '@anthropic-ai/sdk/resources/beta';
-import { defaultLogger } from '@anthropic-ai/sdk/internal/utils/log';
+} from '@tetral-ai/sdk/lib/middleware';
+import type { BetaFallbackParam } from '@tetral-ai/sdk/resources/beta';
+import { defaultLogger } from '@tetral-ai/sdk/internal/utils/log';
 
 const FIXTURES = path.resolve(__dirname, 'fixtures/fable-fallback');
 const FALLBACK_MODEL = 'claude-opus-4-8';

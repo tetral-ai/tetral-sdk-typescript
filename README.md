@@ -1,49 +1,52 @@
 # Tetral Engine SDK for TypeScript
 
-This fork keeps the Anthropic-compatible TypeScript SDK entrypoint while targeting Tetral public APIs.
-The public client class remains `Anthropic`; configure Tetral with a Tetral-issued public API key and Tetral `baseURL`.
+This package is an Anthropic-compatible TypeScript SDK fork for the Tetral Engine public API. It keeps the familiar `new Anthropic(...)` client entrypoint and also exports `Tetral` as an alias for projects that prefer Tetral naming.
 
-## Documentation
+This project is forked from Anthropic's official SDK. It is not affiliated with or endorsed by Anthropic.
 
-Generated API reference is in [api.md](./api.md). Some upstream-generated route families are retained for SDK compatibility but are deferred or unsupported by Tetral until the Tetral backend admits them.
-
-Retained unsupported/deferred Tetral surfaces include Deployments, Deployment Runs, the generated beta Messages resource and Message Batches, the beta Models resource, User Profiles, Webhooks, self-host Environment work APIs, runtime custom-tool result events, and hosted ToolRunner flows. Ordinary generated resource methods keep their normal HTTP request paths; Tetral backend admission returns SDK-compatible errors for unsupported behavior. SDK-local helpers use explicit failure state, such as `posted: false`, when a synthesized helper result is rejected instead of manufacturing success.
-
-## Installation
-
-Use this fork's package name once it is assigned. Until package metadata is renamed, this worktree keeps the upstream package name:
+## Install
 
 ```sh
-npm install @anthropic-ai/sdk
+npm install @tetral-ai/sdk
 ```
 
-## Getting Started With Tetral
+## Quickstart
 
-```js
-import Anthropic from '@anthropic-ai/sdk';
+```ts
+import Anthropic from '@tetral-ai/sdk';
 
 const client = new Anthropic({
-  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  apiKey: process.env['TETRAL_API_KEY'],
   baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
 });
 
-for await (const agent of client.beta.agents.list()) {
-  console.log(agent.id);
-  break;
-}
+const agent = await client.beta.agents.create({
+  name: 'tetral-agent',
+  model: 'anthropic/claude-opus-4-8',
+  approval_mode: 'ask_for_approval',
+  tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
+});
+
+const session = await client.beta.sessions.create({
+  environment_id: 'env_123',
+  agent: { type: 'agent', id: agent.id, version: agent.version },
+  vault_ids: [],
+});
+
+await client.beta.sessions.events.send(session.id, {
+  events: [{ type: 'user.message', content: [{ type: 'text', text: 'Hello Tetral.' }] }],
+});
 ```
 
-Do not pass Anthropic provider API keys as the Tetral SDK `apiKey`. Provider credentials belong in Vault and are selected by Tetral Sessions through `providers`; the SDK public `apiKey` is only the Tetral-issued `redacted-key-...` key. The SDK consumes public keys but does not mint, recover, or persist them.
+The SDK `apiKey` is a Tetral-issued API key. Anthropic provider API keys do not authenticate Tetral public APIs; store provider credentials in Vault and select them from Sessions through `providers`.
 
-## Tetral Managed Agents Example
-
-The `examples/agents*.ts` files are the Tetral Managed Agents examples. Other examples are retained upstream Anthropic compatibility examples and may still use upstream Anthropic environment variable names.
+## Managed Agents Example
 
 ```ts
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 
 const client = new Anthropic({
-  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  apiKey: process.env['TETRAL_API_KEY'],
   baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
 });
 
@@ -76,36 +79,32 @@ const agent = await client.beta.agents.create({
   tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
 });
 
-const file = await client.beta.files.upload({
-  file: new File(['city,revenue\nSF,42\n'], 'data.csv', { type: 'text/csv' }),
-});
-
 const session = await client.beta.sessions.create({
   environment_id: environment.id,
   agent: { type: 'agent', id: agent.id, version: agent.version },
   vault_ids: [vault.id],
-  providers: { anthropic: { credential_id: credential.id } },
-});
-
-await client.beta.sessions.resources.add(session.id, {
-  type: 'file',
-  file_id: file.id,
-  mount_path: '/uploads/data.csv',
+  providers: {
+    anthropic: { credential_id: credential.id },
+  },
 });
 
 await client.beta.sessions.events.send(session.id, {
-  events: [{ type: 'user.message', content: [{ type: 'text', text: 'Summarize /uploads/data.csv.' }] }],
+  events: [{ type: 'user.message', content: [{ type: 'text', text: 'Summarize the workspace.' }] }],
 });
 ```
 
+More runnable examples live in `examples/`.
+
+## Compatibility
+
+See [COMPATIBILITY.md](./COMPATIBILITY.md) for the upstream baseline, Tetral extensions, type-level divergences, retained unsupported surfaces, authentication behavior, and upstream sync policy.
+
+Generated API reference is in [api.md](./api.md).
+
 ## Requirements
 
-Node.js 18+
-
-## Contributing
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+Node.js 18 or later.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).

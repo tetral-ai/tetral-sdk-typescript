@@ -2,10 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import {
-  identityTokenFromFile,
-  identityTokenFromValue,
-} from '@anthropic-ai/sdk/lib/credentials/identity-token';
+import { identityTokenFromFile, identityTokenFromValue } from '@tetral-ai/sdk/lib/credentials/identity-token';
 
 describe('identityTokenFromFile', () => {
   let testDir: string;

@@ -1,9 +1,9 @@
 #!/usr/bin/env -S npm run tsn -T
 
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 
 const client = new Anthropic({
-  apiKey: process.env['TETRAL_API_KEY'] ?? 'redacted-key-...',
+  apiKey: process.env['TETRAL_API_KEY'],
   baseURL: process.env['TETRAL_BASE_URL'] ?? 'https://api.tetral.example',
 });
 

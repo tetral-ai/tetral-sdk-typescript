@@ -1,20 +1,20 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import type {
   AgentCreateParams,
   BetaManagedAgentsAgentToolset20260401Params,
   BetaManagedAgentsCustomToolParams,
-} from '@anthropic-ai/sdk/resources/beta/agents';
+} from '@tetral-ai/sdk/resources/beta/agents';
 import type {
   DeploymentCreateParams,
   Deployments as DeploymentsResource,
-} from '@anthropic-ai/sdk/resources/beta/deployments';
-import type { DeploymentRuns } from '@anthropic-ai/sdk/resources/beta/deployment-runs';
-import type { Messages } from '@anthropic-ai/sdk/resources/beta/messages/messages';
-import type { Batches } from '@anthropic-ai/sdk/resources/beta/messages/batches';
-import type { Models } from '@anthropic-ai/sdk/resources/beta/models';
-import type { BetaManagedAgentsEventParams } from '@anthropic-ai/sdk/resources/beta/sessions';
-import type { UserProfiles } from '@anthropic-ai/sdk/resources/beta/user-profiles';
-import type { Webhooks } from '@anthropic-ai/sdk/resources/beta/webhooks';
+} from '@tetral-ai/sdk/resources/beta/deployments';
+import type { DeploymentRuns } from '@tetral-ai/sdk/resources/beta/deployment-runs';
+import type { Messages } from '@tetral-ai/sdk/resources/beta/messages/messages';
+import type { Batches } from '@tetral-ai/sdk/resources/beta/messages/batches';
+import type { Models } from '@tetral-ai/sdk/resources/beta/models';
+import type { BetaManagedAgentsEventParams } from '@tetral-ai/sdk/resources/beta/sessions';
+import type { UserProfiles } from '@tetral-ai/sdk/resources/beta/user-profiles';
+import type { Webhooks } from '@tetral-ai/sdk/resources/beta/webhooks';
 
 interface CapturedRequest {
   url: string;
@@ -39,7 +39,7 @@ function parseMaybeJSONBody(init: RequestInit | undefined): unknown {
 
 function makeUnsupportedClient(captured: CapturedRequest[]): Anthropic {
   return new Anthropic({
-    apiKey: 'redacted-key-test',
+    apiKey: 'test-tetral-key',
     baseURL: 'https://api.tetral.example',
     fetch: async (url: any, init?: RequestInit) => {
       captured.push({
@@ -134,7 +134,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
   });
 
   test('retained unsupported resources and helper surfaces remain importable', () => {
-    const client = new Anthropic({ apiKey: 'redacted-key-test', baseURL: 'https://api.tetral.example' });
+    const client = new Anthropic({ apiKey: 'test-tetral-key', baseURL: 'https://api.tetral.example' });
     const retainedResources: [
       DeploymentsResource,
       DeploymentRuns,

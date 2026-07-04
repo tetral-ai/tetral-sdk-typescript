@@ -1,10 +1,10 @@
-import Anthropic, { toFile } from '@anthropic-ai/sdk';
-import type { AgentCreateParams } from '@anthropic-ai/sdk/resources/beta/agents';
-import type { SkillCreateResponse, SkillListResponse } from '@anthropic-ai/sdk/resources/beta/skills/skills';
+import Anthropic, { toFile } from '@tetral-ai/sdk';
+import type { AgentCreateParams } from '@tetral-ai/sdk/resources/beta/agents';
+import type { SkillCreateResponse, SkillListResponse } from '@tetral-ai/sdk/resources/beta/skills/skills';
 import type {
   VersionCreateResponse,
   VersionRetrieveResponse,
-} from '@anthropic-ai/sdk/resources/beta/skills/versions';
+} from '@tetral-ai/sdk/resources/beta/skills/versions';
 
 const SKILL_RESPONSE: SkillCreateResponse = {
   id: 'skill_123',
@@ -45,7 +45,7 @@ describe('Tetral Skills SDK contract', () => {
   test('skills.create returns parent metadata with latest_version after initial package upload', async () => {
     const captured: { url: string; body: string }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         if (String(url).includes('/v1/skills') && init?.body != null) {
@@ -72,7 +72,7 @@ describe('Tetral Skills SDK contract', () => {
   test('skills.versions.create uploads an immutable package version with directory-qualified filenames', async () => {
     const captured: { url: string; body: string }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         if (String(url).includes('/v1/skills/skill_123/versions') && init?.body != null) {
@@ -101,7 +101,7 @@ describe('Tetral Skills SDK contract', () => {
 
   test('skills.versions.create parses backend 413 invalid_request_error for oversized packages', async () => {
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async () =>
         jsonResponse(

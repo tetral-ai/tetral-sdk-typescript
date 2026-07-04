@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import Anthropic from '@anthropic-ai/sdk';
-import type { AccessToken } from '@anthropic-ai/sdk/lib/credentials/types';
-import { OAUTH_API_BETA_HEADER } from '@anthropic-ai/sdk/lib/credentials/types';
+import Anthropic from '@tetral-ai/sdk';
+import type { AccessToken } from '@tetral-ai/sdk/lib/credentials/types';
+import { OAUTH_API_BETA_HEADER } from '@tetral-ai/sdk/lib/credentials/types';
 
 const VALID_MSG_RESPONSE = {
   id: 'msg_1',
@@ -46,6 +46,8 @@ describe('client credentials integration', () => {
     'ANTHROPIC_API_KEY',
     'ANTHROPIC_AUTH_TOKEN',
     'ANTHROPIC_BASE_URL',
+    'TETRAL_API_KEY',
+    'TETRAL_BASE_URL',
     'ANTHROPIC_CONFIG_DIR',
     'ANTHROPIC_FEDERATION_RULE_ID',
     'ANTHROPIC_IDENTITY_TOKEN',
@@ -73,9 +75,9 @@ describe('client credentials integration', () => {
     fs.rmSync(testDir, { recursive: true });
   });
 
-  it('ANTHROPIC_API_KEY env var shadows a profile-configured federation config', async () => {
+  it('TETRAL_API_KEY env var shadows a profile-configured federation config', async () => {
     process.env['ANTHROPIC_CONFIG_DIR'] = testDir;
-    process.env['ANTHROPIC_API_KEY'] = 'sk-env-key';
+    process.env['TETRAL_API_KEY'] = 'test-tetral-key';
     const tokenPath = path.join(testDir, 'id-token');
     fs.mkdirSync(path.join(testDir, 'configs'), { recursive: true });
     fs.writeFileSync(tokenPath, 'my-jwt');
@@ -99,7 +101,7 @@ describe('client credentials integration', () => {
           exchanged = true;
           return jsonResponse({ access_token: 'should-not-happen', expires_in: 3600 });
         }
-        expect(getHeader(init, 'x-api-key')).toBe('sk-env-key');
+        expect(getHeader(init, 'x-api-key')).toBe('test-tetral-key');
         expect(getHeader(init, 'authorization')).toBeNull();
         return jsonResponse(VALID_MSG_RESPONSE);
       },
@@ -705,8 +707,8 @@ describe('client credentials integration', () => {
       expect(client.credentials).not.toBeNull();
     });
 
-    it('beats ANTHROPIC_API_KEY in env', async () => {
-      process.env['ANTHROPIC_API_KEY'] = 'sk-env-should-be-ignored';
+    it('beats TETRAL_API_KEY in env', async () => {
+      process.env['TETRAL_API_KEY'] = 'test-tetral-key-ignored';
       writeProfile('staging');
       const client = new Anthropic({
         profile: 'staging',
@@ -850,9 +852,9 @@ describe('client credentials integration', () => {
       expect(client.baseURL).toBe('https://staging.example.com');
     });
 
-    it('ANTHROPIC_BASE_URL env wins over profile base_url', async () => {
+    it('TETRAL_BASE_URL env wins over profile base_url', async () => {
       process.env['ANTHROPIC_CONFIG_DIR'] = testDir;
-      process.env['ANTHROPIC_BASE_URL'] = 'https://env.example.com';
+      process.env['TETRAL_BASE_URL'] = 'https://env.example.com';
       writeUserOAuthProfile(testDir, 'https://profile.example.com');
 
       const seenHosts: string[] = [];
@@ -898,7 +900,7 @@ describe('client credentials integration', () => {
         max_tokens: 1,
         messages: [{ role: 'user', content: 'hi' }],
       });
-      expect(client.baseURL).toBe('https://api.anthropic.com');
+      expect(client.baseURL).toBe('https://api.tetral.example');
     });
 
     it('withOptions clone created before lazy resolution settles adopts profile base_url', async () => {
@@ -986,8 +988,8 @@ describe('client credentials integration', () => {
         max_tokens: 1,
         messages: [{ role: 'user', content: 'hi' }],
       });
-      expect(clone.baseURL).toBe('https://api.anthropic.com');
-      expect(seenHosts).toEqual(['api.anthropic.com']);
+      expect(clone.baseURL).toBe('https://api.tetral.example');
+      expect(seenHosts).toEqual(['api.tetral.example']);
     });
 
     it('withOptions({baseURL}) override is honored over profile base_url', async () => {

@@ -1,14 +1,14 @@
-import Anthropic, { APIConnectionError, APIUserAbortError } from '@anthropic-ai/sdk';
-import { AnthropicError } from '@anthropic-ai/sdk/error';
-import { BetaMessage, BetaRawMessageStreamEvent } from '@anthropic-ai/sdk/resources/beta/messages';
-import * as partialJsonParser from '@anthropic-ai/sdk/_vendor/partial-json-parser/parser';
+import Anthropic, { APIConnectionError, APIUserAbortError } from '@tetral-ai/sdk';
+import { AnthropicError } from '@tetral-ai/sdk/error';
+import { BetaMessage, BetaRawMessageStreamEvent } from '@tetral-ai/sdk/resources/beta/messages';
+import * as partialJsonParser from '@tetral-ai/sdk/_vendor/partial-json-parser/parser';
 import { mockFetch } from '../lib/mock-fetch';
 import { loadFixture, parseSSEFixture } from '../lib/sse-helpers';
 
 // The swc-compiled module exports are non-configurable, so `jest.spyOn` can't patch
 // `partialParse`; wrap the real implementation in a `jest.fn` to count calls instead.
-jest.mock('@anthropic-ai/sdk/_vendor/partial-json-parser/parser', () => {
-  const actual = jest.requireActual('@anthropic-ai/sdk/_vendor/partial-json-parser/parser');
+jest.mock('@tetral-ai/sdk/_vendor/partial-json-parser/parser', () => {
+  const actual = jest.requireActual('@tetral-ai/sdk/_vendor/partial-json-parser/parser');
   return { ...actual, partialParse: jest.fn(actual.partialParse) };
 });
 

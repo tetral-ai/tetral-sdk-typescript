@@ -1,8 +1,8 @@
 import { ContentBlock } from '../../src/resources/messages';
 
-import { TracksToolInput } from '@anthropic-ai/sdk/lib/MessageStream';
-import { TracksToolInput as BetaTracksToolInput } from '@anthropic-ai/sdk/lib/BetaMessageStream';
-import { BetaContentBlock } from '@anthropic-ai/sdk/resources/beta';
+import { TracksToolInput } from '@tetral-ai/sdk/lib/MessageStream';
+import { TracksToolInput as BetaTracksToolInput } from '@tetral-ai/sdk/lib/BetaMessageStream';
+import { BetaContentBlock } from '@tetral-ai/sdk/resources/beta';
 
 /**
  * This test ensures that our TracksToolInput type includes all content block types that have an input property.

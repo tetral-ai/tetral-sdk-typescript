@@ -1,18 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import {
   AnthropicError,
   APIConnectionError,
   APIConnectionTimeoutError,
   RetryableError,
-} from '@anthropic-ai/sdk';
-import type { Middleware } from '@anthropic-ai/sdk';
-import { BetaFallbackState, betaRefusalFallbackMiddleware } from '@anthropic-ai/sdk/lib/middleware';
-import { wrapFetchWithMiddleware } from '@anthropic-ai/sdk/core/middleware';
-import { Stream as SSEStream } from '@anthropic-ai/sdk/core/streaming';
-import { WorkloadIdentityError } from '@anthropic-ai/sdk/lib/credentials/types';
+} from '@tetral-ai/sdk';
+import type { Middleware } from '@tetral-ai/sdk';
+import { BetaFallbackState, betaRefusalFallbackMiddleware } from '@tetral-ai/sdk/lib/middleware';
+import { wrapFetchWithMiddleware } from '@tetral-ai/sdk/core/middleware';
+import { Stream as SSEStream } from '@tetral-ai/sdk/core/streaming';
+import { WorkloadIdentityError } from '@tetral-ai/sdk/lib/credentials/types';
 
 const jsonResponse = (body: unknown = { a: 1 }, init: ResponseInit = {}) =>
   new Response(JSON.stringify(body), {
@@ -43,7 +43,7 @@ describe('middleware', () => {
     expect(await client.request({ path: '/foo', method: 'post', body: { hello: 'world' } })).toEqual({
       a: 1,
     });
-    expect(seenUrl).toEqual('https://api.anthropic.com/foo');
+    expect(seenUrl).toEqual('https://api.tetral.example/foo');
     expect(seenMethod).toEqual('POST');
     expect(seenHeaders).toBeInstanceOf(Headers);
     expect(seenHeaders!.get('x-api-key')).toEqual('my-anthropic-api-key');
@@ -94,7 +94,7 @@ describe('middleware', () => {
   test('can rewrite the request URL', async () => {
     let captured: string | undefined;
     const middleware: Middleware = (request, next) =>
-      next({ ...request, url: request.url.replace('https://api.anthropic.com', 'http://localhost:1234') });
+      next({ ...request, url: request.url.replace('https://api.tetral.example', 'http://localhost:1234') });
 
     const client = new Anthropic({
       apiKey: 'my-anthropic-api-key',
@@ -1207,8 +1207,8 @@ describe('middleware', () => {
 
       expect(await client.request({ path: '/foo', method: 'get' })).toEqual({ a: 1 });
       expect(seen).toEqual([
-        'POST https://api.anthropic.com/v1/oauth/token',
-        'GET https://api.anthropic.com/foo',
+        'POST https://api.tetral.example/v1/oauth/token',
+        'GET https://api.tetral.example/foo',
       ]);
     });
 
@@ -1287,10 +1287,10 @@ describe('middleware', () => {
 
       await client.request({ path: '/foo', method: 'get', middleware: [requestMw] });
       expect(clientSeen).toEqual([
-        'https://api.anthropic.com/v1/oauth/token',
-        'https://api.anthropic.com/foo',
+        'https://api.tetral.example/v1/oauth/token',
+        'https://api.tetral.example/foo',
       ]);
-      expect(requestSeen).toEqual(['https://api.anthropic.com/foo']);
+      expect(requestSeen).toEqual(['https://api.tetral.example/foo']);
     });
 
     test('user OAuth refresh goes through client middleware', async () => {
@@ -1336,8 +1336,8 @@ describe('middleware', () => {
           refresh_token: 'my-refresh-token',
         });
         expect(seen).toEqual([
-          'POST https://api.anthropic.com/v1/oauth/token',
-          'GET https://api.anthropic.com/foo',
+          'POST https://api.tetral.example/v1/oauth/token',
+          'GET https://api.tetral.example/foo',
         ]);
       } finally {
         fs.rmSync(dir, { recursive: true });
@@ -1464,11 +1464,11 @@ describe('middleware', () => {
 
       await client.request({ path: '/foo', method: 'get' });
       expect(client.prepared.map((p) => p.url)).toEqual([
-        'https://api.anthropic.com/foo',
+        'https://api.tetral.example/foo',
         'https://api.anthropic.com/fallback',
       ]);
       expect(sentSignatures).toEqual([
-        'sig:https://api.anthropic.com/foo:undefined',
+        'sig:https://api.tetral.example/foo:undefined',
         'sig:https://api.anthropic.com/fallback:undefined',
       ]);
     });
@@ -1494,7 +1494,7 @@ describe('middleware', () => {
       // signed headers, one entry per next() call.
       const sends = debugMock.mock.calls.filter(([msg]) => String(msg).includes('sending request'));
       expect(sends.map(([, details]) => [details.url, details.headers['x-test-signature']])).toEqual([
-        ['https://api.anthropic.com/foo', 'sig:https://api.anthropic.com/foo:undefined'],
+        ['https://api.tetral.example/foo', 'sig:https://api.tetral.example/foo:undefined'],
         ['https://api.anthropic.com/fallback', 'sig:https://api.anthropic.com/fallback:undefined'],
       ]);
     });
@@ -1670,9 +1670,9 @@ describe('backend middleware', () => {
     });
 
     await client.request({ path: '/foo', method: 'get' });
-    expect(userSawUrl).toEqual('https://api.anthropic.com/foo');
+    expect(userSawUrl).toEqual('https://api.tetral.example/foo');
     expect(userSawSignature).toBeNull();
-    expect(wireUrl).toEqual('https://api.anthropic.com/backend/foo');
+    expect(wireUrl).toEqual('https://api.tetral.example/backend/foo');
     expect(wireSignature).toEqual('signed');
   });
 

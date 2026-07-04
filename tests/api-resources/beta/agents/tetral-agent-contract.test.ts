@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import type {
   AgentCreateParams,
   AgentUpdateParams,
@@ -6,7 +6,7 @@ import type {
   BetaManagedAgentsTetralAgentToolsetParams,
   BetaManagedAgentsTetralClaudeAgentToolsetParams,
   BetaManagedAgentsTetralGPTAgentToolsetParams,
-} from '@anthropic-ai/sdk/resources/beta/agents';
+} from '@tetral-ai/sdk/resources/beta/agents';
 
 const AGENT_RESPONSE = {
   id: 'agent_123',
@@ -62,7 +62,7 @@ describe('Tetral Agent SDK contract', () => {
   test('create serializes Tetral approval mode, canonical model IDs, and Claude tool family', async () => {
     const captured: { url: string; beta: string | null; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({
@@ -112,7 +112,7 @@ describe('Tetral Agent SDK contract', () => {
   test('update serializes Tetral approval mode, model config, and GPT tool family', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -217,6 +217,46 @@ describe('Tetral Agent SDK contract', () => {
     expect(retainedLegacyToolset.tools?.[0]?.type).toBe('agent_toolset_20260401');
     expect(retainedCustomTool.tools?.[0]?.type).toBe('custom');
   });
+
+  test('non-null multiagent create reaches the mock server and parses backend 400', async () => {
+    const captured: { url: string; body: unknown }[] = [];
+    const client = new Anthropic({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url: any, init?: RequestInit) => {
+        captured.push({ url: String(url), body: parseJSONBody(init) });
+        return jsonResponse(
+          {
+            type: 'error',
+            error: {
+              type: 'invalid_request_error',
+              message: 'multiagent is not supported by Tetral',
+            },
+          },
+          400,
+        );
+      },
+    });
+
+    await expect(
+      client.beta.agents.create({
+        name: 'retained multiagent compatibility agent',
+        model: 'anthropic/claude-opus-4-8',
+        multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
+      }),
+    ).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+    });
+
+    expect(captured).toHaveLength(1);
+    expect(captured[0]!.url).toBe('https://api.tetral.example/v1/agents?beta=true');
+    expect(captured[0]!.body).toMatchObject({
+      name: 'retained multiagent compatibility agent',
+      model: 'anthropic/claude-opus-4-8',
+      multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
+    });
+  });
 });
 
 const createApprovalCannotBeNull: AgentCreateParams = {
@@ -261,3 +301,39 @@ const claudeRejectsGPTOnlyTool: BetaManagedAgentsTetralClaudeAgentToolsetParams 
   ],
 };
 void claudeRejectsGPTOnlyTool;
+
+const approvedModelOpenAI: AgentCreateParams = { name: 'openai', model: 'openai/gpt-5.5' };
+const approvedModelAnthropic: AgentCreateParams = {
+  name: 'anthropic',
+  model: 'anthropic/claude-opus-4-8',
+};
+const approvedModelDeepSeek: AgentCreateParams = {
+  name: 'deepseek',
+  model: 'deepseek/deepseek-v4-pro',
+};
+const approvedModelKimi: AgentCreateParams = {
+  name: 'kimi',
+  model: 'moonshotai/kimi-k2.7-code',
+};
+const approvedModelZAI: AgentCreateParams = { name: 'zai', model: 'zai/glm-5.2' };
+void [
+  approvedModelOpenAI,
+  approvedModelAnthropic,
+  approvedModelDeepSeek,
+  approvedModelKimi,
+  approvedModelZAI,
+];
+
+const providerlessModelRejected: AgentCreateParams = {
+  name: 'providerless',
+  // @ts-expect-error Tetral model IDs must be provider/model.
+  model: 'claude-opus-4-8',
+};
+void providerlessModelRejected;
+
+const unapprovedProviderModelRejected: AgentCreateParams = {
+  name: 'unapproved',
+  // @ts-expect-error Only the five approved Tetral model IDs are accepted.
+  model: 'anthropic/claude-sonnet-4-5',
+};
+void unapprovedProviderModelRejected;

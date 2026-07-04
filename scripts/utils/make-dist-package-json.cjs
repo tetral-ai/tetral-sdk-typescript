@@ -13,6 +13,8 @@ for (const key of ['types', 'main', 'module']) {
   if (typeof pkgJson[key] === 'string') pkgJson[key] = pkgJson[key].replace(/^(\.\/)?dist\//, './');
 }
 
+pkgJson.files = ['**/*'];
+
 delete pkgJson.devDependencies;
 delete pkgJson.scripts.prepack;
 delete pkgJson.scripts.prepublishOnly;

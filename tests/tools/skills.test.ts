@@ -3,7 +3,7 @@ import * as fsp from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { extractSkillArchive } from '@anthropic-ai/sdk/tools/agent-toolset/node';
+import { extractSkillArchive } from '@tetral-ai/sdk/tools/agent-toolset/node';
 
 /**
  * Skill version archives are packaged wrapped in a single directory named

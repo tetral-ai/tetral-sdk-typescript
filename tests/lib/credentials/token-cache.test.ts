@@ -1,5 +1,5 @@
-import { TokenCache } from '@anthropic-ai/sdk/lib/credentials/token-cache';
-import type { AccessToken, AccessTokenProvider } from '@anthropic-ai/sdk/lib/credentials/types';
+import { TokenCache } from '@tetral-ai/sdk/lib/credentials/token-cache';
+import type { AccessToken, AccessTokenProvider } from '@tetral-ai/sdk/lib/credentials/types';
 
 let fakeNow = 1700000000;
 

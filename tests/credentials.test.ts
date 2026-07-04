@@ -4,7 +4,7 @@ import {
   AnthropicCredentials,
   loadConfig,
   loadCredentials,
-} from '@anthropic-ai/sdk/core/credentials';
+} from '@tetral-ai/sdk/core/credentials';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -23,7 +23,7 @@ jest.mock('../src/internal/detect-platform', () => ({
 describe('credentials', () => {
   let testFolder = '';
   const originalEnv = [
-    'ANTHROPIC_BASE_URL',
+    'TETRAL_BASE_URL',
     'ANTHROPIC_CONFIG_DIR',
     'ANTHROPIC_FEDERATION_RULE_ID',
     'ANTHROPIC_IDENTITY_TOKEN_FILE',
@@ -149,12 +149,12 @@ describe('credentials', () => {
     expect((await loadConfig())?.organization_id).toBe('from_env');
   });
 
-  test('loadConfig: file base_url wins over ANTHROPIC_BASE_URL; env fills only when absent', async () => {
+  test('loadConfig: file base_url wins over TETRAL_BASE_URL; env fills only when absent', async () => {
     writeTestFile(
       'configs/default.json',
       JSON.stringify({ authentication: { type: 'user_oauth' }, base_url: 'https://from-file.example.com' }),
     );
-    process.env['ANTHROPIC_BASE_URL'] = 'https://from-env.example.com';
+    process.env['TETRAL_BASE_URL'] = 'https://from-env.example.com';
     expect((await loadConfig())?.base_url).toBe('https://from-file.example.com');
 
     writeTestFile('configs/default.json', JSON.stringify({ authentication: { type: 'user_oauth' } }));

@@ -103,7 +103,7 @@ function validateProfileName(name: string): void {
  *   - If `<config_dir>/configs/<profile>.json` exists, it is loaded and
  *     missing fields are filled from environment variables. Values present
  *     in the file take precedence — env vars only fill gaps:
- *       - `ANTHROPIC_BASE_URL` → `base_url`
+ *       - `TETRAL_BASE_URL` → `base_url`
  *       - `ANTHROPIC_ORGANIZATION_ID` → `organization_id`
  *       - `ANTHROPIC_WORKSPACE_ID` → `workspace_id`
  *       - `ANTHROPIC_SCOPE` → `authentication.scope`
@@ -172,7 +172,7 @@ export const loadConfigWithSource = async (profile?: string): Promise<LoadedConf
           // builder's truthy check skips it — so `"workspace_id": ""` never goes
           // on the wire.
           workspace_id: readEnv('ANTHROPIC_WORKSPACE_ID'),
-          base_url: readEnv('ANTHROPIC_BASE_URL'),
+          base_url: readEnv('TETRAL_BASE_URL'),
           authentication: {
             type: 'oidc_federation',
             federation_rule_id: federationRuleId,
@@ -203,7 +203,7 @@ export const loadConfigWithSource = async (profile?: string): Promise<LoadedConf
   // File values are authoritative; env vars only fill fields the file left unset.
   config.organization_id ??= readEnv('ANTHROPIC_ORGANIZATION_ID');
   config.workspace_id ??= readEnv('ANTHROPIC_WORKSPACE_ID');
-  config.base_url ??= readEnv('ANTHROPIC_BASE_URL');
+  config.base_url ??= readEnv('TETRAL_BASE_URL');
   config.authentication.scope ??= readEnv('ANTHROPIC_SCOPE');
 
   if (config.authentication.type === 'oidc_federation') {

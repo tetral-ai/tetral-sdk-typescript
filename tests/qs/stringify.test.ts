@@ -1,7 +1,7 @@
 import iconv from 'iconv-lite';
-import { stringify } from '@anthropic-ai/sdk/internal/qs';
-import { encode } from '@anthropic-ai/sdk/internal/qs/utils';
-import { StringifyOptions } from '@anthropic-ai/sdk/internal/qs/types';
+import { stringify } from '@tetral-ai/sdk/internal/qs';
+import { encode } from '@tetral-ai/sdk/internal/qs/utils';
+import { StringifyOptions } from '@tetral-ai/sdk/internal/qs/types';
 import { empty_test_cases } from './empty-keys-cases';
 import assert from 'assert';
 

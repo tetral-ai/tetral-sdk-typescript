@@ -1,8 +1,8 @@
 import { Readable } from 'node:stream';
 import { EventStreamMarshaller } from '@smithy/eventstream-serde-node';
-import { APIError } from '@anthropic-ai/sdk';
-import { Stream } from '@anthropic-ai/sdk/streaming';
-import type { Middleware } from '@anthropic-ai/sdk';
+import { APIError } from '@tetral-ai/sdk';
+import { Stream } from '@tetral-ai/sdk/streaming';
+import type { Middleware } from '@tetral-ai/sdk';
 import { eventStreamToSSEResponse, fromUtf8, toUtf8 } from '../src/core/streaming';
 import { AnthropicBedrock } from '../src';
 

@@ -201,8 +201,8 @@ export class UnsupportedMCPValueError extends Error {
  * @example
  * ```ts
  * import { Client } from "@modelcontextprotocol/sdk/client/index.js";
- * import Anthropic from "@anthropic-ai/sdk";
- * import { mcpTool } from "@anthropic-ai/sdk/helpers/beta/mcp";
+ * import Anthropic from "@tetral-ai/sdk";
+ * import { mcpTool } from "@tetral-ai/sdk/helpers/beta/mcp";
  *
  * const mcpClient = new Client({ name: "example", version: "1.0.0" });
  * const anthropic = new Anthropic();
@@ -310,8 +310,8 @@ export function mcpTools(
  * @example
  * ```ts
  * import { Client } from "@modelcontextprotocol/sdk/client/index.js";
- * import Anthropic from "@anthropic-ai/sdk";
- * import { mcpMessage } from "@anthropic-ai/sdk/helpers/beta/mcp";
+ * import Anthropic from "@tetral-ai/sdk";
+ * import { mcpMessage } from "@tetral-ai/sdk/helpers/beta/mcp";
  *
  * const mcpClient = new Client({ name: "example", version: "1.0.0" });
  * const anthropic = new Anthropic();
@@ -535,8 +535,8 @@ function mcpResourceContentToContentBlock(
  * @example
  * ```ts
  * import { Client } from "@modelcontextprotocol/sdk/client/index.js";
- * import Anthropic from "@anthropic-ai/sdk";
- * import { mcpResourceToContent } from "@anthropic-ai/sdk/helpers/beta/mcp";
+ * import Anthropic from "@tetral-ai/sdk";
+ * import { mcpResourceToContent } from "@tetral-ai/sdk/helpers/beta/mcp";
  *
  * const mcpClient = new Client({ name: "example", version: "1.0.0" });
  * const anthropic = new Anthropic();
@@ -597,8 +597,8 @@ function textSourceFromResource(resource: MCPResourceContentsLike): BetaPlainTex
  * @example
  * ```ts
  * import { Client } from "@modelcontextprotocol/sdk/client/index.js";
- * import Anthropic from "@anthropic-ai/sdk";
- * import { mcpResourceToFile } from "@anthropic-ai/sdk/helpers/beta/mcp";
+ * import Anthropic from "@tetral-ai/sdk";
+ * import { mcpResourceToFile } from "@tetral-ai/sdk/helpers/beta/mcp";
  *
  * const mcpClient = new Client({ name: "example", version: "1.0.0" });
  * const anthropic = new Anthropic();

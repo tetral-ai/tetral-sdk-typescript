@@ -1,1 +1,1 @@
-export * from '@anthropic-ai/sdk/core/streaming';
+export * from '@tetral-ai/sdk/core/streaming';

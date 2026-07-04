@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import type { Fetch } from '@anthropic-ai/sdk/internal/builtin-types';
-import { defaultCredentials } from '@anthropic-ai/sdk/lib/credentials/credential-chain';
+import type { Fetch } from '@tetral-ai/sdk/internal/builtin-types';
+import { defaultCredentials } from '@tetral-ai/sdk/lib/credentials/credential-chain';
 
 const NOW_IN_SECONDS = 1700000000;
 
@@ -27,7 +27,7 @@ describe('defaultCredentials', () => {
   const originalEnv: Record<string, string | undefined> = {};
 
   const envVars = [
-    'ANTHROPIC_BASE_URL',
+    'TETRAL_BASE_URL',
     'ANTHROPIC_CONFIG_DIR',
     'ANTHROPIC_FEDERATION_RULE_ID',
     'ANTHROPIC_IDENTITY_TOKEN',
@@ -62,7 +62,7 @@ describe('defaultCredentials', () => {
   });
 
   const baseOptions = {
-    baseURL: 'https://api.anthropic.com',
+    baseURL: 'https://api.tetral.example',
     fetch: jest.fn() as unknown as Fetch,
   };
 

@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaEnvironment,
   BetaEnvironmentNetworking,
@@ -6,7 +6,7 @@ import type {
   BetaSelfHostedConfigParams,
   EnvironmentCreateParams,
   EnvironmentUpdateParams,
-} from '@anthropic-ai/sdk/resources/beta/environments';
+} from '@tetral-ai/sdk/resources/beta/environments';
 
 const ENVIRONMENT_RESPONSE: BetaEnvironment = {
   id: 'env_123',
@@ -53,7 +53,7 @@ describe('Tetral Environment SDK contract', () => {
   test('create serializes cidr_allow_list networking without hostname translation', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -89,7 +89,7 @@ describe('Tetral Environment SDK contract', () => {
   test('update serializes blocked networking', async () => {
     const captured: { url: string; body: unknown }[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
@@ -143,7 +143,7 @@ describe('Tetral Environment SDK contract', () => {
     async (_name, params) => {
       const captured: unknown[] = [];
       const client = new Anthropic({
-        apiKey: 'redacted-key-test',
+        apiKey: 'test-tetral-key',
         baseURL: 'https://api.tetral.example',
         fetch: async (_url: any, init?: RequestInit) => {
           captured.push(parseJSONBody(init));
@@ -168,7 +168,7 @@ describe('Tetral Environment SDK contract', () => {
   test('retained work API sends normal request and parses backend 400', async () => {
     const captured: string[] = [];
     const client = new Anthropic({
-      apiKey: 'redacted-key-test',
+      apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any) => {
         captured.push(String(url));

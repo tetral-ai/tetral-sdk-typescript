@@ -536,7 +536,7 @@ export interface BetaSessionWorkData {
 export interface BetaWorkSecret {
   /**
    * Bearer credential the runner uses for all per-session downstream calls
-   * (heartbeat, ack, event stream, send, stop). Format: `sk-ant-req-...`.
+   * (heartbeat, ack, event stream, send, stop).
    */
   sessions_token: string;
 

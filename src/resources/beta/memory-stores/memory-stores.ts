@@ -250,21 +250,21 @@ export interface BetaManagedAgentsMemoryStore {
   /**
    * A timestamp in RFC 3339 format
    */
-  archived_at?: string | null;
+  archived_at: string | null;
 
   /**
    * Free-text description of what the store contains, up to 1024 characters.
    * Included in the agent's system prompt when the store is attached, so word it to
    * be useful to the agent. Empty string when unset.
    */
-  description?: string;
+  description: string;
 
   /**
    * Arbitrary key-value tags for your own bookkeeping (such as the end user a store
    * belongs to). Up to 16 pairs; keys 1–64 characters; values up to 512 characters.
    * Returned on retrieve/list but not filterable.
    */
-  metadata?: { [key: string]: string };
+  metadata: { [key: string]: string };
 }
 
 export interface MemoryStoreCreateParams {
