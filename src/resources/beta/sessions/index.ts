@@ -128,7 +128,7 @@ export {
   type SessionListParams,
   type SessionDeleteParams,
   type SessionArchiveParams,
-  type BetaManagedAgentsSessionsPageCursor,
+  type BetaManagedAgentsSessionsBidirectionalPageCursor,
 } from './sessions';
 export {
   Threads,
