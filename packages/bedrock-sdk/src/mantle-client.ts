@@ -80,6 +80,10 @@ export interface BedrockMantleClientOptions extends ClientOptions {
  * Only the `messages` and `beta.messages` resources are supported.
  */
 export class AnthropicBedrockMantle extends BaseAnthropic {
+  // Auth is injected per-request (SigV4/bearer); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   messages: Resources.Messages = new Resources.Messages(this);
   beta: MantleBetaResource = makeMantleBetaResource(this);
 

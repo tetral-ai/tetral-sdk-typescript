@@ -346,10 +346,11 @@ export interface ClientOptions {
   /**
    * Name of a profile to load from `<config_dir>/configs/<profile>.json`.
    *
-   * Equivalent to setting the `ANTHROPIC_PROFILE` environment variable, but
-   * scoped to this client instance. As an explicit constructor argument it
-   * takes precedence over `TETRAL_API_KEY` in the
-   * environment. Mutually exclusive with `credentials` and `config`.
+   * Explicit profile selection. The Tetral SDK never reads `ANTHROPIC_PROFILE`
+   * or the config-dir `active_config` implicitly; a profile is used only when
+   * named here. As an explicit constructor argument it takes precedence over
+   * `TETRAL_API_KEY` in the environment. Mutually exclusive with `credentials`
+   * and `config`.
    */
   profile?: string | null | undefined;
 
@@ -487,6 +488,13 @@ export class BaseAnthropic {
   protected _options: ClientOptions;
 
   /**
+   * Platform subclass clients (Bedrock/Vertex/AWS/Foundry) inject auth after
+   * construction, so the Tetral missing-key construction guard must not fire
+   * for them; they override this to `false`.
+   */
+  protected static tetralMissingKeyGuard: boolean = true;
+
+  /**
    * API Client for interfacing with the Anthropic API.
    *
    * @param {string | null | undefined} [opts.apiKey=process.env['TETRAL_API_KEY'] ?? null]
@@ -512,6 +520,10 @@ export class BaseAnthropic {
     // do not let env TETRAL_API_KEY shadow it.
     const tetralAPIKey = readEnv('TETRAL_API_KEY') ?? null;
     const anthropicAPIKey = readEnv('ANTHROPIC_API_KEY') ?? null;
+    const anthropicAuthToken = readEnv('ANTHROPIC_AUTH_TOKEN') ?? null;
+    // `apiKey: null` is the bring-your-own-auth escape hatch (auth supplied via
+    // explicit headers); it must stay distinguishable from "not provided".
+    const apiKeyExplicitlyNull = apiKey === null;
     if (apiKey === undefined) {
       apiKey = opts.profile != null ? null : tetralAPIKey;
     }
@@ -519,16 +531,18 @@ export class BaseAnthropic {
       authToken = null;
     }
     if (
+      (new.target as typeof BaseAnthropic).tetralMissingKeyGuard !== false &&
+      !apiKeyExplicitlyNull &&
       apiKey == null &&
       authToken == null &&
       opts.profile == null &&
       opts.credentials == null &&
       opts.config == null &&
       tetralAPIKey == null &&
-      anthropicAPIKey != null
+      (anthropicAPIKey != null || anthropicAuthToken != null)
     ) {
       throw new Errors.AnthropicError(
-        "Could not resolve authentication method. Set process.env['TETRAL_API_KEY'] or pass `apiKey`; ANTHROPIC_API_KEY is not used by the Tetral SDK.",
+        "Could not resolve authentication method. Set process.env['TETRAL_API_KEY'] or pass `apiKey`; ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN are not used by the Tetral SDK.",
       );
     }
     if (opts.profile != null && (opts.credentials != null || opts.config != null)) {
@@ -618,12 +632,12 @@ export class BaseAnthropic {
           this._applyCredentialBaseURL(result.baseURL);
         } else if (options.profile != null) {
           this._authState.resolution = this._resolveDefaultCredentials(options.profile);
-        } else {
-          // No explicit auth provided — lazily resolve from the credential
-          // chain on first request. Errors are captured into _auth.error and
-          // surfaced on first use rather than as an unhandled rejection.
-          this._authState.resolution = this._resolveDefaultCredentials();
         }
+        // No explicit auth: the Tetral fork never falls back to the implicit
+        // Anthropic credential chain (ANTHROPIC_PROFILE / active_config /
+        // config-dir profiles / OIDC env synthesis) and never adopts a
+        // profile-supplied base_url. Requests fail with the missing-auth
+        // error instead.
       }
     }
   }
@@ -718,8 +732,13 @@ export class BaseAnthropic {
       // credentials: this.credentials is a no-op when __auth is shared (the
       // ctor takes the inherited path and ignores options.credentials); when
       // overridesAuth is true via apiKey/authToken only, it lets the clone
-      // build a fresh TokenCache around the parent's provider.
-      credentials: this.credentials,
+      // build a fresh TokenCache around the parent's provider. Skipped when
+      // the parent's provider came from a structured option (profile/config):
+      // that option flows through ...this._options and re-resolves, and
+      // seeding both would trip the mutual-exclusion check.
+      ...(this._options.profile == null && this._options.config == null ?
+        { credentials: this.credentials }
+      : {}),
       // When the caller passes a structured-credential override, drop inherited
       // structured-credential options so only `...options` supplies them —
       // otherwise an inherited `credentials`/`config`/`profile` would trip the
@@ -805,7 +824,7 @@ export class BaseAnthropic {
     }
 
     throw new Error(
-      'Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the "X-Api-Key" or "Authorization" headers to be explicitly omitted',
+      'Could not resolve authentication method. Set process.env[\'TETRAL_API_KEY\'], or pass one of apiKey, authToken, credentials, config, or profile. Or explicitly omit the "X-Api-Key" or "Authorization" header',
     );
   }
 

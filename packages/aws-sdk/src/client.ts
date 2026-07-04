@@ -96,6 +96,10 @@ const noRegionError = () =>
 
 /** API Client for interfacing with the Anthropic AWS API. */
 export class AnthropicAws extends Anthropic {
+  // Auth is injected per-request (SigV4/bearer); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   awsRegion: string | undefined;
   awsAccessKey: string | null;
   awsSecretAccessKey: string | null;

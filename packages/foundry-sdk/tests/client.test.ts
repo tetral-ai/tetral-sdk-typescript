@@ -13,6 +13,21 @@ const mockFetch = jest.fn().mockImplementation(() => {
 const originalFetch = global.fetch;
 
 describe('AnthropicFoundry', () => {
+  test('constructs with ANTHROPIC_API_KEY set and no Tetral key (guard exemption)', () => {
+    const prev = process.env['ANTHROPIC_API_KEY'];
+    process.env['ANTHROPIC_API_KEY'] = 'anthropic-provider-key';
+    try {
+      const client = new AnthropicFoundry({
+        resource: 'example-resource',
+        azureADTokenProvider: async () => 'fake-entra-token',
+      });
+      expect(client).toBeInstanceOf(AnthropicFoundry);
+    } finally {
+      if (prev === undefined) delete process.env['ANTHROPIC_API_KEY'];
+      else process.env['ANTHROPIC_API_KEY'] = prev;
+    }
+  });
+
   describe('basic initialization with API key', () => {
     test('creates client with api key and resource', () => {
       const client = new AnthropicFoundry({

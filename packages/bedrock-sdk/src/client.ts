@@ -63,6 +63,10 @@ type SecretOnly = {
 
 /** API Client for interfacing with the Anthropic Bedrock API. */
 export class AnthropicBedrock extends BaseAnthropic {
+  // Auth is injected per-request (SigV4/bearer); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   awsSecretKey: string | null;
   awsAccessKey: string | null;
   awsRegion: string;

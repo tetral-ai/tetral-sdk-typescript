@@ -255,3 +255,17 @@ describe('AnthropicBedrockMantle', () => {
     });
   });
 });
+
+describe('Tetral missing-key guard exemption', () => {
+  test('constructs with ANTHROPIC_API_KEY set and no Tetral key (SigV4 mode)', () => {
+    const prev = process.env['ANTHROPIC_API_KEY'];
+    process.env['ANTHROPIC_API_KEY'] = 'anthropic-provider-key';
+    try {
+      const client = new AnthropicBedrockMantle({ awsRegion: 'us-east-1' });
+      expect(client).toBeInstanceOf(AnthropicBedrockMantle);
+    } finally {
+      if (prev === undefined) delete process.env['ANTHROPIC_API_KEY'];
+      else process.env['ANTHROPIC_API_KEY'] = prev;
+    }
+  });
+});

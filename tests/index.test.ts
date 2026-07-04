@@ -461,6 +461,17 @@ describe('instantiate client', () => {
     expect(() => new Anthropic()).toThrow(/TETRAL_API_KEY/);
   });
 
+  test('ANTHROPIC_AUTH_TOKEN alone is rejected as a Tetral SDK default', () => {
+    process.env['ANTHROPIC_AUTH_TOKEN'] = 'anthropic-bearer-token';
+    expect(() => new Anthropic()).toThrow(/TETRAL_API_KEY/);
+  });
+
+  test('explicit apiKey: null bypasses the migration guard (bring-your-own-auth)', () => {
+    process.env['ANTHROPIC_API_KEY'] = 'anthropic-provider-key';
+    const client = new Anthropic({ apiKey: null, defaultHeaders: { authorization: 'Bearer my-token' } });
+    expect(client.apiKey).toBeNull();
+  });
+
   test('with overridden environment variable arguments', () => {
     // set options via env var
     process.env['TETRAL_API_KEY'] = 'another my-tetral-api-key';

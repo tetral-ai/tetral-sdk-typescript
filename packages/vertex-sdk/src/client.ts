@@ -52,6 +52,10 @@ export type ClientOptions = Omit<CoreClientOptions, 'apiKey' | 'authToken'> & {
 };
 
 export class AnthropicVertex extends BaseAnthropic {
+  // Auth is injected per-request (GoogleAuth); the Tetral missing-key
+  // construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   region: string;
   projectId: string | null;
   accessToken: string | null;

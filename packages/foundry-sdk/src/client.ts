@@ -29,6 +29,10 @@ export interface FoundryClientOptions extends ClientOptions {
 
 /** API Client for interfacing with the Anthropic Foundry API. */
 export class AnthropicFoundry extends Anthropic {
+  // Auth is injected per-request (Entra ID token/api-key option); the Tetral
+  // missing-key construction guard must not fire here.
+  protected static override tetralMissingKeyGuard = false;
+
   resource: string | null = null;
 
   // @ts-expect-error are using a different Messages type that omits batches
