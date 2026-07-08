@@ -69,9 +69,22 @@ describe('Tetral retained unsupported SDK surface contract', () => {
       status: 400,
       type: 'invalid_request_error',
     });
+    await expect(client.beta.models.list()).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+    });
     await expect(
       client.beta.messages.create({
         max_tokens: 1,
+        model: 'anthropic/claude-opus-4-8',
+        messages: [{ role: 'user', content: 'hello' }],
+      }),
+    ).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+    });
+    await expect(
+      client.beta.messages.countTokens({
         model: 'anthropic/claude-opus-4-8',
         messages: [{ role: 'user', content: 'hello' }],
       }),
@@ -102,21 +115,32 @@ describe('Tetral retained unsupported SDK surface contract', () => {
       status: 400,
       type: 'invalid_request_error',
     });
+    expect(
+      client.beta.webhooks.unwrap(JSON.stringify({ type: 'event', data: {} }), {
+        headers: undefined as never,
+      }),
+    ).toEqual({ type: 'event', data: {} });
 
     expect(captured.map((r) => [r.method, r.url])).toEqual([
       ['POST', 'https://api.tetral.example/v1/deployments?beta=true'],
       ['GET', 'https://api.tetral.example/v1/deployment_runs/drun_123?beta=true'],
       ['GET', 'https://api.tetral.example/v1/models/model_123?beta=true'],
+      ['GET', 'https://api.tetral.example/v1/models?beta=true'],
       ['POST', 'https://api.tetral.example/v1/messages?beta=true'],
+      ['POST', 'https://api.tetral.example/v1/messages/count_tokens?beta=true'],
       ['POST', 'https://api.tetral.example/v1/messages/batches?beta=true'],
       ['POST', 'https://api.tetral.example/v1/user_profiles?beta=true'],
     ]);
     expect(captured[0]!.body).toEqual(deployment);
-    expect(captured[3]!.body).toMatchObject({
+    expect(captured[4]!.body).toMatchObject({
       model: 'anthropic/claude-opus-4-8',
       messages: [{ role: 'user', content: 'hello' }],
     });
-    expect(captured).toHaveLength(6);
+    expect(captured[5]!.body).toMatchObject({
+      model: 'anthropic/claude-opus-4-8',
+      messages: [{ role: 'user', content: 'hello' }],
+    });
+    expect(captured).toHaveLength(8);
   });
 
   test('retained unsupported resources and helper surfaces remain importable', () => {
