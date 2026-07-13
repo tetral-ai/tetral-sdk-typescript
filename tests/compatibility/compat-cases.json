@@ -243,7 +243,7 @@
     "surface": "SessionThread DTO",
     "status": "supported",
     "proof": "live",
-    "expectation": "all 11 top-level fields (stats container present as {})",
+    "expectation": "all 11 top-level fields (stats emits null this stage; thread timing deferred, §1.2)",
     "locator": {
       "suite": "live",
       "scenario": "live-thread",
@@ -1013,7 +1013,7 @@
     "surface": "session.error variants: model_overloaded_error / model_rate_limited_error / model_request_failed_error",
     "status": "supported",
     "proof": "live",
-    "expectation": "§1.1: RuntimeFailure mapped to these SDK members at the durable emission boundary; SessionErrorPayloadSchema widened",
+    "expectation": "§1.1: RuntimeFailure mapped to these SDK members at the durable emission boundary; SessionErrorPayloadSchema widened; this row also tests the retry_status class law (`exhausted` at every idle-settlement emission incl. pod-loss and spent budget, `terminal` only at a real terminal closeout, never `retrying` alongside an idle settlement)",
     "locator": {
       "suite": "live",
       "scenario": "live-evout",

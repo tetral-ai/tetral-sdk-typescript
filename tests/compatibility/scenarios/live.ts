@@ -178,7 +178,7 @@ async function runLiveThreads(context: ProofScenarioContext): Promise<ProofEvide
     'T-COMPAT-THREAD-2': listed,
     'T-COMPAT-THREAD-3': archived.archived_at !== null,
     'T-COMPAT-THREAD-4':
-      retrieved.type === 'session_thread' && retrieved.agent !== undefined && retrieved.stats !== undefined,
+      retrieved.type === 'session_thread' && retrieved.agent !== undefined && retrieved.stats === null,
     'T-COMPAT-THREAD-5': ['idle', 'running', 'rescheduling', 'terminated'].includes(retrieved.status),
     'T-COMPAT-THREAD-6':
       retrieved.usage !== null &&
@@ -336,16 +336,47 @@ async function runLiveEventsOutput(context: ProofScenarioContext): Promise<Proof
   const types = await collectEventTypes(client, session.id);
   const evidence: Record<string, boolean> = {};
   for (const [id, eventType] of supportedOutputEvents) evidence[id] = types.has(eventType);
+  type CompatibilityEvent = BetaManagedAgentsSessionEvent & {
+    error?: { type?: string; retry_status?: { type?: string } };
+    stop_reason?: { type?: string };
+  };
+  const listedEvents: CompatibilityEvent[] = [];
   const errorVariants = new Set<string>();
   for await (const event of client.beta.sessions.events.list(session.id, { limit: 100 })) {
-    const candidate = event as BetaManagedAgentsSessionEvent & { error?: { type?: string } };
+    const candidate = event as CompatibilityEvent;
+    listedEvents.push(candidate);
     if (candidate.type === 'session.error' && candidate.error?.type) errorVariants.add(candidate.error.type);
   }
+  const statusTypes = new Set([
+    'session.status_idle',
+    'session.status_rescheduled',
+    'session.status_terminated',
+    'session.thread_status_idle',
+    'session.thread_status_rescheduled',
+    'session.thread_status_terminated',
+  ]);
+  const retryStatusLaw = listedEvents.every((event, index) => {
+    if (event.type === 'session.error') {
+      const nextStatus = listedEvents.slice(index + 1).find((candidate) => statusTypes.has(candidate.type));
+      if (event.error?.retry_status?.type === 'retrying')
+        return nextStatus?.type !== 'session.status_idle' && nextStatus?.type !== 'session.thread_status_idle';
+      if (event.error?.retry_status?.type === 'terminal')
+        return nextStatus?.type === 'session.status_terminated' || nextStatus?.type === 'session.thread_status_terminated';
+    }
+    if (
+      (event.type === 'session.status_idle' || event.type === 'session.thread_status_idle') &&
+      event.stop_reason?.type === 'retries_exhausted'
+    ) {
+      const previousError = listedEvents.slice(0, index).reverse().find((candidate) => candidate.type === 'session.error');
+      return previousError?.error?.retry_status?.type === 'exhausted';
+    }
+    return true;
+  });
   evidence['T-COMPAT-EVOUT-37'] = [
     'model_overloaded_error',
     'model_rate_limited_error',
     'model_request_failed_error',
-  ].every((type) => errorVariants.has(type));
+  ].every((type) => errorVariants.has(type)) && retryStatusLaw;
   return evidence;
 }
 
