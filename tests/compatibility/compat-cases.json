@@ -1,0 +1,3922 @@
+[
+  {
+    "id": "T-COMPAT-SESS-1",
+    "name": "T-COMPAT-SESS-1 Sessions.create (SessionCreateParams + Session)",
+    "surface": "Sessions.create (SessionCreateParams + Session)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/sessions; aligned param fields agent(3 subfields)/environment_id/metadata/title/providers(+credential_id)/vault_ids(required,[] ok)/betas + resources file{file_id,mount_path}/memory_store{memory_store_id,access,instructions}/github{url,mount_path}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-1",
+      "handler": "live-sess#T-COMPAT-SESS-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-2",
+    "name": "T-COMPAT-SESS-2 Sessions.retrieve (Session DTO)",
+    "surface": "Sessions.retrieve (Session DTO)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /v1/sessions/{id}; 13/16 Session fields + 11/12 SessionAgent fields + full SessionUsage (input/output/cache_read/cache_creation{1h,5m}/server_tool_use) served",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-2",
+      "handler": "live-sess#T-COMPAT-SESS-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-3",
+    "name": "T-COMPAT-SESS-3 Sessions.update (SessionUpdateParams + SessionAgentUpdate)",
+    "surface": "Sessions.update (SessionUpdateParams + SessionAgentUpdate)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/sessions/{id}; agent.approval_mode/mcp_servers/tools raw full-replace, metadata per-key null=delete, title set, providers {} clears / one-entry upsert",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-3",
+      "handler": "live-sess#T-COMPAT-SESS-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-4",
+    "name": "T-COMPAT-SESS-4 Sessions.list (SessionListParams + cursor)",
+    "surface": "Sessions.list (SessionListParams + cursor)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /v1/sessions; filters agent_id, agent_version, created_at[gt\\|gte\\|lt\\|lte], deployment_id, include_archived, memory_store_id, order, statuses[], limit, page; next_page served",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-4",
+      "handler": "live-sess#T-COMPAT-SESS-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-5",
+    "name": "T-COMPAT-SESS-5 Sessions.delete (DeletedSession)",
+    "surface": "Sessions.delete (DeletedSession)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "DELETE; {id,type=session_deleted}; empty body enforced",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-5",
+      "handler": "live-sess#T-COMPAT-SESS-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-6",
+    "name": "T-COMPAT-SESS-6 Sessions.archive",
+    "surface": "Sessions.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /archive; returns Session DTO (active→archiving→archived, stamps archived_at); empty body",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-6",
+      "handler": "live-sess#T-COMPAT-SESS-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-7",
+    "name": "T-COMPAT-SESS-7 SessionUpdateParams.vault_ids",
+    "surface": "SessionUpdateParams.vault_ids",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"field is immutable\" — vault_ids is create-time state, rejected on update",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-7",
+      "handler": "live-sess#T-COMPAT-SESS-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-8",
+    "name": "T-COMPAT-SESS-8 Session.outcome_evaluations (+ OutcomeEvaluationResource)",
+    "surface": "Session.outcome_evaluations (+ OutcomeEvaluationResource)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "always []; outcome-evaluation loop not implemented this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-sess",
+      "assertion": "T-COMPAT-SESS-8",
+      "handler": "static-sess#T-COMPAT-SESS-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-9",
+    "name": "T-COMPAT-SESS-9 SessionAgent.multiagent (+ MultiagentCoordinator)",
+    "surface": "SessionAgent.multiagent (+ MultiagentCoordinator)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "always null; user-authored multiagent topology unsupported this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-sess",
+      "assertion": "T-COMPAT-SESS-9",
+      "handler": "static-sess#T-COMPAT-SESS-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-10",
+    "name": "T-COMPAT-SESS-10 Session.deployment_id",
+    "surface": "Session.deployment_id",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "always null; deployments unimplemented this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-sess",
+      "assertion": "T-COMPAT-SESS-10",
+      "handler": "static-sess#T-COMPAT-SESS-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-11",
+    "name": "T-COMPAT-SESS-11 SessionStats.active_seconds + duration_seconds",
+    "surface": "SessionStats.active_seconds + duration_seconds",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.2: duration_seconds = now − created_at (frozen at terminal); active_seconds from new running-since accumulator",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-11",
+      "handler": "live-sess#T-COMPAT-SESS-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-12",
+    "name": "T-COMPAT-SESS-12 SessionUpdateParams.title (explicit null)",
+    "surface": "SessionUpdateParams.title (explicit null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3 class law: title:null = CLEAR → NULL",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-12",
+      "handler": "live-sess#T-COMPAT-SESS-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-13",
+    "name": "T-COMPAT-SESS-13 SessionUpdateParams.metadata (outer null)",
+    "surface": "SessionUpdateParams.metadata (outer null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3: metadata:null = CLEAR → {}/NULL per DTO (per-key null=delete already aligned)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-13",
+      "handler": "live-sess#T-COMPAT-SESS-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-14",
+    "name": "T-COMPAT-SESS-14 MemoryStoreResourceParam.access / instructions (explicit null)",
+    "surface": "MemoryStoreResourceParam.access / instructions (explicit null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3: null = drop override (access defaults read_only)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-14",
+      "handler": "live-sess#T-COMPAT-SESS-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-1",
+    "name": "T-COMPAT-THREAD-1 Threads.retrieve",
+    "surface": "Threads.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /v1/sessions/{session_id}/threads/{id}; SessionThread all 11 top-level fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-thread",
+      "assertion": "T-COMPAT-THREAD-1",
+      "handler": "live-thread#T-COMPAT-THREAD-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-2",
+    "name": "T-COMPAT-THREAD-2 Threads.list",
+    "surface": "Threads.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "forward PageCursor {data,next_page}; limit/page (not bidirectional)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-thread",
+      "assertion": "T-COMPAT-THREAD-2",
+      "handler": "live-thread#T-COMPAT-THREAD-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-3",
+    "name": "T-COMPAT-THREAD-3 Threads.archive",
+    "surface": "Threads.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /archive; 409 for running/rescheduling, 404 invisible, idempotent re-archive",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-thread",
+      "assertion": "T-COMPAT-THREAD-3",
+      "handler": "live-thread#T-COMPAT-THREAD-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-4",
+    "name": "T-COMPAT-THREAD-4 SessionThread DTO",
+    "surface": "SessionThread DTO",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "all 11 top-level fields (stats container present as {})",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-thread",
+      "assertion": "T-COMPAT-THREAD-4",
+      "handler": "live-thread#T-COMPAT-THREAD-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-5",
+    "name": "T-COMPAT-THREAD-5 SessionThreadStatus enum",
+    "surface": "SessionThreadStatus enum",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "4 public values (7 internal statuses projected: requires_action/closed_for_runtime→idle, failed→terminated)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-thread",
+      "assertion": "T-COMPAT-THREAD-5",
+      "handler": "live-thread#T-COMPAT-THREAD-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-6",
+    "name": "T-COMPAT-THREAD-6 SessionThreadUsage",
+    "surface": "SessionThreadUsage",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "4 usage fields + cache_creation{1h,5m} sub-fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-thread",
+      "assertion": "T-COMPAT-THREAD-6",
+      "handler": "live-thread#T-COMPAT-THREAD-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-7",
+    "name": "T-COMPAT-THREAD-7 SessionThreadStats.active_seconds",
+    "surface": "SessionThreadStats.active_seconds",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "thread stats emit null this stage; thread timing deferred (§1.2)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-thread",
+      "assertion": "T-COMPAT-THREAD-7",
+      "handler": "static-thread#T-COMPAT-THREAD-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-8",
+    "name": "T-COMPAT-THREAD-8 SessionThreadStats.duration_seconds",
+    "surface": "SessionThreadStats.duration_seconds",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "thread stats emit null this stage; thread timing deferred (§1.2)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-thread",
+      "assertion": "T-COMPAT-THREAD-8",
+      "handler": "static-thread#T-COMPAT-THREAD-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-THREAD-9",
+    "name": "T-COMPAT-THREAD-9 SessionThreadStats.startup_seconds",
+    "surface": "SessionThreadStats.startup_seconds",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "thread stats emit null this stage; thread timing deferred (§1.2)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-thread",
+      "assertion": "T-COMPAT-THREAD-9",
+      "handler": "static-thread#T-COMPAT-THREAD-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-1",
+    "name": "T-COMPAT-EVIN-1 events.send (method + EventSendParams + SendSessionEvents)",
+    "surface": "events.send (method + EventSendParams + SendSessionEvents)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/sessions/{id}/events; {events} batch, atomic admission; Idempotency-Key optional/minted",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-1",
+      "handler": "live-evin#T-COMPAT-EVIN-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-2",
+    "name": "T-COMPAT-EVIN-2 user.message (text content)",
+    "surface": "user.message (text content)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "text blocks admitted + echoed",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-2",
+      "handler": "live-evin#T-COMPAT-EVIN-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-3",
+    "name": "T-COMPAT-EVIN-3 user.interrupt",
+    "surface": "user.interrupt",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{type, session_thread_id?}; target/fanout semantics",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-3",
+      "handler": "live-evin#T-COMPAT-EVIN-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-4",
+    "name": "T-COMPAT-EVIN-4 user.tool_confirmation",
+    "surface": "user.tool_confirmation",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{result allow\\|deny, tool_use_id, deny_message?}; resolves pending row; deny_message only-with-deny",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-4",
+      "handler": "live-evin#T-COMPAT-EVIN-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-5",
+    "name": "T-COMPAT-EVIN-5 TextBlock",
+    "surface": "TextBlock",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "sole admitted content block ({type=text,text})",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-5",
+      "handler": "live-evin#T-COMPAT-EVIN-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-6",
+    "name": "T-COMPAT-EVIN-6 user.custom_tool_result",
+    "surface": "user.custom_tool_result",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"custom tools are not supported in this stage\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-6",
+      "handler": "live-evin#T-COMPAT-EVIN-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-7",
+    "name": "T-COMPAT-EVIN-7 user.tool_result",
+    "surface": "user.tool_result",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"event type must be user.message, user.interrupt, or user.tool_confirmation\" (Cloud runtime rejects)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-7",
+      "handler": "live-evin#T-COMPAT-EVIN-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-8",
+    "name": "T-COMPAT-EVIN-8 user.define_outcome",
+    "surface": "user.define_outcome",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"event type must be user.message, user.interrupt, or user.tool_confirmation\" (outcome-eval loop not implemented)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-8",
+      "handler": "live-evin#T-COMPAT-EVIN-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-9",
+    "name": "T-COMPAT-EVIN-9 system.message",
+    "surface": "system.message",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"event type must be user.message, user.interrupt, or user.tool_confirmation\" (not stored as inert context)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-9",
+      "handler": "live-evin#T-COMPAT-EVIN-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-10",
+    "name": "T-COMPAT-EVIN-10 events.toolRunner / SessionToolRunner",
+    "surface": "events.toolRunner / SessionToolRunner",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "posts user.tool_result / user.custom_tool_result → 400 (same rejections as above)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-10",
+      "handler": "live-evin#T-COMPAT-EVIN-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-11",
+    "name": "T-COMPAT-EVIN-11 user.message content → ImageBlock (Base64/URL/File)",
+    "surface": "user.message content → ImageBlock (Base64/URL/File)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "§2: 400 invalid_request_error \"user message content supports text blocks only in this stage\" (dedups events-output echo)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-11",
+      "handler": "live-evin#T-COMPAT-EVIN-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-12",
+    "name": "T-COMPAT-EVIN-12 user.message content → DocumentBlock (Base64/PlainText/URL/File, context, title)",
+    "surface": "user.message content → DocumentBlock (Base64/PlainText/URL/File, context, title)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "§2: 400 invalid_request_error \"user message content supports text blocks only in this stage\" (dedups events-output echo)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evin",
+      "assertion": "T-COMPAT-EVIN-12",
+      "handler": "live-evin#T-COMPAT-EVIN-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVIN-13",
+    "name": "T-COMPAT-EVIN-13 events.send method name (vs legacy events.create)",
+    "surface": "events.send method name (vs legacy events.create)",
+    "status": "supported",
+    "proof": "static",
+    "expectation": "§3: public mutation method is `send`; matrix/contract naming aligned to the SDK",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evin",
+      "assertion": "T-COMPAT-EVIN-13",
+      "handler": "static-evin#T-COMPAT-EVIN-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-1",
+    "name": "T-COMPAT-EVOUT-1 user.message (output echo)",
+    "surface": "user.message (output echo)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "text echo served (image/document members rejected — see EVIN-11/12)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-1",
+      "handler": "live-evout#T-COMPAT-EVOUT-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-2",
+    "name": "T-COMPAT-EVOUT-2 user.interrupt (output)",
+    "surface": "user.interrupt (output)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "admitted + stored",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-2",
+      "handler": "live-evout#T-COMPAT-EVOUT-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-3",
+    "name": "T-COMPAT-EVOUT-3 user.tool_confirmation (output)",
+    "surface": "user.tool_confirmation (output)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "admitted when resolving pending approval",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-3",
+      "handler": "live-evout#T-COMPAT-EVOUT-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-4",
+    "name": "T-COMPAT-EVOUT-4 agent.message",
+    "surface": "agent.message",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "runtime-produced via bridge allowlist",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-4",
+      "handler": "live-evout#T-COMPAT-EVOUT-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-5",
+    "name": "T-COMPAT-EVOUT-5 agent.tool_use",
+    "surface": "agent.tool_use",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "evaluated_permission enum (allow\\|ask\\|deny) matches; session-visible cross-post",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-5",
+      "handler": "live-evout#T-COMPAT-EVOUT-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-6",
+    "name": "T-COMPAT-EVOUT-6 agent.tool_result",
+    "surface": "agent.tool_result",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "text content served (media members not produced — see EVOUT-39)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-6",
+      "handler": "live-evout#T-COMPAT-EVOUT-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-7",
+    "name": "T-COMPAT-EVOUT-7 agent.thread_context_compacted",
+    "surface": "agent.thread_context_compacted",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,processed_at,type}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-7",
+      "handler": "live-evout#T-COMPAT-EVOUT-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-8",
+    "name": "T-COMPAT-EVOUT-8 agent.thread_message_sent",
+    "surface": "agent.thread_message_sent",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "visible cross-post",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-8",
+      "handler": "live-evout#T-COMPAT-EVOUT-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-9",
+    "name": "T-COMPAT-EVOUT-9 agent.thread_message_received",
+    "surface": "agent.thread_message_received",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "inter-agent delivery write",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-9",
+      "handler": "live-evout#T-COMPAT-EVOUT-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-10",
+    "name": "T-COMPAT-EVOUT-10 session.status_running",
+    "surface": "session.status_running",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "markPublicSessionRunning",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-10",
+      "handler": "live-evout#T-COMPAT-EVOUT-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-11",
+    "name": "T-COMPAT-EVOUT-11 session.status_rescheduled",
+    "surface": "session.status_rescheduled",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "runtime + allowlist",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-11",
+      "handler": "live-evout#T-COMPAT-EVOUT-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-12",
+    "name": "T-COMPAT-EVOUT-12 session.status_idle",
+    "surface": "session.status_idle",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "stop_reason end_turn / retries_exhausted served (requires_action field-name — see flag)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-12",
+      "handler": "live-evout#T-COMPAT-EVOUT-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-13",
+    "name": "T-COMPAT-EVOUT-13 session.status_terminated",
+    "surface": "session.status_terminated",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "CommitRuntimeTermination",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-13",
+      "handler": "live-evout#T-COMPAT-EVOUT-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-14",
+    "name": "T-COMPAT-EVOUT-14 session.error",
+    "surface": "session.error",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "event served; unknown_error variant produced (model_* variants land this batch — see EVOUT-37)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-14",
+      "handler": "live-evout#T-COMPAT-EVOUT-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-15",
+    "name": "T-COMPAT-EVOUT-15 session.thread_created",
+    "surface": "session.thread_created",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "admission write + CreateChildThread",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-15",
+      "handler": "live-evout#T-COMPAT-EVOUT-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-16",
+    "name": "T-COMPAT-EVOUT-16 session.thread_status_running",
+    "surface": "session.thread_status_running",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "bridge child status.running",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-16",
+      "handler": "live-evout#T-COMPAT-EVOUT-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-17",
+    "name": "T-COMPAT-EVOUT-17 session.thread_status_idle",
+    "surface": "session.thread_status_idle",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "bridge child idle (shares requires_action field-name flag)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-17",
+      "handler": "live-evout#T-COMPAT-EVOUT-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-18",
+    "name": "T-COMPAT-EVOUT-18 session.thread_status_rescheduled",
+    "surface": "session.thread_status_rescheduled",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "bridge child status.rescheduled",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-18",
+      "handler": "live-evout#T-COMPAT-EVOUT-18"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-19",
+    "name": "T-COMPAT-EVOUT-19 session.thread_status_terminated",
+    "surface": "session.thread_status_terminated",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "runtime_termination",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-19",
+      "handler": "live-evout#T-COMPAT-EVOUT-19"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-20",
+    "name": "T-COMPAT-EVOUT-20 session.updated",
+    "surface": "session.updated",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "update-admission write (agent/metadata/title)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-20",
+      "handler": "live-evout#T-COMPAT-EVOUT-20"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-21",
+    "name": "T-COMPAT-EVOUT-21 session.deleted",
+    "surface": "session.deleted",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "delete transaction",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-21",
+      "handler": "live-evout#T-COMPAT-EVOUT-21"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-22",
+    "name": "T-COMPAT-EVOUT-22 span.model_request_start",
+    "surface": "span.model_request_start",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "requires model_request_id",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-22",
+      "handler": "live-evout#T-COMPAT-EVOUT-22"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-23",
+    "name": "T-COMPAT-EVOUT-23 span.model_request_end",
+    "surface": "span.model_request_end",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "model_request_start_id/is_error/model_usage; model_usage.speed always null",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-23",
+      "handler": "live-evout#T-COMPAT-EVOUT-23"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-24",
+    "name": "T-COMPAT-EVOUT-24 agent.custom_tool_use",
+    "surface": "agent.custom_tool_use",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "custom tools deferred this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-24",
+      "handler": "static-evout#T-COMPAT-EVOUT-24"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-25",
+    "name": "T-COMPAT-EVOUT-25 agent.mcp_tool_use",
+    "surface": "agent.mcp_tool_use",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "MCP event production outside this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-25",
+      "handler": "static-evout#T-COMPAT-EVOUT-25"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-26",
+    "name": "T-COMPAT-EVOUT-26 agent.mcp_tool_result",
+    "surface": "agent.mcp_tool_result",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "MCP event production outside this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-26",
+      "handler": "static-evout#T-COMPAT-EVOUT-26"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-27",
+    "name": "T-COMPAT-EVOUT-27 span.outcome_evaluation_start",
+    "surface": "span.outcome_evaluation_start",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "outcome evaluation outside this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-27",
+      "handler": "static-evout#T-COMPAT-EVOUT-27"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-28",
+    "name": "T-COMPAT-EVOUT-28 span.outcome_evaluation_end",
+    "surface": "span.outcome_evaluation_end",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "outcome evaluation outside this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-28",
+      "handler": "static-evout#T-COMPAT-EVOUT-28"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-29",
+    "name": "T-COMPAT-EVOUT-29 span.outcome_evaluation_ongoing",
+    "surface": "span.outcome_evaluation_ongoing",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "outcome evaluation outside this stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-29",
+      "handler": "static-evout#T-COMPAT-EVOUT-29"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-30",
+    "name": "T-COMPAT-EVOUT-30 user.custom_tool_result (output echo)",
+    "surface": "user.custom_tool_result (output echo)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "input rejected → no echo row written",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-30",
+      "handler": "static-evout#T-COMPAT-EVOUT-30"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-31",
+    "name": "T-COMPAT-EVOUT-31 user.define_outcome (output echo)",
+    "surface": "user.define_outcome (output echo)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "input rejected → no echo",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-31",
+      "handler": "static-evout#T-COMPAT-EVOUT-31"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-32",
+    "name": "T-COMPAT-EVOUT-32 user.tool_result (output echo)",
+    "surface": "user.tool_result (output echo)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "input rejected in Cloud runtime → no echo",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-32",
+      "handler": "static-evout#T-COMPAT-EVOUT-32"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-33",
+    "name": "T-COMPAT-EVOUT-33 system.message (output echo)",
+    "surface": "system.message (output echo)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "input rejected → no echo",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-33",
+      "handler": "static-evout#T-COMPAT-EVOUT-33"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-34",
+    "name": "T-COMPAT-EVOUT-34 agent.thinking",
+    "surface": "agent.thinking",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.5: content-less {id,processed_at,type}; emitted once per reasoning part at reasoning-start; event-only (no session_messages projection)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-34",
+      "handler": "live-evout#T-COMPAT-EVOUT-34"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-35",
+    "name": "T-COMPAT-EVOUT-35 event_start (StartEvent + previews)",
+    "surface": "event_start (StartEvent + previews)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "§2: streaming previews never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-35",
+      "handler": "static-evout#T-COMPAT-EVOUT-35"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-36",
+    "name": "T-COMPAT-EVOUT-36 event_delta (DeltaEvent + DeltaContent + EventStreamParams.event_deltas)",
+    "surface": "event_delta (DeltaEvent + DeltaContent + EventStreamParams.event_deltas)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "§2: never produced; event_deltas query param accepted-and-ignored",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-36",
+      "handler": "static-evout#T-COMPAT-EVOUT-36"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-37",
+    "name": "T-COMPAT-EVOUT-37 session.error variants: model_overloaded_error / model_rate_limited_error / model_request_failed_error",
+    "surface": "session.error variants: model_overloaded_error / model_rate_limited_error / model_request_failed_error",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.1: RuntimeFailure mapped to these SDK members at the durable emission boundary; SessionErrorPayloadSchema widened",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-evout",
+      "assertion": "T-COMPAT-EVOUT-37",
+      "handler": "live-evout#T-COMPAT-EVOUT-37"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-38",
+    "name": "T-COMPAT-EVOUT-38 session.error variants: billing_error / credential_host_unreachable_error",
+    "surface": "session.error variants: billing_error / credential_host_unreachable_error",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "§1.1: never mapped; unmatched failures fall through to unknown_error",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-38",
+      "handler": "static-evout#T-COMPAT-EVOUT-38"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-39",
+    "name": "T-COMPAT-EVOUT-39 agent.tool_result content Image/Document/SearchResult (and agent.mcp_tool_result)",
+    "surface": "agent.tool_result content Image/Document/SearchResult (and agent.mcp_tool_result)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "§2: engine emits text blocks only (legal union subset); media stays ref + placeholder",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-39",
+      "handler": "static-evout#T-COMPAT-EVOUT-39"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-40",
+    "name": "T-COMPAT-EVOUT-40 webhook: session.created",
+    "surface": "webhook: session.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook delivery + management deferred (§9 out of scope); no producer; /v1/webhooks* → 400 unsupported SDK surface",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-40",
+      "handler": "static-evout#T-COMPAT-EVOUT-40"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-41",
+    "name": "T-COMPAT-EVOUT-41 webhook: session.pending",
+    "surface": "webhook: session.pending",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-41",
+      "handler": "static-evout#T-COMPAT-EVOUT-41"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-42",
+    "name": "T-COMPAT-EVOUT-42 webhook: session.running",
+    "surface": "webhook: session.running",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-42",
+      "handler": "static-evout#T-COMPAT-EVOUT-42"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-43",
+    "name": "T-COMPAT-EVOUT-43 webhook: session.idled",
+    "surface": "webhook: session.idled",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-43",
+      "handler": "static-evout#T-COMPAT-EVOUT-43"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-44",
+    "name": "T-COMPAT-EVOUT-44 webhook: session.requires_action",
+    "surface": "webhook: session.requires_action",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-44",
+      "handler": "static-evout#T-COMPAT-EVOUT-44"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-45",
+    "name": "T-COMPAT-EVOUT-45 webhook: session.archived",
+    "surface": "webhook: session.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-45",
+      "handler": "static-evout#T-COMPAT-EVOUT-45"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-46",
+    "name": "T-COMPAT-EVOUT-46 webhook: session.deleted",
+    "surface": "webhook: session.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-46",
+      "handler": "static-evout#T-COMPAT-EVOUT-46"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-47",
+    "name": "T-COMPAT-EVOUT-47 webhook: session.status_rescheduled",
+    "surface": "webhook: session.status_rescheduled",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-47",
+      "handler": "static-evout#T-COMPAT-EVOUT-47"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-48",
+    "name": "T-COMPAT-EVOUT-48 webhook: session.status_run_started",
+    "surface": "webhook: session.status_run_started",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-48",
+      "handler": "static-evout#T-COMPAT-EVOUT-48"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-49",
+    "name": "T-COMPAT-EVOUT-49 webhook: session.status_idled",
+    "surface": "webhook: session.status_idled",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-49",
+      "handler": "static-evout#T-COMPAT-EVOUT-49"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-50",
+    "name": "T-COMPAT-EVOUT-50 webhook: session.status_terminated",
+    "surface": "webhook: session.status_terminated",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-50",
+      "handler": "static-evout#T-COMPAT-EVOUT-50"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-51",
+    "name": "T-COMPAT-EVOUT-51 webhook: session.thread_created",
+    "surface": "webhook: session.thread_created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-51",
+      "handler": "static-evout#T-COMPAT-EVOUT-51"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-52",
+    "name": "T-COMPAT-EVOUT-52 webhook: session.thread_idled",
+    "surface": "webhook: session.thread_idled",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-52",
+      "handler": "static-evout#T-COMPAT-EVOUT-52"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-53",
+    "name": "T-COMPAT-EVOUT-53 webhook: session.thread_terminated",
+    "surface": "webhook: session.thread_terminated",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-53",
+      "handler": "static-evout#T-COMPAT-EVOUT-53"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-54",
+    "name": "T-COMPAT-EVOUT-54 webhook: session.outcome_evaluation_ended",
+    "surface": "webhook: session.outcome_evaluation_ended",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred + outcome eval outside stage",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-54",
+      "handler": "static-evout#T-COMPAT-EVOUT-54"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-55",
+    "name": "T-COMPAT-EVOUT-55 webhook: session.updated",
+    "surface": "webhook: session.updated",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-55",
+      "handler": "static-evout#T-COMPAT-EVOUT-55"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-56",
+    "name": "T-COMPAT-EVOUT-56 webhook: vault.created",
+    "surface": "webhook: vault.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-56",
+      "handler": "static-evout#T-COMPAT-EVOUT-56"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-57",
+    "name": "T-COMPAT-EVOUT-57 webhook: vault.archived",
+    "surface": "webhook: vault.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-57",
+      "handler": "static-evout#T-COMPAT-EVOUT-57"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-58",
+    "name": "T-COMPAT-EVOUT-58 webhook: vault.deleted",
+    "surface": "webhook: vault.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-58",
+      "handler": "static-evout#T-COMPAT-EVOUT-58"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-59",
+    "name": "T-COMPAT-EVOUT-59 webhook: vault_credential.created",
+    "surface": "webhook: vault_credential.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-59",
+      "handler": "static-evout#T-COMPAT-EVOUT-59"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-60",
+    "name": "T-COMPAT-EVOUT-60 webhook: vault_credential.archived",
+    "surface": "webhook: vault_credential.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-60",
+      "handler": "static-evout#T-COMPAT-EVOUT-60"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-61",
+    "name": "T-COMPAT-EVOUT-61 webhook: vault_credential.deleted",
+    "surface": "webhook: vault_credential.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-61",
+      "handler": "static-evout#T-COMPAT-EVOUT-61"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-62",
+    "name": "T-COMPAT-EVOUT-62 webhook: vault_credential.refresh_failed",
+    "surface": "webhook: vault_credential.refresh_failed",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-62",
+      "handler": "static-evout#T-COMPAT-EVOUT-62"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-63",
+    "name": "T-COMPAT-EVOUT-63 webhook: agent.created",
+    "surface": "webhook: agent.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-63",
+      "handler": "static-evout#T-COMPAT-EVOUT-63"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-64",
+    "name": "T-COMPAT-EVOUT-64 webhook: agent.archived",
+    "surface": "webhook: agent.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-64",
+      "handler": "static-evout#T-COMPAT-EVOUT-64"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-65",
+    "name": "T-COMPAT-EVOUT-65 webhook: agent.deleted",
+    "surface": "webhook: agent.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-65",
+      "handler": "static-evout#T-COMPAT-EVOUT-65"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-66",
+    "name": "T-COMPAT-EVOUT-66 webhook: agent.updated",
+    "surface": "webhook: agent.updated",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook surface deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-66",
+      "handler": "static-evout#T-COMPAT-EVOUT-66"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-67",
+    "name": "T-COMPAT-EVOUT-67 webhook: deployment.paused",
+    "surface": "webhook: deployment.paused",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployments deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-67",
+      "handler": "static-evout#T-COMPAT-EVOUT-67"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-68",
+    "name": "T-COMPAT-EVOUT-68 webhook: deployment.created",
+    "surface": "webhook: deployment.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployments deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-68",
+      "handler": "static-evout#T-COMPAT-EVOUT-68"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-69",
+    "name": "T-COMPAT-EVOUT-69 webhook: deployment.updated",
+    "surface": "webhook: deployment.updated",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployments deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-69",
+      "handler": "static-evout#T-COMPAT-EVOUT-69"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-70",
+    "name": "T-COMPAT-EVOUT-70 webhook: deployment.unpaused",
+    "surface": "webhook: deployment.unpaused",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployments deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-70",
+      "handler": "static-evout#T-COMPAT-EVOUT-70"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-71",
+    "name": "T-COMPAT-EVOUT-71 webhook: deployment.archived",
+    "surface": "webhook: deployment.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployments deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-71",
+      "handler": "static-evout#T-COMPAT-EVOUT-71"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-72",
+    "name": "T-COMPAT-EVOUT-72 webhook: deployment.deleted",
+    "surface": "webhook: deployment.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployments deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-72",
+      "handler": "static-evout#T-COMPAT-EVOUT-72"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-73",
+    "name": "T-COMPAT-EVOUT-73 webhook: deployment_run.failed",
+    "surface": "webhook: deployment_run.failed",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployment_runs deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-73",
+      "handler": "static-evout#T-COMPAT-EVOUT-73"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-74",
+    "name": "T-COMPAT-EVOUT-74 webhook: deployment_run.started",
+    "surface": "webhook: deployment_run.started",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployment_runs deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-74",
+      "handler": "static-evout#T-COMPAT-EVOUT-74"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-75",
+    "name": "T-COMPAT-EVOUT-75 webhook: deployment_run.succeeded",
+    "surface": "webhook: deployment_run.succeeded",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "webhook + deployment_runs deferred; no producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-75",
+      "handler": "static-evout#T-COMPAT-EVOUT-75"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-76",
+    "name": "T-COMPAT-EVOUT-76 webhook: BetaWebhookEventData (36-member union)",
+    "surface": "webhook: BetaWebhookEventData (36-member union)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "entire union deferred; no engine producer",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-76",
+      "handler": "static-evout#T-COMPAT-EVOUT-76"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-77",
+    "name": "T-COMPAT-EVOUT-77 webhook: BetaWebhookEvent (envelope)",
+    "surface": "webhook: BetaWebhookEvent (envelope)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "delivery envelope deferred; no emitter",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-77",
+      "handler": "static-evout#T-COMPAT-EVOUT-77"
+    }
+  },
+  {
+    "id": "T-COMPAT-EVOUT-78",
+    "name": "T-COMPAT-EVOUT-78 webhook: UnwrapWebhookEvent + Webhooks.unwrap helper",
+    "surface": "webhook: UnwrapWebhookEvent + Webhooks.unwrap helper",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "local verifier/parser retained only; no delivery, no server counterpart",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-evout",
+      "assertion": "T-COMPAT-EVOUT-78",
+      "handler": "static-evout#T-COMPAT-EVOUT-78"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-1",
+    "name": "T-COMPAT-AGENT-1 agents.create",
+    "surface": "agents.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/agents; name/approval_mode/description/metadata/system/betas + model.id 5-ID closed set + mcp_toolset shape + custom skill; response 13/16 Agent fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-1",
+      "handler": "live-agent#T-COMPAT-AGENT-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-2",
+    "name": "T-COMPAT-AGENT-2 agents.retrieve",
+    "surface": "agents.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "version query param (positive int, omit=latest) + betas",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-2",
+      "handler": "live-agent#T-COMPAT-AGENT-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-3",
+    "name": "T-COMPAT-AGENT-3 agents.update",
+    "surface": "agents.update",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/agents/{id} patch; version required (conflict→409); null-clear description/system/mcp_servers/skills/tools",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-3",
+      "handler": "live-agent#T-COMPAT-AGENT-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-4",
+    "name": "T-COMPAT-AGENT-4 agents.list",
+    "surface": "agents.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "created_at[gte\\|lte], include_archived, limit(1-100), page; forward PageCursor {data,next_page}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-4",
+      "handler": "live-agent#T-COMPAT-AGENT-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-5",
+    "name": "T-COMPAT-AGENT-5 agents.archive",
+    "surface": "agents.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "archived_at populated",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-5",
+      "handler": "live-agent#T-COMPAT-AGENT-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-6",
+    "name": "T-COMPAT-AGENT-6 agents.versions.list",
+    "surface": "agents.versions.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "limit/page keyset over Agent snapshots",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-6",
+      "handler": "live-agent#T-COMPAT-AGENT-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-7",
+    "name": "T-COMPAT-AGENT-7 model.speed = 'fast'",
+    "surface": "model.speed = 'fast'",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"speed must be standard; fast mode is not supported\" (create + update)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-7",
+      "handler": "live-agent#T-COMPAT-AGENT-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-8",
+    "name": "T-COMPAT-AGENT-8 multiagent (create/update param + response)",
+    "surface": "multiagent (create/update param + response)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"multiagent must be null when provided\"; response Agent.multiagent always null",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-8",
+      "handler": "live-agent#T-COMPAT-AGENT-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-9",
+    "name": "T-COMPAT-AGENT-9 mcp_servers[].url (curated-catalog-only)",
+    "surface": "mcp_servers[].url (curated-catalog-only)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"url must reference a supported MCP catalog entry\" (only https://api.githubcopilot.com/mcp/)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-9",
+      "handler": "live-agent#T-COMPAT-AGENT-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-10",
+    "name": "T-COMPAT-AGENT-10 tools[] type 'agent_toolset_20260401'",
+    "surface": "tools[] type 'agent_toolset_20260401'",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"tools[i].type is unsupported\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-10",
+      "handler": "live-agent#T-COMPAT-AGENT-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-11",
+    "name": "T-COMPAT-AGENT-11 tools[] type 'custom'",
+    "surface": "tools[] type 'custom'",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"custom tools are not supported in this stage\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-11",
+      "handler": "live-agent#T-COMPAT-AGENT-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-12",
+    "name": "T-COMPAT-AGENT-12 tetral_agent_toolset request fields configs / default_config",
+    "surface": "tetral_agent_toolset request fields configs / default_config",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "§2: existing unknown-field 400 kept — 400 invalid_request_error \".configs is an unknown field\" (only {type,family} accepted; mcp_toolset configs stay supported)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-12",
+      "handler": "live-agent#T-COMPAT-AGENT-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-13",
+    "name": "T-COMPAT-AGENT-13 skills[] type 'anthropic'",
+    "surface": "skills[] type 'anthropic'",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"skills[i].type must be custom\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-13",
+      "handler": "live-agent#T-COMPAT-AGENT-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-14",
+    "name": "T-COMPAT-AGENT-14 custom skill version (explicit null)",
+    "surface": "custom skill version (explicit null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3 class law: version:null = defaults to latest (clear the pin)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-14",
+      "handler": "live-agent#T-COMPAT-AGENT-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-15",
+    "name": "T-COMPAT-AGENT-15 AgentUpdateParams.metadata (top-level null)",
+    "surface": "AgentUpdateParams.metadata (top-level null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3: metadata:null = CLEAR → {} (per-key null=delete already aligned)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-15",
+      "handler": "live-agent#T-COMPAT-AGENT-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-16",
+    "name": "T-COMPAT-AGENT-16 mcp_servers[] unreferenced by any mcp_toolset",
+    "surface": "mcp_servers[] unreferenced by any mcp_toolset",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "engine accepts (stored, no runtime enablement); permissive superset of the SDK docstring's stated rejection",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-16",
+      "handler": "live-agent#T-COMPAT-AGENT-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-1",
+    "name": "T-COMPAT-ENV-1 Environments.create",
+    "surface": "Environments.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/environments; name/description/config/metadata + config type/networking/packages; response 9 fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-1",
+      "handler": "live-env#T-COMPAT-ENV-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-2",
+    "name": "T-COMPAT-ENV-2 Environments.retrieve",
+    "surface": "Environments.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /v1/environments/{id}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-2",
+      "handler": "live-env#T-COMPAT-ENV-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-3",
+    "name": "T-COMPAT-ENV-3 Environments.update",
+    "surface": "Environments.update",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "name/description/config/metadata patch; metadata null/empty-string deletes key",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-3",
+      "handler": "live-env#T-COMPAT-ENV-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-4",
+    "name": "T-COMPAT-ENV-4 Environments.list",
+    "surface": "Environments.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "limit/page/include_archived; PageCursor {data,next_page}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-4",
+      "handler": "live-env#T-COMPAT-ENV-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-5",
+    "name": "T-COMPAT-ENV-5 Environments.delete",
+    "surface": "Environments.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=environment_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-5",
+      "handler": "live-env#T-COMPAT-ENV-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-6",
+    "name": "T-COMPAT-ENV-6 Environments.archive",
+    "surface": "Environments.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "archived_at populated",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-6",
+      "handler": "live-env#T-COMPAT-ENV-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-7",
+    "name": "T-COMPAT-ENV-7 EnvironmentCreateParams.scope",
+    "surface": "EnvironmentCreateParams.scope",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unknown field \\\"scope\\\"\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-7",
+      "handler": "live-env#T-COMPAT-ENV-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-8",
+    "name": "T-COMPAT-ENV-8 EnvironmentUpdateParams.scope",
+    "surface": "EnvironmentUpdateParams.scope",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unknown field \\\"scope\\\"\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-8",
+      "handler": "live-env#T-COMPAT-ENV-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-9",
+    "name": "T-COMPAT-ENV-9 BetaEnvironment.scope (response)",
+    "surface": "BetaEnvironment.scope (response)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "never emitted (deferred compat field)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-9",
+      "handler": "static-env#T-COMPAT-ENV-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-10",
+    "name": "T-COMPAT-ENV-10 BetaSelfHostedConfigParams (config type=self_hosted request)",
+    "surface": "BetaSelfHostedConfigParams (config type=self_hosted request)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error — config.type must be cloud",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-10",
+      "handler": "live-env#T-COMPAT-ENV-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-11",
+    "name": "T-COMPAT-ENV-11 BetaSelfHostedConfig (self_hosted response)",
+    "surface": "BetaSelfHostedConfig (self_hosted response)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine emits cloud config only",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-11",
+      "handler": "static-env#T-COMPAT-ENV-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-12",
+    "name": "T-COMPAT-ENV-12 BetaLimitedNetworkParams (networking type=limited request)",
+    "surface": "BetaLimitedNetworkParams (networking type=limited request)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error — networking.type must be unrestricted/blocked/cidr_allow_list",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-12",
+      "handler": "live-env#T-COMPAT-ENV-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-13",
+    "name": "T-COMPAT-ENV-13 BetaLimitedNetwork (limited response)",
+    "surface": "BetaLimitedNetwork (limited response)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "never produced (preflight fails closed)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-13",
+      "handler": "static-env#T-COMPAT-ENV-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-14",
+    "name": "T-COMPAT-ENV-14 Work.retrieve",
+    "surface": "Work.retrieve",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (self-host work deferred; no /work route)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-14",
+      "handler": "live-env#T-COMPAT-ENV-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-15",
+    "name": "T-COMPAT-ENV-15 Work.update",
+    "surface": "Work.update",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-15",
+      "handler": "live-env#T-COMPAT-ENV-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-16",
+    "name": "T-COMPAT-ENV-16 Work.list",
+    "surface": "Work.list",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-16",
+      "handler": "live-env#T-COMPAT-ENV-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-17",
+    "name": "T-COMPAT-ENV-17 Work.ack",
+    "surface": "Work.ack",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-17",
+      "handler": "live-env#T-COMPAT-ENV-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-18",
+    "name": "T-COMPAT-ENV-18 Work.heartbeat",
+    "surface": "Work.heartbeat",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-18",
+      "handler": "live-env#T-COMPAT-ENV-18"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-19",
+    "name": "T-COMPAT-ENV-19 Work.poll",
+    "surface": "Work.poll",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-19",
+      "handler": "live-env#T-COMPAT-ENV-19"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-20",
+    "name": "T-COMPAT-ENV-20 Work.stats",
+    "surface": "Work.stats",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-20",
+      "handler": "live-env#T-COMPAT-ENV-20"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-21",
+    "name": "T-COMPAT-ENV-21 Work.stop",
+    "surface": "Work.stop",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-21",
+      "handler": "live-env#T-COMPAT-ENV-21"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-22",
+    "name": "T-COMPAT-ENV-22 Work.poller (local helper)",
+    "surface": "Work.poller (local helper)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "drives deferred /work endpoints → 400 unsupported SDK surface",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-22",
+      "handler": "live-env#T-COMPAT-ENV-22"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-23",
+    "name": "T-COMPAT-ENV-23 Work.worker (local helper)",
+    "surface": "Work.worker (local helper)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "drives deferred /work endpoints → 400 unsupported SDK surface",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-23",
+      "handler": "live-env#T-COMPAT-ENV-23"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-24",
+    "name": "T-COMPAT-ENV-24 BetaSelfHostedWork",
+    "surface": "BetaSelfHostedWork",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-24",
+      "handler": "static-env#T-COMPAT-ENV-24"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-25",
+    "name": "T-COMPAT-ENV-25 BetaSelfHostedWorkHeartbeatResponse",
+    "surface": "BetaSelfHostedWorkHeartbeatResponse",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-25",
+      "handler": "static-env#T-COMPAT-ENV-25"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-26",
+    "name": "T-COMPAT-ENV-26 BetaSelfHostedWorkListResponse",
+    "surface": "BetaSelfHostedWorkListResponse",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-26",
+      "handler": "static-env#T-COMPAT-ENV-26"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-27",
+    "name": "T-COMPAT-ENV-27 BetaSelfHostedWorkQueueStats",
+    "surface": "BetaSelfHostedWorkQueueStats",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-27",
+      "handler": "static-env#T-COMPAT-ENV-27"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-28",
+    "name": "T-COMPAT-ENV-28 BetaSelfHostedWorkStopRequest",
+    "surface": "BetaSelfHostedWorkStopRequest",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-28",
+      "handler": "static-env#T-COMPAT-ENV-28"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-29",
+    "name": "T-COMPAT-ENV-29 BetaSelfHostedWorkUpdateRequest",
+    "surface": "BetaSelfHostedWorkUpdateRequest",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-29",
+      "handler": "static-env#T-COMPAT-ENV-29"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-30",
+    "name": "T-COMPAT-ENV-30 BetaSessionWorkData",
+    "surface": "BetaSessionWorkData",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-30",
+      "handler": "static-env#T-COMPAT-ENV-30"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-31",
+    "name": "T-COMPAT-ENV-31 BetaHealthCheckWorkData",
+    "surface": "BetaHealthCheckWorkData",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work resource; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-31",
+      "handler": "static-env#T-COMPAT-ENV-31"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-32",
+    "name": "T-COMPAT-ENV-32 BetaWorkSecret",
+    "surface": "BetaWorkSecret",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "deferred work runner-secret type; never produced",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-env",
+      "assertion": "T-COMPAT-ENV-32",
+      "handler": "static-env#T-COMPAT-ENV-32"
+    }
+  },
+  {
+    "id": "T-COMPAT-ENV-33",
+    "name": "T-COMPAT-ENV-33 Nullable request fields explicit null (config / name / description)",
+    "surface": "Nullable request fields explicit null (config / name / description)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3 class law: null = CLEAR/default; config:null on create → 400 (clear meaningless) as named-style exception",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-env",
+      "assertion": "T-COMPAT-ENV-33",
+      "handler": "live-env#T-COMPAT-ENV-33"
+    }
+  },
+  {
+    "id": "T-COMPAT-FILE-1",
+    "name": "T-COMPAT-FILE-1 files.list",
+    "surface": "files.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /v1/files; scope_id + PageParams(limit,before_id,after_id); Page envelope {data,has_more,first_id,last_id}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-file",
+      "assertion": "T-COMPAT-FILE-1",
+      "handler": "live-file#T-COMPAT-FILE-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-FILE-2",
+    "name": "T-COMPAT-FILE-2 files.retrieveMetadata",
+    "surface": "files.retrieveMetadata",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "FileMetadata 8 fields + BetaFileScope 2 fields (type='file', scope type='session')",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-file",
+      "assertion": "T-COMPAT-FILE-2",
+      "handler": "live-file#T-COMPAT-FILE-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-FILE-3",
+    "name": "T-COMPAT-FILE-3 files.upload",
+    "surface": "files.upload",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/files multipart 'file'; 500MB cap; 413 request_too_large on overflow; returns FileMetadata",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-file",
+      "assertion": "T-COMPAT-FILE-3",
+      "handler": "live-file#T-COMPAT-FILE-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-FILE-4",
+    "name": "T-COMPAT-FILE-4 files.delete",
+    "surface": "files.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=file_deleted}; tombstones row",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-file",
+      "assertion": "T-COMPAT-FILE-4",
+      "handler": "live-file#T-COMPAT-FILE-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-FILE-5",
+    "name": "T-COMPAT-FILE-5 files.download (wire)",
+    "surface": "files.download (wire)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /files/{id}/content streams bytes with stored mime; route registered",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-file",
+      "assertion": "T-COMPAT-FILE-5",
+      "handler": "live-file#T-COMPAT-FILE-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-FILE-6",
+    "name": "T-COMPAT-FILE-6 files.download / FileMetadata.downloadable (policy)",
+    "surface": "files.download / FileMetadata.downloadable (policy)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§4 fact: uploaded originals downloadable=false → 403 permission_error on content fetch (intentional); session-produced files download",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-file",
+      "assertion": "T-COMPAT-FILE-6",
+      "handler": "live-file#T-COMPAT-FILE-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-1",
+    "name": "T-COMPAT-MEM-1 memoryStores.create",
+    "surface": "memoryStores.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "name(req)/description/metadata; Store 8 fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-1",
+      "handler": "live-mem#T-COMPAT-MEM-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-2",
+    "name": "T-COMPAT-MEM-2 memoryStores.retrieve",
+    "surface": "memoryStores.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "8-field Store",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-2",
+      "handler": "live-mem#T-COMPAT-MEM-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-3",
+    "name": "T-COMPAT-MEM-3 memoryStores.update",
+    "surface": "memoryStores.update",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "patch (>=1 mutable); description null→\"\"; per-key metadata null=delete",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-3",
+      "handler": "live-mem#T-COMPAT-MEM-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-4",
+    "name": "T-COMPAT-MEM-4 memoryStores.list",
+    "surface": "memoryStores.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "limit/page/include_archived/created_at[gte\\|lte]; PageCursor",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-4",
+      "handler": "live-mem#T-COMPAT-MEM-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-5",
+    "name": "T-COMPAT-MEM-5 memoryStores.delete",
+    "surface": "memoryStores.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=memory_store_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-5",
+      "handler": "live-mem#T-COMPAT-MEM-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-6",
+    "name": "T-COMPAT-MEM-6 memoryStores.archive",
+    "surface": "memoryStores.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "archived_at populated",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-6",
+      "handler": "live-mem#T-COMPAT-MEM-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-7",
+    "name": "T-COMPAT-MEM-7 memories.create",
+    "surface": "memories.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "content/path/view; 10-field Memory (view default basic; /mnt/memory prefix rejection recorded)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-7",
+      "handler": "live-mem#T-COMPAT-MEM-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-8",
+    "name": "T-COMPAT-MEM-8 memories.retrieve",
+    "surface": "memories.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "view default full",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-8",
+      "handler": "live-mem#T-COMPAT-MEM-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-9",
+    "name": "T-COMPAT-MEM-9 memories.update",
+    "surface": "memories.update",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "rename via path / content update / content_sha256 precondition",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-9",
+      "handler": "live-mem#T-COMPAT-MEM-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-10",
+    "name": "T-COMPAT-MEM-10 memories.list",
+    "surface": "memories.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "depth(>=1)/path_prefix/order_by(path\\|created_at\\|updated_at)/order/view/limit/page; view=full caps 20, basic 100",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-10",
+      "handler": "live-mem#T-COMPAT-MEM-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-11",
+    "name": "T-COMPAT-MEM-11 memories.delete",
+    "surface": "memories.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "expected_content_sha256 query; {id,type=memory_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-11",
+      "handler": "live-mem#T-COMPAT-MEM-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-12",
+    "name": "T-COMPAT-MEM-12 memoryVersions.retrieve",
+    "surface": "memoryVersions.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "13 fields incl created_by/redacted_by Actor union",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-12",
+      "handler": "live-mem#T-COMPAT-MEM-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-13",
+    "name": "T-COMPAT-MEM-13 memoryVersions.list",
+    "surface": "memoryVersions.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "api_key_id/memory_id/operation/session_id/created_at[gte\\|lte]/view filters",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-13",
+      "handler": "live-mem#T-COMPAT-MEM-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-14",
+    "name": "T-COMPAT-MEM-14 memoryVersions.redact",
+    "surface": "memoryVersions.redact",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "redacted_at/redacted_by set, content/path/hash nulled; live head rejected",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-14",
+      "handler": "live-mem#T-COMPAT-MEM-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-15",
+    "name": "T-COMPAT-MEM-15 MemoryPathConflictError (type + conflicting_memory_id/path)",
+    "surface": "MemoryPathConflictError (type + conflicting_memory_id/path)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine uses shared 409 invalid_request_error envelope; retained upstream marker",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-mem",
+      "assertion": "T-COMPAT-MEM-15",
+      "handler": "static-mem#T-COMPAT-MEM-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-16",
+    "name": "T-COMPAT-MEM-16 MemoryPreconditionFailedError",
+    "surface": "MemoryPreconditionFailedError",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine uses shared 409 invalid_request_error envelope",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-mem",
+      "assertion": "T-COMPAT-MEM-16",
+      "handler": "static-mem#T-COMPAT-MEM-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-17",
+    "name": "T-COMPAT-MEM-17 ConflictError (memory)",
+    "surface": "ConflictError (memory)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine surfaces write conflicts as 409 invalid_request_error",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-mem",
+      "assertion": "T-COMPAT-MEM-17",
+      "handler": "static-mem#T-COMPAT-MEM-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-18",
+    "name": "T-COMPAT-MEM-18 BetaManagedAgentsError (memory error union)",
+    "surface": "BetaManagedAgentsError (memory error union)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine uses the shared writeError envelope, not the Anthropic beta union",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-mem",
+      "assertion": "T-COMPAT-MEM-18",
+      "handler": "static-mem#T-COMPAT-MEM-18"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-19",
+    "name": "T-COMPAT-MEM-19 MemoryCreateParams.content (explicit null)",
+    "surface": "MemoryCreateParams.content (explicit null)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"content must be a string\" — SDK doc: \"Required; pass `\"\"` explicitly to create an empty memory\"; null has no documented meaning (§3)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-19",
+      "handler": "live-mem#T-COMPAT-MEM-19"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-20",
+    "name": "T-COMPAT-MEM-20 MemoryUpdateParams.content / path (explicit null)",
+    "surface": "MemoryUpdateParams.content / path (explicit null)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "`content:null` and `path:null` are each 400 invalid_request_error — SDK doc semantics are omit=unchanged / `\"\"`=empty / string=value; null has no documented meaning (§3); the class law does not apply",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-20",
+      "handler": "live-mem#T-COMPAT-MEM-20"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-21",
+    "name": "T-COMPAT-MEM-21 MemoryUpdateParams.precondition.content_sha256",
+    "surface": "MemoryUpdateParams.precondition.content_sha256",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "content_sha256 precondition supported; content_sha256 required (400 if omitted) — SDK \"optional\" is a Stainless artifact",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-21",
+      "handler": "live-mem#T-COMPAT-MEM-21"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-22",
+    "name": "T-COMPAT-MEM-22 MemoryStoreUpdateParams.name (explicit null)",
+    "surface": "MemoryStoreUpdateParams.name (explicit null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3 (named): name:null = CLEAR → NULL",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-22",
+      "handler": "live-mem#T-COMPAT-MEM-22"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-23",
+    "name": "T-COMPAT-MEM-23 MemoryStoreUpdateParams.metadata (top-level null)",
+    "surface": "MemoryStoreUpdateParams.metadata (top-level null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3 (named): metadata:null = CLEAR → {}/NULL (per-key null=delete already aligned)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-mem",
+      "assertion": "T-COMPAT-MEM-23",
+      "handler": "live-mem#T-COMPAT-MEM-23"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-1",
+    "name": "T-COMPAT-VAULT-1 vaults.create",
+    "surface": "vaults.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "display_name(req)/metadata; Vault 7 fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-1",
+      "handler": "live-vault#T-COMPAT-VAULT-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-2",
+    "name": "T-COMPAT-VAULT-2 vaults.retrieve",
+    "surface": "vaults.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "7-field Vault",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-2",
+      "handler": "live-vault#T-COMPAT-VAULT-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-3",
+    "name": "T-COMPAT-VAULT-3 vaults.update",
+    "surface": "vaults.update",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "display_name null→clear; per-key metadata null=delete",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-3",
+      "handler": "live-vault#T-COMPAT-VAULT-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-4",
+    "name": "T-COMPAT-VAULT-4 vaults.list",
+    "surface": "vaults.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "limit/page/include_archived; PageCursor",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-4",
+      "handler": "live-vault#T-COMPAT-VAULT-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-5",
+    "name": "T-COMPAT-VAULT-5 vaults.delete",
+    "surface": "vaults.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=vault_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-5",
+      "handler": "live-vault#T-COMPAT-VAULT-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-6",
+    "name": "T-COMPAT-VAULT-6 vaults.archive",
+    "surface": "vaults.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "archived_at populated",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-6",
+      "handler": "live-vault#T-COMPAT-VAULT-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-7",
+    "name": "T-COMPAT-VAULT-7 credentials.create",
+    "surface": "credentials.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "4 auth kinds (mcp_oauth/static_bearer/provider_api_key/provider_oauth) + token_endpoint_auth none/basic/post + mcp refresh; Credential 9 fields",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-7",
+      "handler": "live-vault#T-COMPAT-VAULT-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-8",
+    "name": "T-COMPAT-VAULT-8 credentials.retrieve",
+    "surface": "credentials.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "redacted auth view (secrets omitted)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-8",
+      "handler": "live-vault#T-COMPAT-VAULT-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-9",
+    "name": "T-COMPAT-VAULT-9 credentials.update",
+    "surface": "credentials.update",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "4-kind update; immutable discriminants (type/mcp_server_url/provider_id/access_mode) enforced",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-9",
+      "handler": "live-vault#T-COMPAT-VAULT-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-10",
+    "name": "T-COMPAT-VAULT-10 credentials.list",
+    "surface": "credentials.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "PageCursor {data,next_page}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-10",
+      "handler": "live-vault#T-COMPAT-VAULT-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-11",
+    "name": "T-COMPAT-VAULT-11 credentials.delete",
+    "surface": "credentials.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=vault_credential_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-11",
+      "handler": "live-vault#T-COMPAT-VAULT-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-12",
+    "name": "T-COMPAT-VAULT-12 credentials.archive",
+    "surface": "credentials.archive",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "archived_at populated",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-12",
+      "handler": "live-vault#T-COMPAT-VAULT-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-13",
+    "name": "T-COMPAT-VAULT-13 credentials.mcpOAuthValidate",
+    "surface": "credentials.mcpOAuthValidate",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /mcp_oauth_validate; 8 top-level field names + mcp_oauth-only restriction (status/probe/refresh sub-shapes reshaped this batch — see below)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-13",
+      "handler": "live-vault#T-COMPAT-VAULT-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-14",
+    "name": "T-COMPAT-VAULT-14 credentials.create auth[environment_variable]",
+    "surface": "credentials.create auth[environment_variable]",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"auth.type must be mcp_oauth, static_bearer, provider_api_key, or provider_oauth\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-14",
+      "handler": "live-vault#T-COMPAT-VAULT-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-15",
+    "name": "T-COMPAT-VAULT-15 credentials.update auth[environment_variable]",
+    "surface": "credentials.update auth[environment_variable]",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"auth.type must be mcp_oauth, static_bearer, provider_api_key, or provider_oauth\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-15",
+      "handler": "live-vault#T-COMPAT-VAULT-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-16",
+    "name": "T-COMPAT-VAULT-16 Credential.auth[environment_variable] (response)",
+    "surface": "Credential.auth[environment_variable] (response)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "environment_variable kind never stored/emitted (rejected at admission)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-vault",
+      "assertion": "T-COMPAT-VAULT-16",
+      "handler": "static-vault#T-COMPAT-VAULT-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-17",
+    "name": "T-COMPAT-VAULT-17 InjectionLocation {body,header} (Params/Response/UpdateParams)",
+    "surface": "InjectionLocation {body,header} (Params/Response/UpdateParams)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "sub-field of environment_variable kind; rejected with parent (never independently admitted or produced)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-17",
+      "handler": "live-vault#T-COMPAT-VAULT-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-18",
+    "name": "T-COMPAT-VAULT-18 CredentialNetworking union (limited/unrestricted, allowed_hosts)",
+    "surface": "CredentialNetworking union (limited/unrestricted, allowed_hosts)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "sub-field of environment_variable kind; rejected with parent (no credential-level networking)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-18",
+      "handler": "live-vault#T-COMPAT-VAULT-18"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-19",
+    "name": "T-COMPAT-VAULT-19 CredentialValidation.status enum (valid/invalid/unknown)",
+    "surface": "CredentialValidation.status enum (valid/invalid/unknown)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.3 reshape: ok→valid, failed→invalid, indeterminate (probe transport error)→unknown",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-19",
+      "handler": "live-vault#T-COMPAT-VAULT-19"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-20",
+    "name": "T-COMPAT-VAULT-20 CredentialValidation.mcp_probe (method + http_response)",
+    "surface": "CredentialValidation.mcp_probe (method + http_response)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.3 reshape: {method:\"initialize\", http_response{status_code,content_type,body,body_truncated}\\|null}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-20",
+      "handler": "live-vault#T-COMPAT-VAULT-20"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-21",
+    "name": "T-COMPAT-VAULT-21 CredentialValidation.refresh (status + http_response)",
+    "surface": "CredentialValidation.refresh (status + http_response)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.3 reshape: {status succeeded/failed/connect_error/no_refresh_token, http_response\\|null}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-21",
+      "handler": "live-vault#T-COMPAT-VAULT-21"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-22",
+    "name": "T-COMPAT-VAULT-22 RefreshHTTPResponse (body/body_truncated/content_type/status_code)",
+    "surface": "RefreshHTTPResponse (body/body_truncated/content_type/status_code)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.3: size-bounded, redacted http_response object added to probe/refresh",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-22",
+      "handler": "live-vault#T-COMPAT-VAULT-22"
+    }
+  },
+  {
+    "id": "T-COMPAT-VAULT-23",
+    "name": "T-COMPAT-VAULT-23 Vault/Credential update metadata (top-level null)",
+    "surface": "Vault/Credential update metadata (top-level null)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.3: metadata:null = CLEAR → {}/NULL (per-key null=delete already aligned)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-vault",
+      "assertion": "T-COMPAT-VAULT-23",
+      "handler": "live-vault#T-COMPAT-VAULT-23"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-1",
+    "name": "T-COMPAT-SKILL-1 skills.create",
+    "surface": "skills.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/skills multipart files[]/display_title; Skill 7 fields (type='skill', source='custom')",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-1",
+      "handler": "live-skill#T-COMPAT-SKILL-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-2",
+    "name": "T-COMPAT-SKILL-2 skills.retrieve",
+    "surface": "skills.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "7-field Skill",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-2",
+      "handler": "live-skill#T-COMPAT-SKILL-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-3",
+    "name": "T-COMPAT-SKILL-3 skills.list",
+    "surface": "skills.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "limit/page + source='custom'; PageCursor (source='anthropic' rejected — see SKILL-9)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-3",
+      "handler": "live-skill#T-COMPAT-SKILL-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-4",
+    "name": "T-COMPAT-SKILL-4 skills.delete",
+    "surface": "skills.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=skill_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-4",
+      "handler": "live-skill#T-COMPAT-SKILL-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-5",
+    "name": "T-COMPAT-SKILL-5 versions.create",
+    "surface": "versions.create",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST .../versions multipart files[]; SkillVersion 8 fields; display_title rejected on versions",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-5",
+      "handler": "live-skill#T-COMPAT-SKILL-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-6",
+    "name": "T-COMPAT-SKILL-6 versions.retrieve",
+    "surface": "versions.retrieve",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "8-field SkillVersion; empty version → 404",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-6",
+      "handler": "live-skill#T-COMPAT-SKILL-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-7",
+    "name": "T-COMPAT-SKILL-7 versions.list",
+    "surface": "versions.list",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "limit/page; PageCursor",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-7",
+      "handler": "live-skill#T-COMPAT-SKILL-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-8",
+    "name": "T-COMPAT-SKILL-8 versions.delete",
+    "surface": "versions.delete",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "{id,type=skill_version_deleted}",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-8",
+      "handler": "live-skill#T-COMPAT-SKILL-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-SKILL-9",
+    "name": "T-COMPAT-SKILL-9 skills.list source='anthropic'",
+    "surface": "skills.list source='anthropic'",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"source must be custom\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-skill",
+      "assertion": "T-COMPAT-SKILL-9",
+      "handler": "live-skill#T-COMPAT-SKILL-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-1",
+    "name": "T-COMPAT-DEFER-1 beta.models.retrieve",
+    "surface": "beta.models.retrieve",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/models)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-1",
+      "handler": "live-defer#T-COMPAT-DEFER-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-2",
+    "name": "T-COMPAT-DEFER-2 beta.models.list",
+    "surface": "beta.models.list",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/models)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-2",
+      "handler": "live-defer#T-COMPAT-DEFER-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-3",
+    "name": "T-COMPAT-DEFER-3 beta.messages.create",
+    "surface": "beta.messages.create",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/messages; whole beta Messages type universe deferred)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-3",
+      "handler": "live-defer#T-COMPAT-DEFER-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-4",
+    "name": "T-COMPAT-DEFER-4 beta.messages.parse",
+    "surface": "beta.messages.parse",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/messages)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-4",
+      "handler": "live-defer#T-COMPAT-DEFER-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-5",
+    "name": "T-COMPAT-DEFER-5 beta.messages.stream",
+    "surface": "beta.messages.stream",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/messages)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-5",
+      "handler": "live-defer#T-COMPAT-DEFER-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-6",
+    "name": "T-COMPAT-DEFER-6 beta.messages.countTokens",
+    "surface": "beta.messages.countTokens",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/messages/count_tokens)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-6",
+      "handler": "live-defer#T-COMPAT-DEFER-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-7",
+    "name": "T-COMPAT-DEFER-7 beta.messages.toolRunner",
+    "surface": "beta.messages.toolRunner",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (backend rejects underlying /v1/messages; no local preflight)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-7",
+      "handler": "live-defer#T-COMPAT-DEFER-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-8",
+    "name": "T-COMPAT-DEFER-8 beta.messages.batches.create",
+    "surface": "beta.messages.batches.create",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/messages/batches)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-8",
+      "handler": "live-defer#T-COMPAT-DEFER-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-9",
+    "name": "T-COMPAT-DEFER-9 beta.messages.batches.retrieve",
+    "surface": "beta.messages.batches.retrieve",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-9",
+      "handler": "live-defer#T-COMPAT-DEFER-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-10",
+    "name": "T-COMPAT-DEFER-10 beta.messages.batches.list",
+    "surface": "beta.messages.batches.list",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-10",
+      "handler": "live-defer#T-COMPAT-DEFER-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-11",
+    "name": "T-COMPAT-DEFER-11 beta.messages.batches.delete",
+    "surface": "beta.messages.batches.delete",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-11",
+      "handler": "live-defer#T-COMPAT-DEFER-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-12",
+    "name": "T-COMPAT-DEFER-12 beta.messages.batches.cancel",
+    "surface": "beta.messages.batches.cancel",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-12",
+      "handler": "live-defer#T-COMPAT-DEFER-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-13",
+    "name": "T-COMPAT-DEFER-13 beta.messages.batches.results",
+    "surface": "beta.messages.batches.results",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (fails at deferred retrieve)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-13",
+      "handler": "live-defer#T-COMPAT-DEFER-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-14",
+    "name": "T-COMPAT-DEFER-14 beta.deployments.create",
+    "surface": "beta.deployments.create",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/deployments)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-14",
+      "handler": "live-defer#T-COMPAT-DEFER-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-15",
+    "name": "T-COMPAT-DEFER-15 beta.deployments.retrieve",
+    "surface": "beta.deployments.retrieve",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-15",
+      "handler": "live-defer#T-COMPAT-DEFER-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-16",
+    "name": "T-COMPAT-DEFER-16 beta.deployments.update",
+    "surface": "beta.deployments.update",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-16",
+      "handler": "live-defer#T-COMPAT-DEFER-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-17",
+    "name": "T-COMPAT-DEFER-17 beta.deployments.list",
+    "surface": "beta.deployments.list",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-17",
+      "handler": "live-defer#T-COMPAT-DEFER-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-18",
+    "name": "T-COMPAT-DEFER-18 beta.deployments.archive",
+    "surface": "beta.deployments.archive",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-18",
+      "handler": "live-defer#T-COMPAT-DEFER-18"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-19",
+    "name": "T-COMPAT-DEFER-19 beta.deployments.pause",
+    "surface": "beta.deployments.pause",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-19",
+      "handler": "live-defer#T-COMPAT-DEFER-19"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-20",
+    "name": "T-COMPAT-DEFER-20 beta.deployments.run",
+    "surface": "beta.deployments.run",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-20",
+      "handler": "live-defer#T-COMPAT-DEFER-20"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-21",
+    "name": "T-COMPAT-DEFER-21 beta.deployments.unpause",
+    "surface": "beta.deployments.unpause",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-21",
+      "handler": "live-defer#T-COMPAT-DEFER-21"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-22",
+    "name": "T-COMPAT-DEFER-22 beta.deploymentRuns.retrieve",
+    "surface": "beta.deploymentRuns.retrieve",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/deployment_runs)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-22",
+      "handler": "live-defer#T-COMPAT-DEFER-22"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-23",
+    "name": "T-COMPAT-DEFER-23 beta.deploymentRuns.list",
+    "surface": "beta.deploymentRuns.list",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/deployment_runs)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-23",
+      "handler": "live-defer#T-COMPAT-DEFER-23"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-24",
+    "name": "T-COMPAT-DEFER-24 beta.userProfiles.create",
+    "surface": "beta.userProfiles.create",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/user_profiles)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-24",
+      "handler": "live-defer#T-COMPAT-DEFER-24"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-25",
+    "name": "T-COMPAT-DEFER-25 beta.userProfiles.retrieve",
+    "surface": "beta.userProfiles.retrieve",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-25",
+      "handler": "live-defer#T-COMPAT-DEFER-25"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-26",
+    "name": "T-COMPAT-DEFER-26 beta.userProfiles.update",
+    "surface": "beta.userProfiles.update",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-26",
+      "handler": "live-defer#T-COMPAT-DEFER-26"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-27",
+    "name": "T-COMPAT-DEFER-27 beta.userProfiles.list",
+    "surface": "beta.userProfiles.list",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-27",
+      "handler": "live-defer#T-COMPAT-DEFER-27"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-28",
+    "name": "T-COMPAT-DEFER-28 beta.userProfiles.createEnrollmentURL",
+    "surface": "beta.userProfiles.createEnrollmentURL",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"unsupported SDK surface\"",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-defer",
+      "assertion": "T-COMPAT-DEFER-28",
+      "handler": "live-defer#T-COMPAT-DEFER-28"
+    }
+  },
+  {
+    "id": "T-COMPAT-DEFER-29",
+    "name": "T-COMPAT-DEFER-29 beta.webhooks.unwrap",
+    "surface": "beta.webhooks.unwrap",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "local signature-verify + parse helper retained; no engine route; /v1/webhooks* management → 400 unsupported SDK surface; delivery out of scope (§9)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-defer",
+      "assertion": "T-COMPAT-DEFER-29",
+      "handler": "static-defer#T-COMPAT-DEFER-29"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-1",
+    "name": "T-COMPAT-CONN-1 shared.ErrorResponse (type, error, request_id)",
+    "surface": "shared.ErrorResponse (type, error, request_id)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "SDK-compatible error envelope pinned",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-1",
+      "handler": "live-conn#T-COMPAT-CONN-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-2",
+    "name": "T-COMPAT-CONN-2 shared.ErrorObject union (5/9 members)",
+    "surface": "shared.ErrorObject union (5/9 members)",
+    "status": "supported",
+    "proof": "static",
+    "expectation": "invalid_request_error, authentication_error, permission_error, not_found_error, api_error aligned",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-2",
+      "handler": "static-conn#T-COMPAT-CONN-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-3",
+    "name": "T-COMPAT-CONN-3 shared.ErrorType enum (5/9 values)",
+    "surface": "shared.ErrorType enum (5/9 values)",
+    "status": "supported",
+    "proof": "static",
+    "expectation": "same 5 values aligned",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-3",
+      "handler": "static-conn#T-COMPAT-CONN-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-4",
+    "name": "T-COMPAT-CONN-4 Page family (before_id/after_id)",
+    "surface": "Page family (before_id/after_id)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "files list (live); models/messages families deferred",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-4",
+      "handler": "live-conn#T-COMPAT-CONN-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-5",
+    "name": "T-COMPAT-CONN-5 PageCursor family (page/next_page)",
+    "surface": "PageCursor family (page/next_page)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "agents/skills/sessions.events/threads/environments/vaults/memory lists; wire param `page`, response `next_page`",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-5",
+      "handler": "live-conn#T-COMPAT-CONN-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-6",
+    "name": "T-COMPAT-CONN-6 client.apiKey → X-Api-Key auth",
+    "surface": "client.apiKey → X-Api-Key auth",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "THE supported public auth mode",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-6",
+      "handler": "live-conn#T-COMPAT-CONN-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-7",
+    "name": "T-COMPAT-CONN-7 beta=true query marker",
+    "surface": "beta=true query marker",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "requireBetaQuery gate (missing/duplicate/other-valued rejected)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-7",
+      "handler": "live-conn#T-COMPAT-CONN-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-8",
+    "name": "T-COMPAT-CONN-8 beta.apiKeys management resource (absent in SDK)",
+    "surface": "beta.apiKeys management resource (absent in SDK)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "NOTE: engine serves /v1/api_keys (GET/POST/DELETE; DTO pinned §5.0.3/§5-item-6; DELETE→204); no fork-SDK resource by design — admin/raw-HTTP surface only",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-8",
+      "handler": "live-conn#T-COMPAT-CONN-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-9",
+    "name": "T-COMPAT-CONN-9 sessions.list → BidirectionalPageCursor / prev_page",
+    "surface": "sessions.list → BidirectionalPageCursor / prev_page",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.6: bidirectional cursor pinned verbatim; prev_page served on list endpoints that declare it (dedups sessions-core prev_page item)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-9",
+      "handler": "live-conn#T-COMPAT-CONN-9"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-10",
+    "name": "T-COMPAT-CONN-10 TokenPage family (page_token)",
+    "surface": "TokenPage family (page_token)",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "unreferenced SDK page class; no resource method returns it; inert",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-10",
+      "handler": "static-conn#T-COMPAT-CONN-10"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-11",
+    "name": "T-COMPAT-CONN-11 shared ErrorType 'rate_limit_error' / RateLimitError",
+    "surface": "shared ErrorType 'rate_limit_error' / RateLimitError",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine never emits this envelope type (SDK error class built from HTTP status, so client-safe)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-11",
+      "handler": "static-conn#T-COMPAT-CONN-11"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-12",
+    "name": "T-COMPAT-CONN-12 shared ErrorType 'timeout_error' / GatewayTimeoutError",
+    "surface": "shared ErrorType 'timeout_error' / GatewayTimeoutError",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine never emits this envelope type",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-12",
+      "handler": "static-conn#T-COMPAT-CONN-12"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-13",
+    "name": "T-COMPAT-CONN-13 shared ErrorType 'overloaded_error' / OverloadedError",
+    "surface": "shared ErrorType 'overloaded_error' / OverloadedError",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine never emits this envelope type",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-13",
+      "handler": "static-conn#T-COMPAT-CONN-13"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-14",
+    "name": "T-COMPAT-CONN-14 shared ErrorType 'billing_error' / BillingError",
+    "surface": "shared ErrorType 'billing_error' / BillingError",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "engine never emits this envelope type (billing_error is upstream provider taxonomy only)",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-14",
+      "handler": "static-conn#T-COMPAT-CONN-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-15",
+    "name": "T-COMPAT-CONN-15 shared.ErrorType missing engine types (conflict_error, request_too_large, not_implemented)",
+    "surface": "shared.ErrorType missing engine types (conflict_error, request_too_large, not_implemented)",
+    "status": "supported",
+    "proof": "static",
+    "expectation": "§1.4.2 fork-additive: add the three to shared.ErrorType + ErrorObject body union with doc comments",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-conn",
+      "assertion": "T-COMPAT-CONN-15",
+      "handler": "static-conn#T-COMPAT-CONN-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-16",
+    "name": "T-COMPAT-CONN-16 client request-id RESPONSE header (.requestID / withResponse().request_id)",
+    "surface": "client request-id RESPONSE header (.requestID / withResponse().request_id)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.1: middleware sets `request-id: <id>` on every response (success + error)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-16",
+      "handler": "live-conn#T-COMPAT-CONN-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-17",
+    "name": "T-COMPAT-CONN-17 betas param → anthropic-beta header",
+    "surface": "betas param → anthropic-beta header",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.4: accepted and ignored (beta=true query is the gate)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-17",
+      "handler": "live-conn#T-COMPAT-CONN-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-18",
+    "name": "T-COMPAT-CONN-18 anthropic-version request header (2023-06-01)",
+    "surface": "anthropic-version request header (2023-06-01)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "§1.4.4: accepted and ignored (single-version platform)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-18",
+      "handler": "live-conn#T-COMPAT-CONN-18"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-19",
+    "name": "T-COMPAT-CONN-19 client authToken/credentials/config/profile → Bearer / OAuth",
+    "surface": "client authToken/credentials/config/profile → Bearer / OAuth",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "§1.4.5: 401 authentication_error naming x-api-key (SDK Bearer/OAuth auth modes not accepted)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-conn",
+      "assertion": "T-COMPAT-CONN-19",
+      "handler": "live-conn#T-COMPAT-CONN-19"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-1",
+    "name": "T-COMPAT-GAP-1 GitHub resource `checkout` (nested union, req+resp)",
+    "surface": "GitHub resource `checkout` (nested union, req+resp)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "admission decodes nested {type:branch,name}\\|{type:commit,sha}; response reassembles nested from flat columns; flat spellings leave the wire (nested-only)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-1",
+      "handler": "live-gap#T-COMPAT-GAP-1"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-2",
+    "name": "T-COMPAT-GAP-2 `requires_action` stop reason field name",
+    "surface": "`requires_action` stop reason field name",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "`event_ids` (renamed from blocking_event_ids; pre-launch history keeps legacy key)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-2",
+      "handler": "live-gap#T-COMPAT-GAP-2"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-3",
+    "name": "T-COMPAT-GAP-3 Memory list `depth = 0`",
+    "surface": "Memory list `depth = 0`",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "0/omitted = unlimited recursion (routes to unbounded path); only depth<0 rejected",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-3",
+      "handler": "live-gap#T-COMPAT-GAP-3"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-4",
+    "name": "T-COMPAT-GAP-4 Environment `packages` all-six keys",
+    "surface": "Environment `packages` all-six keys",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "always emits apt/cargo/gem/go/npm/pip with [] defaults",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-4",
+      "handler": "live-gap#T-COMPAT-GAP-4"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-5",
+    "name": "T-COMPAT-GAP-5 `tetral_agent_toolset` response configs/default_config",
+    "surface": "`tetral_agent_toolset` response configs/default_config",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "response-only §7.3-faithful projection: default_config={enabled:true,always_ask} + configs enumerating always_allow exceptions (Claude read/grep/glob, GPT view_image)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-5",
+      "handler": "live-gap#T-COMPAT-GAP-5"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-6",
+    "name": "T-COMPAT-GAP-6 `mcp_toolset` response configs/default_config",
+    "surface": "`mcp_toolset` response configs/default_config",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "response-only projection: default_config resolves (MCP default always_ask), configs entries fully populated; override list not full census",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-6",
+      "handler": "live-gap#T-COMPAT-GAP-6"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-7",
+    "name": "T-COMPAT-GAP-7 `provider_oauth` response `has_refresh_token`",
+    "surface": "`provider_oauth` response `has_refresh_token`",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "derived from stored refresh-token presence; emitted only on the provider_oauth auth member; old rows compute on read",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-7",
+      "handler": "live-gap#T-COMPAT-GAP-7"
+    }
+  },
+  {
+    "id": "T-COMPAT-GAP-8",
+    "name": "T-COMPAT-GAP-8 `GET /v1/skills/{id}/versions/{version}/content`",
+    "surface": "`GET /v1/skills/{id}/versions/{version}/content`",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "mirrors Files download; durable zip; always downloadable within owning workspace (no per-version gate)",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-gap",
+      "assertion": "T-COMPAT-GAP-8",
+      "handler": "live-gap#T-COMPAT-GAP-8"
+    }
+  }
+]

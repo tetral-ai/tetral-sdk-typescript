@@ -35,10 +35,13 @@ import type {
   BetaManagedAgentsVault,
 } from '@tetral-ai/sdk/resources/beta/vaults';
 
-const hasIntegrationEnv = Boolean(process.env['TETRAL_BASE_URL'] && process.env['TETRAL_API_KEY']);
-const describeIntegration = hasIntegrationEnv ? describe : describe.skip;
+const liveCompatibilityLaunch = process.env['TETRAL_COMPAT_LIVE'] === '1';
+const describeIntegration = liveCompatibilityLaunch ? describe : describe.skip;
 
 function integrationClient(): Anthropic {
+  if (!liveCompatibilityLaunch) {
+    throw new Error('Live integration client may only be created by the compatibility launch gate');
+  }
   return new Anthropic({
     apiKey: process.env['TETRAL_API_KEY'],
     baseURL: process.env['TETRAL_BASE_URL'],
@@ -529,6 +532,57 @@ describeIntegration('Tetral live integration suite', () => {
     assertMemoryVersion(
       await client.beta.memoryStores.memoryVersions.redact(version.id, { memory_store_id: store.id }),
     );
+  });
+
+  test('T-COMPAT-MEM-19 rejects create content:null and accepts content:""', async () => {
+    const client = integrationClient();
+    const store = await client.beta.memoryStores.create({ name: `compat-mem-19-${Date.now()}` });
+
+    await expectInvalidRequest(
+      client.beta.memoryStores.memories.create(store.id, {
+        path: '/null-create.md',
+        content: null,
+        view: 'full',
+      }),
+    );
+
+    const emptyMemory = await client.beta.memoryStores.memories.create(store.id, {
+      path: '/empty-create.md',
+      content: '',
+      view: 'full',
+    });
+    expect(emptyMemory.content).toBe('');
+    expect(emptyMemory.content_size_bytes).toBe(0);
+  });
+
+  test('T-COMPAT-MEM-20 rejects update nulls and omission leaves content and path unchanged', async () => {
+    const client = integrationClient();
+    const store = await client.beta.memoryStores.create({ name: `compat-mem-20-${Date.now()}` });
+    const memory = await client.beta.memoryStores.memories.create(store.id, {
+      path: '/unchanged.md',
+      content: 'unchanged content',
+      view: 'full',
+    });
+
+    await expectInvalidRequest(
+      client.beta.memoryStores.memories.update(memory.id, {
+        memory_store_id: store.id,
+        content: null,
+      }),
+    );
+    await expectInvalidRequest(
+      client.beta.memoryStores.memories.update(memory.id, {
+        memory_store_id: store.id,
+        path: null,
+      }),
+    );
+
+    const unchanged = await client.beta.memoryStores.memories.update(memory.id, {
+      memory_store_id: store.id,
+      view: 'full',
+    });
+    expect(unchanged.content).toBe('unchanged content');
+    expect(unchanged.path).toBe('/unchanged.md');
   });
 
   test('environments lifecycle', async () => {

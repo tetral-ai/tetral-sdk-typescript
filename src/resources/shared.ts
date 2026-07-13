@@ -18,15 +18,25 @@ export interface BillingError {
   type: 'billing_error';
 }
 
+/** A Tetral Engine write cannot proceed because durable state has changed. */
+export interface ConflictError {
+  message: string;
+
+  type: 'conflict_error';
+}
+
 export type ErrorObject =
   | InvalidRequestError
   | AuthenticationError
   | BillingError
+  | ConflictError
   | PermissionError
   | NotFoundError
+  | RequestTooLargeError
   | RateLimitError
   | GatewayTimeoutError
   | APIErrorObject
+  | NotImplementedError
   | OverloadedError;
 
 export interface ErrorResponse {
@@ -42,6 +52,9 @@ export type ErrorType =
   | 'authentication_error'
   | 'permission_error'
   | 'not_found_error'
+  | 'conflict_error'
+  | 'request_too_large'
+  | 'not_implemented'
   | 'rate_limit_error'
   | 'timeout_error'
   | 'overloaded_error'
@@ -66,6 +79,13 @@ export interface NotFoundError {
   type: 'not_found_error';
 }
 
+/** A Tetral Engine route is recognized but is not implemented by this deployment. */
+export interface NotImplementedError {
+  message: string;
+
+  type: 'not_implemented';
+}
+
 export interface OverloadedError {
   message: string;
 
@@ -82,4 +102,11 @@ export interface RateLimitError {
   message: string;
 
   type: 'rate_limit_error';
+}
+
+/** A Tetral Engine request exceeded the route's admitted body or item limit. */
+export interface RequestTooLargeError {
+  message: string;
+
+  type: 'request_too_large';
 }

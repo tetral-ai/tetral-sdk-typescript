@@ -1,0 +1,112 @@
+{
+  "live-sess": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-sess": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-thread": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-thread": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-evin": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-evin": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-evout": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-evout": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-agent": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "live-env": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-env": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-file": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "live-mem": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-mem": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-vault": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-vault": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-skill": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "live-defer": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-defer": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-conn": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  },
+  "static-conn": {
+    "suite": "static",
+    "source": "tests/compatibility/scenarios/static.ts",
+    "export": "staticScenarioRunners"
+  },
+  "live-gap": {
+    "suite": "live",
+    "source": "tests/compatibility/scenarios/live.ts",
+    "export": "liveScenarioRunners"
+  }
+}

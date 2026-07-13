@@ -27,6 +27,10 @@
   },
   "scripts": {
     "test": "./scripts/test",
+    "test:compatibility": "jest tests/compatibility --runInBand",
+    "test:compatibility:live": "ts-node scripts/test-compatibility-live.ts",
+    "test:compatibility:static": "ts-node scripts/test-compatibility-static.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "build": "./scripts/build-all",
     "prepublishOnly": "echo 'to publish, run yarn build && (cd dist; yarn publish)' && exit 1",
     "format": "./scripts/format",
