@@ -5,7 +5,7 @@
     "surface": "Sessions.create (SessionCreateParams + Session)",
     "status": "supported",
     "proof": "live",
-    "expectation": "POST /v1/sessions; aligned param fields agent(3 subfields)/environment_id/metadata/title/providers(+credential_id)/vault_ids(required,[] ok)/betas + resources file{file_id,mount_path}/memory_store{memory_store_id,access,instructions}/github{url,mount_path}",
+    "expectation": "POST /v1/sessions; aligned param fields agent(3 subfields)/environment_id/metadata/title/providers(+credential_id)/vault_ids(required,[] ok)/betas + resources file{file_id,mount_path}/memory_store{memory_store_id,access,instructions}/github{url,mount_path,authorization_token(REQUIRED,write-only,request-only)}",
     "locator": {
       "suite": "live",
       "scenario": "live-sess",
@@ -193,6 +193,62 @@
       "scenario": "live-sess",
       "assertion": "T-COMPAT-SESS-14",
       "handler": "live-sess#T-COMPAT-SESS-14"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-15",
+    "name": "T-COMPAT-SESS-15 SessionUpdateParams agent.tools family lock",
+    "surface": "SessionUpdateParams agent.tools family lock",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "tools full-replace missing the tetral_agent_toolset entry → 400 \"tools must contain exactly one tetral_agent_toolset entry\"; family differing from the session's pinned family → 400 invalid_request_error \"tools[i].family must match the session's pinned family\"; mcp_toolset entries replace freely",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-15",
+      "handler": "live-sess#T-COMPAT-SESS-15"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-16",
+    "name": "T-COMPAT-SESS-16 Sessions.create against a pre-law agent version",
+    "surface": "Sessions.create against a pre-law agent version",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "pinned agent version config lacking exactly one tetral_agent_toolset → 400 invalid_request_error \"agent must declare exactly one tetral_agent_toolset entry; update the agent\"; pre-law durable state is unconstructible through public admission, so the engine-side proof is internal/httpapi/session_real_dependencies_integration_test.go's seeded pre-law row and internal/session/service.go's exact message",
+    "locator": {
+      "suite": "static",
+      "scenario": "static-sess",
+      "assertion": "T-COMPAT-SESS-16",
+      "handler": "static-sess#T-COMPAT-SESS-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-17",
+    "name": "T-COMPAT-SESS-17 Session resources rotation: `resources.update` → `ResourceUpdateResponse`",
+    "surface": "Session resources rotation: `resources.update` → `ResourceUpdateResponse`",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "POST /v1/sessions/{id}/resources/{resource_id}, write-only body {authorization_token}, github_repository only (file/memory_store → 400), response = resource read shape, token never echoed",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-17",
+      "handler": "live-sess#T-COMPAT-SESS-17"
+    }
+  },
+  {
+    "id": "T-COMPAT-SESS-18",
+    "name": "T-COMPAT-SESS-18 Sessions.create with duplicate `github_repository` URLs",
+    "surface": "Sessions.create with duplicate `github_repository` URLs",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "two resources with the same comparison key (owner/repo case-folded, optional `.git` trimmed first; stored/echoed URLs stay verbatim) in one create → 400 invalid_request_error; duplicate mounts with independent tokens are unresolvable at git time",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-sess",
+      "assertion": "T-COMPAT-SESS-18",
+      "handler": "live-sess#T-COMPAT-SESS-18"
     }
   },
   {
@@ -1817,6 +1873,20 @@
       "scenario": "live-agent",
       "assertion": "T-COMPAT-AGENT-16",
       "handler": "live-agent#T-COMPAT-AGENT-16"
+    }
+  },
+  {
+    "id": "T-COMPAT-AGENT-17",
+    "name": "T-COMPAT-AGENT-17 tetral_agent_toolset cardinality (create + update effective config)",
+    "surface": "tetral_agent_toolset cardinality (create + update effective config)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error \"tools must contain exactly one tetral_agent_toolset entry\" (zero) / \"tools[i] duplicates the tetral_agent_toolset entry; exactly one is required\" (second entry, same or mixed family); no dedup/first-wins/merge",
+    "locator": {
+      "suite": "live",
+      "scenario": "live-agent",
+      "assertion": "T-COMPAT-AGENT-17",
+      "handler": "live-agent#T-COMPAT-AGENT-17"
     }
   },
   {
@@ -3813,7 +3883,7 @@
     "surface": "GitHub resource `checkout` (nested union, req+resp)",
     "status": "supported",
     "proof": "live",
-    "expectation": "admission decodes nested {type:branch,name}\\|{type:commit,sha}; response reassembles nested from flat columns; flat spellings leave the wire (nested-only)",
+    "expectation": "admission decodes nested {type:branch,name}\\|{type:commit,sha}; response reassembles nested from flat columns; flat spellings leave the wire (nested-only); sibling authorization_token is required, request-only, and write-only",
     "locator": {
       "suite": "live",
       "scenario": "live-gap",

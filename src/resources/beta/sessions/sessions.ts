@@ -494,6 +494,12 @@ export interface BetaManagedAgentsFileResourceParams {
  * Mount a GitHub repository into the session's container.
  */
 export interface BetaManagedAgentsGitHubRepositoryResourceParams {
+  /**
+   * GitHub authorization token used to clone the repository. Write-only and never
+   * returned in Session or resource responses.
+   */
+  authorization_token: string;
+
   type: 'github_repository';
 
   /**

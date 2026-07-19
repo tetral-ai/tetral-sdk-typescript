@@ -874,10 +874,12 @@ Types:
 - <code><a href="./src/resources/beta/sessions/resources.ts">BetaManagedAgentsMemoryStoreResource</a></code>
 - <code><a href="./src/resources/beta/sessions/resources.ts">BetaManagedAgentsSessionResource</a></code>
 - <code><a href="./src/resources/beta/sessions/resources.ts">ResourceRetrieveResponse</a></code>
+- <code><a href="./src/resources/beta/sessions/resources.ts">ResourceUpdateResponse</a></code>
 
 Methods:
 
 - <code title="get /v1/sessions/{session_id}/resources/{resource_id}?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">retrieve</a>(resourceID, { ...params }) -> ResourceRetrieveResponse</code>
+- <code title="post /v1/sessions/{session_id}/resources/{resource_id}?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">update</a>(resourceID, { ...params }) -> ResourceUpdateResponse</code>
 - <code title="get /v1/sessions/{session_id}/resources?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">list</a>(sessionID, { ...params }) -> BetaManagedAgentsSessionResourcesPageCursor</code>
 - <code title="delete /v1/sessions/{session_id}/resources/{resource_id}?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">delete</a>(resourceID, { ...params }) -> BetaManagedAgentsDeleteSessionResource</code>
 - <code title="post /v1/sessions/{session_id}/resources?beta=true">client.beta.sessions.resources.<a href="./src/resources/beta/sessions/resources.ts">add</a>(sessionID, { ...params }) -> BetaManagedAgentsFileResource</code>

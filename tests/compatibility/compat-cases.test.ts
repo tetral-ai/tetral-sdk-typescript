@@ -23,10 +23,10 @@ describe('SDK compatibility proof registry', () => {
     }
   });
 
-  test('contains exactly 280 unique IDs and names', () => {
-    expect(compatCases).toHaveLength(280);
-    expect(new Set(compatCases.map((compatibilityCase) => compatibilityCase.id)).size).toBe(280);
-    expect(new Set(compatCases.map((compatibilityCase) => compatibilityCase.name)).size).toBe(280);
+  test('contains exactly 285 unique IDs and names', () => {
+    expect(compatCases).toHaveLength(285);
+    expect(new Set(compatCases.map((compatibilityCase) => compatibilityCase.id)).size).toBe(285);
+    expect(new Set(compatCases.map((compatibilityCase) => compatibilityCase.name)).size).toBe(285);
   });
 
   test('numbers every proof family continuously from one', () => {

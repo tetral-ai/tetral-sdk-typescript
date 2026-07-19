@@ -143,6 +143,11 @@ async function runLiveSessions(context: ProofScenarioContext): Promise<ProofEvid
         access: null,
         instructions: null,
       },
+      {
+        type: 'github_repository',
+        url: 'https://github.com/tetral-ai/compatibility',
+        authorization_token: 'compatibility-github-token-initial',
+      },
     ],
   });
   const retrieved = await client.beta.sessions.retrieve(created.id);
@@ -157,13 +162,59 @@ async function runLiveSessions(context: ProofScenarioContext): Promise<ProofEvid
     'invalid_request_error',
     'immutable',
   );
+  const missingFamilyRejected = await rejectsAs(
+    client.beta.sessions.update(created.id, { agent: { tools: [] } }),
+    400,
+    'invalid_request_error',
+    'tools must contain exactly one tetral_agent_toolset entry',
+  );
+  const changedFamilyRejected = await rejectsAs(
+    client.beta.sessions.update(created.id, {
+      agent: { tools: [{ type: 'tetral_agent_toolset', family: 'gpt' }] },
+    }),
+    400,
+    'invalid_request_error',
+    "family must match the session's pinned family",
+  );
   const clearedTitle = await client.beta.sessions.update(created.id, { title: null });
   const clearedMetadata = await client.beta.sessions.update(created.id, { metadata: null });
+  const githubResource = created.resources.find((resource) => resource.type === 'github_repository');
+  if (!githubResource) throw new Error(`Session ${created.id} did not expose its GitHub resource`);
+  const rotatedGitHubResource = await client.beta.sessions.resources.update(githubResource.id, {
+    session_id: created.id,
+    authorization_token: 'compatibility-github-token-rotated',
+  });
+  const duplicateGitHubRejected = await rejectsAs(
+    client.beta.sessions.create({
+      environment_id: environment.id,
+      agent: { type: 'agent', id: agent.id, version: agent.version },
+      vault_ids: [],
+      resources: [
+        {
+          type: 'github_repository',
+          url: 'https://github.com/Tetral-AI/Compatibility.git',
+          authorization_token: 'compatibility-github-token-first',
+          mount_path: '/workspace/first',
+        },
+        {
+          type: 'github_repository',
+          url: 'https://github.com/tetral-ai/compatibility',
+          authorization_token: 'compatibility-github-token-second',
+          mount_path: '/workspace/second',
+        },
+      ],
+    }),
+    400,
+    'invalid_request_error',
+  );
   const archived = await client.beta.sessions.archive(created.id);
   const deleted = await client.beta.sessions.delete(created.id);
   const memoryResource = created.resources.find((resource) => resource.type === 'memory_store');
   return {
-    'T-COMPAT-SESS-1': created.type === 'session' && created.environment_id === environment.id,
+    'T-COMPAT-SESS-1':
+      created.type === 'session' &&
+      created.environment_id === environment.id &&
+      !Object.prototype.hasOwnProperty.call(githubResource, 'authorization_token'),
     'T-COMPAT-SESS-2': retrieved.id === created.id && retrieved.usage !== undefined,
     'T-COMPAT-SESS-3': updated.metadata['proof'] === 'session-update' && updated.title !== null,
     'T-COMPAT-SESS-4': listed,
@@ -177,6 +228,12 @@ async function runLiveSessions(context: ProofScenarioContext): Promise<ProofEvid
       memoryResource?.type === 'memory_store' &&
       memoryResource.access === 'read_only' &&
       memoryResource.instructions === null,
+    'T-COMPAT-SESS-15': missingFamilyRejected && changedFamilyRejected,
+    'T-COMPAT-SESS-17':
+      rotatedGitHubResource.type === 'github_repository' &&
+      rotatedGitHubResource.id === githubResource.id &&
+      !Object.prototype.hasOwnProperty.call(rotatedGitHubResource, 'authorization_token'),
+    'T-COMPAT-SESS-18': duplicateGitHubRejected,
   };
 }
 
@@ -474,6 +531,51 @@ async function runLiveAgents(context: ProofScenarioContext): Promise<ProofEviden
     400,
     'invalid_request_error',
   );
+  const missingToolsetRejected = await rejectsAs(
+    client.beta.agents.create({
+      name: unique('missing-toolset'),
+      model: 'anthropic/claude-opus-4-8',
+      tools: [],
+    }),
+    400,
+    'invalid_request_error',
+    'tools must contain exactly one tetral_agent_toolset entry',
+  );
+  const duplicateToolsetRejected = await rejectsAs(
+    client.beta.agents.create({
+      name: unique('duplicate-toolset'),
+      model: 'anthropic/claude-opus-4-8',
+      tools: [
+        { type: 'tetral_agent_toolset', family: 'claude' },
+        { type: 'tetral_agent_toolset', family: 'claude' },
+      ],
+    }),
+    400,
+    'invalid_request_error',
+    'duplicates the tetral_agent_toolset entry',
+  );
+  const mixedToolsetRejected = await rejectsAs(
+    client.beta.agents.create({
+      name: unique('mixed-toolset'),
+      model: 'anthropic/claude-opus-4-8',
+      tools: [
+        { type: 'tetral_agent_toolset', family: 'claude' },
+        { type: 'tetral_agent_toolset', family: 'gpt' },
+      ],
+    }),
+    400,
+    'invalid_request_error',
+    'duplicates the tetral_agent_toolset entry',
+  );
+  const clearedToolsetRejected = await rejectsAs(
+    client.beta.agents.update(agent.id, {
+      version: updated.version,
+      tools: null,
+    } as never),
+    400,
+    'invalid_request_error',
+    'tools must contain exactly one tetral_agent_toolset entry',
+  );
   const anthropicSkillRejected = await rejectsAs(
     client.beta.agents.create({
       name: unique('anthropic-skill'),
@@ -540,6 +642,8 @@ async function runLiveAgents(context: ProofScenarioContext): Promise<ProofEviden
       nullSkillVersion.skills[0].version === skill.latest_version,
     'T-COMPAT-AGENT-15': Object.keys(metadataCleared.metadata).length === 0,
     'T-COMPAT-AGENT-16': unreferencedMCP.mcp_servers.length === 1,
+    'T-COMPAT-AGENT-17':
+      missingToolsetRejected && duplicateToolsetRejected && mixedToolsetRejected && clearedToolsetRejected,
   };
 }
 
@@ -1106,6 +1210,7 @@ async function runLiveGaps(context: ProofScenarioContext): Promise<ProofEvidence
       {
         type: 'github_repository',
         url: 'https://github.com/tetral-ai/compatibility',
+        authorization_token: 'compatibility-gap-github-token',
         mount_path: '/workspace/repository',
         checkout: { type: 'branch', name: 'main' },
       },

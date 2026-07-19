@@ -3,7 +3,7 @@ import { compatibilityProofHandlers, proofSuiteManifest } from './proof-registra
 
 describe('compatibility executable proof registration', () => {
   test('binds and invokes every contract row through its exact scenario and assertion', async () => {
-    expect(Object.keys(compatibilityProofHandlers)).toHaveLength(280);
+    expect(Object.keys(compatibilityProofHandlers)).toHaveLength(285);
     for (const compatibilityCase of compatCases) {
       expect(proofSuiteManifest[compatibilityCase.locator.scenario]).toMatchObject({
         suite: compatibilityCase.locator.suite,

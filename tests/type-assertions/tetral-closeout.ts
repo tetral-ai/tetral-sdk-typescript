@@ -3,30 +3,30 @@ import type { AgentCreateParams, BetaManagedAgentsModel } from '@tetral-ai/sdk/r
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
 import type { CredentialCreateParams } from '@tetral-ai/sdk/resources/beta/vaults';
 
-type RemovedResourceUpdateParams =
-  // @ts-expect-error ResourceUpdateParams is intentionally not exported by the Tetral fork.
-  import('@tetral-ai/sdk/resources/beta/sessions/resources').ResourceUpdateParams;
-const removedResourceUpdateParamsProof: RemovedResourceUpdateParams | null = null;
-void removedResourceUpdateParamsProof;
+type ResourceUpdateParams = import('@tetral-ai/sdk/resources/beta/sessions/resources').ResourceUpdateParams;
+const resourceUpdateParamsProof: ResourceUpdateParams = {
+  session_id: 'sesn_123',
+  authorization_token: 'test-github-token',
+};
+void resourceUpdateParamsProof;
 
 type SessionResourceParam = NonNullable<SessionCreateParams['resources']>[number];
 
 const githubResource: SessionResourceParam = {
   type: 'github_repository',
   url: 'https://github.com/tetral-ai/example',
+  authorization_token: 'test-github-token',
 };
 void githubResource;
 
 const githubResourceWithToken = {
   type: 'github_repository',
   url: 'https://github.com/tetral-ai/example',
-  // @ts-expect-error Tetral GitHub session resources use Vault credentials, not inline tokens.
   authorization_token: 'test-github-token',
 } satisfies SessionResourceParam;
 void githubResourceWithToken;
 
 const client = new Anthropic({ apiKey: 'test-tetral-key' });
-// @ts-expect-error resources.update was removed from the Tetral fork.
 client.beta.sessions.resources.update;
 
 const approvedModels: Array<BetaManagedAgentsModel> = [

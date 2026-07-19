@@ -31,6 +31,11 @@ function typeAliasStringMembers(source: string, aliasName: string): Set<string> 
 async function runStaticSessions(context: ProofScenarioContext): Promise<ProofEvidence> {
   const { engineRoot } = staticContext(context);
   const service = read(engineRoot, 'internal/session/service.go');
+  const compatibilityTest = read(engineRoot, 'internal/session/sdk_compatibility_test.go');
+  const httpIntegrationTest = read(
+    engineRoot,
+    'internal/httpapi/session_real_dependencies_integration_test.go',
+  );
   const assemble = service.slice(
     service.indexOf('func (s *Service) assemble('),
     service.indexOf('func sessionAgentResponse('),
@@ -43,6 +48,16 @@ async function runStaticSessions(context: ProofScenarioContext): Promise<ProofEv
     'T-COMPAT-SESS-8': assemble.includes('OutcomeEvaluations: agent.RawArray{}'),
     'T-COMPAT-SESS-9': agentProjection.includes('Multiagent:   nil'),
     'T-COMPAT-SESS-10': !assemble.includes('DeploymentID:'),
+    'T-COMPAT-SESS-16':
+      service.includes('agent must declare exactly one tetral_agent_toolset entry; update the agent') &&
+      compatibilityTest.includes(
+        'agent must declare exactly one tetral_agent_toolset entry; update the agent',
+      ) &&
+      httpIntegrationTest.includes('TestSessionHTTPCompatibilityPinsToolFamilyAndRejectsPreLawAgent') &&
+      httpIntegrationTest.includes('UPDATE agent_versions SET config_json') &&
+      httpIntegrationTest.includes(
+        'agent must declare exactly one tetral_agent_toolset entry; update the agent',
+      ),
   };
 }
 

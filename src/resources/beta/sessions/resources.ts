@@ -38,6 +38,37 @@ export class Resources extends APIResource {
   }
 
   /**
+   * Update Session Resource
+   *
+   * @example
+   * ```ts
+   * const resource =
+   *   await client.beta.sessions.resources.update(
+   *     'sesrsc_011CZkZBJq5dWxk9fVLNcPht',
+   *     {
+   *       session_id: 'sesn_011CZkZAtmR3yMPDzynEDxu7',
+   *       authorization_token: 'ghp_exampletoken',
+   *     },
+   *   );
+   * ```
+   */
+  update(
+    resourceID: string,
+    params: ResourceUpdateParams,
+    options?: RequestOptions,
+  ): APIPromise<ResourceUpdateResponse> {
+    const { session_id, betas, ...body } = params;
+    return this._client.post(path`/v1/sessions/${session_id}/resources/${resourceID}?beta=true`, {
+      body,
+      ...options,
+      headers: buildHeaders([
+        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        options?.headers,
+      ]),
+    });
+  }
+
+  /**
    * List Session Resources
    *
    * @example
@@ -243,11 +274,37 @@ export type ResourceRetrieveResponse =
   | BetaManagedAgentsFileResource
   | BetaManagedAgentsMemoryStoreResource;
 
+/**
+ * The updated session resource.
+ */
+export type ResourceUpdateResponse =
+  | BetaManagedAgentsGitHubRepositoryResource
+  | BetaManagedAgentsFileResource
+  | BetaManagedAgentsMemoryStoreResource;
+
 export interface ResourceRetrieveParams {
   /**
    * Path param: Path parameter session_id
    */
   session_id: string;
+
+  /**
+   * Header param: Optional header to specify the beta version(s) you want to use.
+   */
+  betas?: Array<BetaAPI.AnthropicBeta>;
+}
+
+export interface ResourceUpdateParams {
+  /**
+   * Path param: Path parameter session_id
+   */
+  session_id: string;
+
+  /**
+   * Body param: New authorization token for the resource. Currently only
+   * `github_repository` resources support token rotation.
+   */
+  authorization_token: string;
 
   /**
    * Header param: Optional header to specify the beta version(s) you want to use.
@@ -305,8 +362,10 @@ export declare namespace Resources {
     type BetaManagedAgentsMemoryStoreResource as BetaManagedAgentsMemoryStoreResource,
     type BetaManagedAgentsSessionResource as BetaManagedAgentsSessionResource,
     type ResourceRetrieveResponse as ResourceRetrieveResponse,
+    type ResourceUpdateResponse as ResourceUpdateResponse,
     type BetaManagedAgentsSessionResourcesPageCursor as BetaManagedAgentsSessionResourcesPageCursor,
     type ResourceRetrieveParams as ResourceRetrieveParams,
+    type ResourceUpdateParams as ResourceUpdateParams,
     type ResourceListParams as ResourceListParams,
     type ResourceDeleteParams as ResourceDeleteParams,
     type ResourceAddParams as ResourceAddParams,
