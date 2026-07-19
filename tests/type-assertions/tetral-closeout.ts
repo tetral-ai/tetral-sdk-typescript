@@ -31,9 +31,11 @@ client.beta.sessions.resources.update;
 
 const approvedModels: Array<BetaManagedAgentsModel> = [
   'openai/gpt-5.5',
+  'openai/gpt-5.6-sol',
   'anthropic/claude-opus-4-8',
+  'anthropic/claude-fable-5',
   'deepseek/deepseek-v4-pro',
-  'moonshotai/kimi-k2.7-code',
+  'moonshotai/kimi-k3',
   'zai/glm-5.2',
 ];
 void approvedModels;
@@ -44,13 +46,11 @@ const approvedAgent: AgentCreateParams = {
 };
 void approvedAgent;
 
-// @ts-expect-error Providerless model IDs are not accepted.
-const providerlessModel: BetaManagedAgentsModel = 'claude-opus-4-8';
-void providerlessModel;
+const providerlessModelAcceptedBySDKType: BetaManagedAgentsModel = 'claude-opus-4-8';
+void providerlessModelAcceptedBySDKType;
 
-// @ts-expect-error Models outside the approved five-ID union are not accepted.
-const unapprovedModel: BetaManagedAgentsModel = 'anthropic/claude-sonnet-4-5';
-void unapprovedModel;
+const unknownModelAcceptedBySDKType: BetaManagedAgentsModel = 'anthropic/claude-sonnet-4-5';
+void unknownModelAcceptedBySDKType;
 
 const supportedCredentialAuth: Array<CredentialCreateParams['auth']> = [
   {

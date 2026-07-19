@@ -833,17 +833,22 @@ export interface BetaManagedAgentsMCPToolsetParams {
 /**
  * The model that will power your agent.
  *
- * Tetral model IDs use the canonical `provider/model` form. The supported
- * Tetral Agent models in this stage are `openai/gpt-5.5`,
- * `anthropic/claude-opus-4-8`, `deepseek/deepseek-v4-pro`,
- * `moonshotai/kimi-k2.7-code`, and `zai/glm-5.2`.
+ * Known Tetral model IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`,
+ * `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`,
+ * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`.
+ * This type provides autocomplete, not admission: arbitrary strings
+ * type-check, while the engine gates model IDs and rejects unknown values with
+ * a 400 response that enumerates the allowed set.
  */
 export type BetaManagedAgentsModel =
   | 'openai/gpt-5.5'
+  | 'openai/gpt-5.6-sol'
   | 'anthropic/claude-opus-4-8'
+  | 'anthropic/claude-fable-5'
   | 'deepseek/deepseek-v4-pro'
-  | 'moonshotai/kimi-k2.7-code'
-  | 'zai/glm-5.2';
+  | 'moonshotai/kimi-k3'
+  | 'zai/glm-5.2'
+  | (string & {});
 
 /**
  * Model identifier and configuration.
@@ -852,10 +857,12 @@ export interface BetaManagedAgentsModelConfig {
   /**
    * The model that will power your agent.
    *
-   * Tetral model IDs use the canonical `provider/model` form. Supported IDs
-   * are `openai/gpt-5.5`, `anthropic/claude-opus-4-8`,
-   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, and
-   * `zai/glm-5.2`.
+   * Known Tetral model IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`,
+   * `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`,
+   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`.
+   * This type provides autocomplete, not admission: arbitrary strings
+   * type-check, while the engine gates model IDs and rejects unknown values
+   * with a 400 response that enumerates the allowed set.
    */
   id: BetaManagedAgentsModel;
 
@@ -874,10 +881,12 @@ export interface BetaManagedAgentsModelConfigParams {
   /**
    * The model that will power your agent.
    *
-   * Tetral model IDs use the canonical `provider/model` form. Supported IDs
-   * are `openai/gpt-5.5`, `anthropic/claude-opus-4-8`,
-   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k2.7-code`, and
-   * `zai/glm-5.2`.
+   * Known Tetral model IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`,
+   * `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`,
+   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`.
+   * This type provides autocomplete, not admission: arbitrary strings
+   * type-check, while the engine gates model IDs and rejects unknown values
+   * with a 400 response that enumerates the allowed set.
    */
   id: BetaManagedAgentsModel;
 

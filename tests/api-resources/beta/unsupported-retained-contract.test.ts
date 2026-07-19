@@ -11,7 +11,6 @@ import type {
 import type { DeploymentRuns } from '@tetral-ai/sdk/resources/beta/deployment-runs';
 import type { Messages } from '@tetral-ai/sdk/resources/beta/messages/messages';
 import type { Batches } from '@tetral-ai/sdk/resources/beta/messages/batches';
-import type { Models } from '@tetral-ai/sdk/resources/beta/models';
 import type { BetaManagedAgentsEventParams } from '@tetral-ai/sdk/resources/beta/sessions';
 import type { UserProfiles } from '@tetral-ai/sdk/resources/beta/user-profiles';
 import type { Webhooks } from '@tetral-ai/sdk/resources/beta/webhooks';
@@ -62,14 +61,6 @@ describe('Tetral retained unsupported SDK surface contract', () => {
       type: 'invalid_request_error',
     });
     await expect(client.beta.deploymentRuns.retrieve('drun_123')).rejects.toMatchObject({
-      status: 400,
-      type: 'invalid_request_error',
-    });
-    await expect(client.beta.models.retrieve('model_123')).rejects.toMatchObject({
-      status: 400,
-      type: 'invalid_request_error',
-    });
-    await expect(client.beta.models.list()).rejects.toMatchObject({
       status: 400,
       type: 'invalid_request_error',
     });
@@ -124,23 +115,21 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     expect(captured.map((r) => [r.method, r.url])).toEqual([
       ['POST', 'https://api.tetral.example/v1/deployments?beta=true'],
       ['GET', 'https://api.tetral.example/v1/deployment_runs/drun_123?beta=true'],
-      ['GET', 'https://api.tetral.example/v1/models/model_123?beta=true'],
-      ['GET', 'https://api.tetral.example/v1/models?beta=true'],
       ['POST', 'https://api.tetral.example/v1/messages?beta=true'],
       ['POST', 'https://api.tetral.example/v1/messages/count_tokens?beta=true'],
       ['POST', 'https://api.tetral.example/v1/messages/batches?beta=true'],
       ['POST', 'https://api.tetral.example/v1/user_profiles?beta=true'],
     ]);
     expect(captured[0]!.body).toEqual(deployment);
-    expect(captured[4]!.body).toMatchObject({
+    expect(captured[2]!.body).toMatchObject({
       model: 'anthropic/claude-opus-4-8',
       messages: [{ role: 'user', content: 'hello' }],
     });
-    expect(captured[5]!.body).toMatchObject({
+    expect(captured[3]!.body).toMatchObject({
       model: 'anthropic/claude-opus-4-8',
       messages: [{ role: 'user', content: 'hello' }],
     });
-    expect(captured).toHaveLength(8);
+    expect(captured).toHaveLength(6);
   });
 
   test('retained unsupported resources and helper surfaces remain importable', () => {
@@ -148,7 +137,6 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     const retainedResources: [
       DeploymentsResource,
       DeploymentRuns,
-      Models,
       Messages,
       Batches,
       UserProfiles,
@@ -156,14 +144,13 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     ] = [
       client.beta.deployments,
       client.beta.deploymentRuns,
-      client.beta.models,
       client.beta.messages,
       client.beta.messages.batches,
       client.beta.userProfiles,
       client.beta.webhooks,
     ];
 
-    expect(retainedResources).toHaveLength(7);
+    expect(retainedResources).toHaveLength(6);
     expect(
       client.beta.webhooks.unwrap(JSON.stringify({ type: 'event', data: {} }), {
         headers: undefined as never,

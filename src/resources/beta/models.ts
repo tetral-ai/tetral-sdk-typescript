@@ -9,9 +9,9 @@ import { RequestOptions } from '../../internal/request-options';
 import { path } from '../../internal/utils/path';
 
 /**
- * Retained upstream Models compatibility resource. Tetral model selection for
- * supported Agent and Session flows uses canonical `provider/model` IDs on
- * those requests; this route family is deferred in this stage.
+ * Live Tetral model catalog. List and retrieve return the upstream Models
+ * shapes with Tetral's canonical `provider/model` IDs. List supports
+ * `limit`, `before_id`, and `after_id` pagination.
  */
 export class Models extends APIResource {
   /**

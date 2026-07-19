@@ -350,7 +350,7 @@ describeIntegration('Tetral live integration suite', () => {
         display_name: 'static bearer',
         auth: {
           type: 'static_bearer',
-          mcp_server_url: 'https://mcp.example/sse',
+          mcp_server_url: 'https://static-bearer.mcp.example/sse',
           token: 'static-bearer-token',
         },
       }),
@@ -466,7 +466,9 @@ describeIntegration('Tetral live integration suite', () => {
   test('skills including versions', async () => {
     const client = integrationClient();
     const skillFile = await toFile(
-      Buffer.from('# Integration Skill\n\nUse this skill only for integration checks.\n'),
+      Buffer.from(
+        '---\nname: integration-skill\ndescription: Skill fixture for SDK integration checks.\n---\n\n# Integration Skill\n\nUse this skill only for integration checks.\n',
+      ),
       'integration/SKILL.md',
     );
     const skill = await client.beta.skills.create({
@@ -478,7 +480,9 @@ describeIntegration('Tetral live integration suite', () => {
     assertSkill(await firstPageItem(client.beta.skills.list({ limit: 1 })));
 
     const versionFile = await toFile(
-      Buffer.from('# Integration Skill\n\nSecond version for integration checks.\n'),
+      Buffer.from(
+        '---\nname: integration-skill\ndescription: Skill fixture for SDK integration checks.\n---\n\n# Integration Skill\n\nSecond version for integration checks.\n',
+      ),
       'integration/SKILL.md',
     );
     const version = await client.beta.skills.versions.create(skill.id, {

@@ -1601,7 +1601,7 @@
     "surface": "agents.create",
     "status": "supported",
     "proof": "live",
-    "expectation": "POST /v1/agents; name/approval_mode/description/metadata/system/betas + model.id 5-ID closed set + mcp_toolset shape + custom skill; response 13/16 Agent fields",
+    "expectation": "POST /v1/agents; name/approval_mode/description/metadata/system/betas + model.id 7-ID closed set + mcp_toolset shape + custom skill; response 13/16 Agent fields",
     "locator": {
       "suite": "live",
       "scenario": "live-agent",
@@ -3139,9 +3139,9 @@
     "id": "T-COMPAT-DEFER-1",
     "name": "T-COMPAT-DEFER-1 beta.models.retrieve",
     "surface": "beta.models.retrieve",
-    "status": "rejected",
-    "proof": "rejection",
-    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/models)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "GET /v1/models/{id}; ModelInfo fields; beta fallback field; unknown id 404",
     "locator": {
       "suite": "live",
       "scenario": "live-defer",
@@ -3153,9 +3153,9 @@
     "id": "T-COMPAT-DEFER-2",
     "name": "T-COMPAT-DEFER-2 beta.models.list",
     "surface": "beta.models.list",
-    "status": "rejected",
-    "proof": "rejection",
-    "expectation": "400 invalid_request_error \"unsupported SDK surface\" (/v1/models)",
+    "status": "supported",
+    "proof": "live",
+    "expectation": "Page envelope over seven models; computed has_more; limit/before_id/after_id",
     "locator": {
       "suite": "live",
       "scenario": "live-defer",
@@ -3589,7 +3589,7 @@
     "surface": "Page family (before_id/after_id)",
     "status": "supported",
     "proof": "live",
-    "expectation": "files list (live); models/messages families deferred",
+    "expectation": "files list (live); models list covered by T-COMPAT-DEFER-2; messages family deferred",
     "locator": {
       "suite": "live",
       "scenario": "live-conn",

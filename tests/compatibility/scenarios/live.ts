@@ -6,6 +6,16 @@ import type { LiveProofScenarioContext, ProofEvidence, ProofScenarioContext } fr
 
 let sequence = 0;
 
+const tetralModelIDs = [
+  'openai/gpt-5.5',
+  'openai/gpt-5.6-sol',
+  'anthropic/claude-opus-4-8',
+  'anthropic/claude-fable-5',
+  'deepseek/deepseek-v4-pro',
+  'moonshotai/kimi-k3',
+  'zai/glm-5.2',
+] as const;
+
 function liveContext(context: ProofScenarioContext): LiveProofScenarioContext {
   if (context.kind !== 'live') throw new Error('Live compatibility scenario requires an SDK client');
   return context;
@@ -14,6 +24,10 @@ function liveContext(context: ProofScenarioContext): LiveProofScenarioContext {
 function unique(prefix: string): string {
   sequence++;
   return `${prefix}-${Date.now()}-${sequence}`;
+}
+
+function skillFixture(name: string, description: string, body: string): Buffer {
+  return Buffer.from(`---\nname: ${name}\ndescription: ${description}\n---\n\n${body}`);
 }
 
 async function firstItem<T>(items: AsyncIterable<T>): Promise<T> {
@@ -52,10 +66,13 @@ async function createEnvironment(client: Anthropic) {
   });
 }
 
-async function createAgent(client: Anthropic) {
+async function createAgent(
+  client: Anthropic,
+  model: (typeof tetralModelIDs)[number] = 'anthropic/claude-opus-4-8',
+) {
   return client.beta.agents.create({
     name: unique('compat-agent'),
-    model: 'anthropic/claude-opus-4-8',
+    model,
     approval_mode: 'ask_for_approval',
     tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
@@ -359,30 +376,41 @@ async function runLiveEventsOutput(context: ProofScenarioContext): Promise<Proof
     if (event.type === 'session.error') {
       const nextStatus = listedEvents.slice(index + 1).find((candidate) => statusTypes.has(candidate.type));
       if (event.error?.retry_status?.type === 'retrying')
-        return nextStatus?.type !== 'session.status_idle' && nextStatus?.type !== 'session.thread_status_idle';
+        return (
+          nextStatus?.type !== 'session.status_idle' && nextStatus?.type !== 'session.thread_status_idle'
+        );
       if (event.error?.retry_status?.type === 'terminal')
-        return nextStatus?.type === 'session.status_terminated' || nextStatus?.type === 'session.thread_status_terminated';
+        return (
+          nextStatus?.type === 'session.status_terminated' ||
+          nextStatus?.type === 'session.thread_status_terminated'
+        );
     }
     if (
       (event.type === 'session.status_idle' || event.type === 'session.thread_status_idle') &&
       event.stop_reason?.type === 'retries_exhausted'
     ) {
-      const previousError = listedEvents.slice(0, index).reverse().find((candidate) => candidate.type === 'session.error');
+      const previousError = listedEvents
+        .slice(0, index)
+        .reverse()
+        .find((candidate) => candidate.type === 'session.error');
       return previousError?.error?.retry_status?.type === 'exhausted';
     }
     return true;
   });
-  evidence['T-COMPAT-EVOUT-37'] = [
-    'model_overloaded_error',
-    'model_rate_limited_error',
-    'model_request_failed_error',
-  ].every((type) => errorVariants.has(type)) && retryStatusLaw;
+  evidence['T-COMPAT-EVOUT-37'] =
+    ['model_overloaded_error', 'model_rate_limited_error', 'model_request_failed_error'].every((type) =>
+      errorVariants.has(type),
+    ) && retryStatusLaw;
   return evidence;
 }
 
 async function runLiveAgents(context: ProofScenarioContext): Promise<ProofEvidence> {
   const { client } = liveContext(context);
   const agent = await createAgent(client);
+  const catalogAgents = await Promise.all(
+    tetralModelIDs.filter((model) => model !== agent.model.id).map((model) => createAgent(client, model)),
+  );
+  const admittedModelIDs = new Set([agent.model.id, ...catalogAgents.map((entry) => entry.model.id)]);
   const retrieved = await client.beta.agents.retrieve(agent.id);
   const updated = await client.beta.agents.update(agent.id, {
     version: agent.version,
@@ -463,19 +491,38 @@ async function runLiveAgents(context: ProofScenarioContext): Promise<ProofEviden
     name: unique('unreferenced-mcp'),
     model: 'anthropic/claude-opus-4-8',
     mcp_servers: [{ type: 'url', name: 'github', url: 'https://api.githubcopilot.com/mcp/' }] as never,
+    tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
   const skill = await client.beta.skills.create({
-    files: [await toFile(Buffer.from('# Agent Compatibility Skill\n'), 'agent/SKILL.md')],
+    files: [
+      await toFile(
+        skillFixture(
+          'agent-compatibility-skill',
+          'Skill fixture for Agent compatibility proofs.',
+          '# Agent Compatibility Skill\n',
+        ),
+        'agent/SKILL.md',
+      ),
+    ],
   });
   if (skill.latest_version === null) throw new Error(`Skill ${skill.id} did not expose latest_version`);
   const nullSkillVersion = await client.beta.agents.create({
     name: unique('null-skill-version'),
     model: 'anthropic/claude-opus-4-8',
     skills: [{ type: 'custom', skill_id: skill.id, version: null }],
+    tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
   const archived = await client.beta.agents.archive(agent.id);
+  await Promise.all(
+    [...catalogAgents, unreferencedMCP, nullSkillVersion].map((createdAgent) =>
+      client.beta.agents.archive(createdAgent.id),
+    ),
+  );
+  await client.beta.skills.versions.delete(skill.latest_version, { skill_id: skill.id });
+  await client.beta.skills.delete(skill.id);
   return {
-    'T-COMPAT-AGENT-1': agent.type === 'agent',
+    'T-COMPAT-AGENT-1':
+      agent.type === 'agent' && tetralModelIDs.every((model) => admittedModelIDs.has(model)),
     'T-COMPAT-AGENT-2': retrieved.id === agent.id,
     'T-COMPAT-AGENT-3': updated.approval_mode === 'approve_for_me',
     'T-COMPAT-AGENT-4': listed,
@@ -815,17 +862,26 @@ async function runLiveSkills(context: ProofScenarioContext): Promise<ProofEviden
     display_title: unique('compat-skill'),
     files: [
       await toFile(
-        Buffer.from('# Compatibility Skill\n\nUse this skill for compatibility proof.\n'),
+        skillFixture(
+          'compatibility-skill',
+          'Skill fixture for compatibility proofs.',
+          '# Compatibility Skill\n\nUse this skill for compatibility proof.\n',
+        ),
         'compatibility/SKILL.md',
       ),
     ],
   });
+  if (skill.latest_version === null) throw new Error(`Skill ${skill.id} did not expose latest_version`);
   const retrieved = await client.beta.skills.retrieve(skill.id);
   const listed = await includesItem(client.beta.skills.list({ limit: 100 }), skill.id);
   const version = await client.beta.skills.versions.create(skill.id, {
     files: [
       await toFile(
-        Buffer.from('# Compatibility Skill\n\nSecond compatibility version.\n'),
+        skillFixture(
+          'compatibility-skill',
+          'Skill fixture for compatibility proofs.',
+          '# Compatibility Skill\n\nSecond compatibility version.\n',
+        ),
         'compatibility/SKILL.md',
       ),
     ],
@@ -843,6 +899,7 @@ async function runLiveSkills(context: ProofScenarioContext): Promise<ProofEviden
     'invalid_request_error',
   );
   const deletedVersion = await client.beta.skills.versions.delete(version.version, { skill_id: skill.id });
+  await client.beta.skills.versions.delete(skill.latest_version, { skill_id: skill.id });
   const deleted = await client.beta.skills.delete(skill.id);
   return {
     'T-COMPAT-SKILL-1': skill.type === 'skill',
@@ -861,6 +918,50 @@ async function runLiveDeferred(context: ProofScenarioContext): Promise<ProofEvid
   const { client } = liveContext(context);
   const rejected = (operation: Promise<unknown>) =>
     rejectsAs(operation, 400, 'invalid_request_error', 'unsupported SDK surface');
+  const model = await client.beta.models.retrieve(tetralModelIDs[0]);
+  const unknownModelRejected = await rejectsAs(
+    client.beta.models.retrieve('provider/unknown-model'),
+    404,
+    'not_found_error',
+  );
+  const modelShape =
+    model.id === tetralModelIDs[0] &&
+    model.type === 'model' &&
+    model.display_name.length > 0 &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(model.created_at) &&
+    !Number.isNaN(Date.parse(model.created_at)) &&
+    typeof model.max_tokens === 'number' &&
+    model.max_tokens > 0 &&
+    typeof model.max_input_tokens === 'number' &&
+    model.max_input_tokens > 0 &&
+    model.capabilities === null &&
+    model.allowed_fallback_models === null;
+  const firstModelPage = await client.beta.models.list({ limit: 4 });
+  const secondModelPage = await firstModelPage.getNextPage();
+  const finalFullModelPage = await client.beta.models.list({
+    limit: 1,
+    after_id: tetralModelIDs[5],
+  });
+  const beforeModelPage = await client.beta.models.list({ limit: 2, before_id: tetralModelIDs[4] });
+  const listedModelIDs = [...firstModelPage.data, ...secondModelPage.data].map((entry) => entry.id);
+  const modelListShape =
+    firstModelPage.data.length === 4 &&
+    firstModelPage.has_more === true &&
+    firstModelPage.first_id === firstModelPage.data[0]?.id &&
+    firstModelPage.last_id === firstModelPage.data.at(-1)?.id &&
+    secondModelPage.data.length === 3 &&
+    secondModelPage.has_more === false &&
+    secondModelPage.first_id === secondModelPage.data[0]?.id &&
+    secondModelPage.last_id === secondModelPage.data.at(-1)?.id &&
+    listedModelIDs.length === tetralModelIDs.length &&
+    new Set(listedModelIDs).size === tetralModelIDs.length &&
+    tetralModelIDs.every((id) => listedModelIDs.includes(id)) &&
+    finalFullModelPage.data.length === 1 &&
+    finalFullModelPage.data[0]?.id === tetralModelIDs[6] &&
+    finalFullModelPage.has_more === false &&
+    beforeModelPage.data.length === 2 &&
+    beforeModelPage.data[0]?.id === tetralModelIDs[2] &&
+    beforeModelPage.data[1]?.id === tetralModelIDs[3];
   const message = {
     max_tokens: 1,
     model: 'anthropic/claude-opus-4-8',
@@ -877,8 +978,8 @@ async function runLiveDeferred(context: ProofScenarioContext): Promise<ProofEvid
   const userProfile = { external_id: 'compat', relationship: 'external' as const };
 
   return {
-    'T-COMPAT-DEFER-1': await rejected(client.beta.models.retrieve('model_compat')),
-    'T-COMPAT-DEFER-2': await rejected(firstItem(client.beta.models.list())),
+    'T-COMPAT-DEFER-1': modelShape && unknownModelRejected,
+    'T-COMPAT-DEFER-2': modelListShape,
     'T-COMPAT-DEFER-3': await rejected(client.beta.messages.create(message)),
     'T-COMPAT-DEFER-4': await rejected(client.beta.messages.parse(message)),
     'T-COMPAT-DEFER-5': await rejected(client.beta.messages.stream(message).finalMessage()),
@@ -1016,11 +1117,19 @@ async function runLiveGaps(context: ProofScenarioContext): Promise<ProofEvidence
     name: unique('gap-mcp-agent'),
     model: 'anthropic/claude-opus-4-8',
     mcp_servers: [{ type: 'url', name: 'github', url: 'https://api.githubcopilot.com/mcp/' }] as never,
-    tools: [{ type: 'mcp_toolset', mcp_server_name: 'github' }] as never,
+    tools: [
+      { type: 'tetral_agent_toolset', family: 'claude' },
+      { type: 'mcp_toolset', mcp_server_name: 'github' },
+    ] as never,
   });
   const mcpToolset = mcpAgent.tools.find((tool) => tool.type === 'mcp_toolset');
   const skill = await client.beta.skills.create({
-    files: [await toFile(Buffer.from('# Gap Skill\n'), 'gap/SKILL.md')],
+    files: [
+      await toFile(
+        skillFixture('gap-skill', 'Skill fixture for compatibility gap proofs.', '# Gap Skill\n'),
+        'gap/SKILL.md',
+      ),
+    ],
   });
   if (skill.latest_version === null) throw new Error(`Skill ${skill.id} did not expose latest_version`);
   const downloadedSkill = await client.beta.skills.versions.download(skill.latest_version, {

@@ -140,9 +140,11 @@ describe('Tetral Agent SDK contract', () => {
     };
     const approvedTetralModels: Array<AgentCreateParams['model']> = [
       'openai/gpt-5.5',
+      'openai/gpt-5.6-sol',
       'anthropic/claude-opus-4-8',
+      'anthropic/claude-fable-5',
       'deepseek/deepseek-v4-pro',
-      'moonshotai/kimi-k2.7-code',
+      'moonshotai/kimi-k3',
       'zai/glm-5.2',
     ];
     const updateWithApproval: AgentUpdateParams = {
@@ -187,7 +189,7 @@ describe('Tetral Agent SDK contract', () => {
 
     expect(createWithApproval.approval_mode).toBe('full_access');
     expect(createOmittedApproval.multiagent).toBeNull();
-    expect(approvedTetralModels).toHaveLength(5);
+    expect(approvedTetralModels).toHaveLength(7);
     expect(updateWithApproval.approval_mode).toBe('approve_for_me');
     expect(responseShape.approval_mode).toBe('ask_for_approval');
     expect(platformToolsInBothFamilies).toHaveLength(2);
@@ -280,9 +282,17 @@ const claudeRejectsGPTOnlyTool: BetaManagedAgentsTetralClaudeAgentToolsetParams 
 void claudeRejectsGPTOnlyTool;
 
 const approvedModelOpenAI: AgentCreateParams = { name: 'openai', model: 'openai/gpt-5.5' };
+const approvedModelOpenAISol: AgentCreateParams = {
+  name: 'openai sol',
+  model: 'openai/gpt-5.6-sol',
+};
 const approvedModelAnthropic: AgentCreateParams = {
   name: 'anthropic',
   model: 'anthropic/claude-opus-4-8',
+};
+const approvedModelAnthropicFable: AgentCreateParams = {
+  name: 'anthropic fable',
+  model: 'anthropic/claude-fable-5',
 };
 const approvedModelDeepSeek: AgentCreateParams = {
   name: 'deepseek',
@@ -290,27 +300,27 @@ const approvedModelDeepSeek: AgentCreateParams = {
 };
 const approvedModelKimi: AgentCreateParams = {
   name: 'kimi',
-  model: 'moonshotai/kimi-k2.7-code',
+  model: 'moonshotai/kimi-k3',
 };
 const approvedModelZAI: AgentCreateParams = { name: 'zai', model: 'zai/glm-5.2' };
 void [
   approvedModelOpenAI,
+  approvedModelOpenAISol,
   approvedModelAnthropic,
+  approvedModelAnthropicFable,
   approvedModelDeepSeek,
   approvedModelKimi,
   approvedModelZAI,
 ];
 
-const providerlessModelRejected: AgentCreateParams = {
+const providerlessModelAcceptedBySDKType: AgentCreateParams = {
   name: 'providerless',
-  // @ts-expect-error Tetral model IDs must be provider/model.
   model: 'claude-opus-4-8',
 };
-void providerlessModelRejected;
+void providerlessModelAcceptedBySDKType;
 
-const unapprovedProviderModelRejected: AgentCreateParams = {
+const unknownProviderModelAcceptedBySDKType: AgentCreateParams = {
   name: 'unapproved',
-  // @ts-expect-error Only the five approved Tetral model IDs are accepted.
   model: 'anthropic/claude-sonnet-4-5',
 };
-void unapprovedProviderModelRejected;
+void unknownProviderModelAcceptedBySDKType;

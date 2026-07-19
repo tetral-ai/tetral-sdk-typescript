@@ -234,10 +234,10 @@ Methods:
 
 # Models
 
-Top-level `client.models` is retained upstream compatibility surface. Tetral
-model selection for supported Agent and Session flows uses canonical
-`provider/model` IDs on those requests; this generated Models resource is not a
-Tetral-supported model discovery route in this stage.
+Top-level `client.models` lists and retrieves Tetral's live model catalog using
+canonical `provider/model` IDs. List responses use the upstream page envelope
+and support `limit`, `before_id`, and `after_id`; retrieve returns one model or
+an SDK-compatible 404.
 
 Types:
 
@@ -273,11 +273,9 @@ Types:
 
 ## Models
 
-Tetral keeps this generated Models resource as a retained compatibility surface.
-Tetral model selection for supported Agent and Session flows uses canonical
-`provider/model` IDs on those requests instead. Calls to `client.beta.models`
-remain normal generated HTTP requests; Tetral backend admission rejects this
-route family with an SDK-compatible error until it is admitted.
+`client.beta.models` lists and retrieves Tetral's live model catalog using the
+same upstream page and model shapes as `client.models`. Beta model responses
+also expose `allowed_fallback_models`, which is `null` in this stage.
 
 Types:
 
@@ -576,9 +574,12 @@ MCP server and `mcp_toolset` declarations are supported as credential-free
 curated-catalog configuration. Tetral admission accepts catalog entries and
 rejects non-catalog URLs.
 
-Allowed Tetral Managed Agent model IDs are `openai/gpt-5.5`,
-`anthropic/claude-opus-4-8`, `deepseek/deepseek-v4-pro`,
-`moonshotai/kimi-k2.7-code`, and `zai/glm-5.2`.
+Known Tetral Managed Agent model IDs are `openai/gpt-5.5`,
+`openai/gpt-5.6-sol`, `anthropic/claude-opus-4-8`,
+`anthropic/claude-fable-5`, `deepseek/deepseek-v4-pro`,
+`moonshotai/kimi-k3`, and `zai/glm-5.2`. The SDK type provides autocomplete,
+not admission: arbitrary strings type-check, while the engine gates model IDs
+and rejects unknown values with a 400 response that enumerates the allowed set.
 
 Types:
 
