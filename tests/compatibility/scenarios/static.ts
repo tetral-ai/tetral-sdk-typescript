@@ -93,8 +93,6 @@ async function runStaticEventsInput(context: ProofScenarioContext): Promise<Proo
 
 const notProducedEventTypes: ReadonlyArray<readonly [string, string]> = [
   ['T-COMPAT-EVOUT-24', 'agent.custom_tool_use'],
-  ['T-COMPAT-EVOUT-25', 'agent.mcp_tool_use'],
-  ['T-COMPAT-EVOUT-26', 'agent.mcp_tool_result'],
   ['T-COMPAT-EVOUT-27', 'span.outcome_evaluation_start'],
   ['T-COMPAT-EVOUT-28', 'span.outcome_evaluation_end'],
   ['T-COMPAT-EVOUT-29', 'span.outcome_evaluation_ongoing'],
@@ -154,9 +152,49 @@ async function runStaticEventsOutput(context: ProofScenarioContext): Promise<Pro
     engineRoot,
     'services/agent-runtime-pod/packages/core/src/runtime/session-event-writer.ts',
   );
+  const bridgeEvents = read(engineRoot, 'services/agent-runtime-bridge/bridge_api_events.go');
   const router = read(engineRoot, 'internal/httpapi/router.go');
   const evidence: Record<string, boolean> = {};
   for (const [id, eventType] of notProducedEventTypes) evidence[id] = !writer.includes(`"${eventType}"`);
+  const allowedTypes = bridgeEvents.slice(
+    bridgeEvents.indexOf('func writeEventTypeAllowed('),
+    bridgeEvents.indexOf('type threadMutationScope struct'),
+  );
+  const durableWrite = bridgeEvents.slice(
+    bridgeEvents.indexOf('func (s *PostgreSQLBridgeAPIStore) WriteEvent('),
+    bridgeEvents.indexOf('func normalizeServerToolUseUsage('),
+  );
+  const publicProjection = bridgeEvents.slice(
+    bridgeEvents.indexOf('func (s threadMutationScope) publicProjection('),
+    bridgeEvents.indexOf('func lockThreadMutationTx('),
+  );
+  const durableProjection = bridgeEvents.slice(
+    bridgeEvents.indexOf('func projectRuntimeEventTx('),
+    bridgeEvents.indexOf('func mergeAssistantMessagePartTx('),
+  );
+  const mainThreadPublicProjection =
+    `if s.visibility != "public" || s.role == "approval_reviewer" {\n` +
+    `\t\treturn "internal", false\n` +
+    `\t}\n` +
+    `\tif s.role == "main" {\n` +
+    `\t\treturn "public", true\n` +
+    `\t}`;
+  evidence['T-COMPAT-EVOUT-25'] =
+    allowedTypes.includes('"agent.mcp_tool_use"') &&
+    durableWrite.includes('INSERT INTO session_events') &&
+    durableWrite.includes('visibility, sessionVisible := threadScope.publicProjection(eventType)') &&
+    publicProjection.includes(mainThreadPublicProjection) &&
+    durableProjection.includes(
+      'case "agent.mcp_tool_use":\n\t\treturn projectToolUseEventTx(ctx, tx, scope, event, now)',
+    );
+  evidence['T-COMPAT-EVOUT-26'] =
+    allowedTypes.includes('"agent.mcp_tool_result"') &&
+    durableWrite.includes('INSERT INTO session_events') &&
+    durableWrite.includes('visibility, sessionVisible := threadScope.publicProjection(eventType)') &&
+    publicProjection.includes(mainThreadPublicProjection) &&
+    durableProjection.includes(
+      'case "agent.mcp_tool_result":\n\t\treturn projectToolResultEventTx(ctx, tx, scope, event, now)',
+    );
   evidence['T-COMPAT-EVOUT-38'] =
     !writer.includes('"billing_error"') && !writer.includes('"credential_host_unreachable_error"');
   evidence['T-COMPAT-EVOUT-39'] =

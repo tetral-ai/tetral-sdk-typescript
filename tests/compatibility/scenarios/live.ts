@@ -30,6 +30,75 @@ function skillFixture(name: string, description: string, body: string): Buffer {
   return Buffer.from(`---\nname: ${name}\ndescription: ${description}\n---\n\n${body}`);
 }
 
+function minimalPDF(pageCount: number): Buffer {
+  let body = '%PDF-1.4\n';
+  const offsets = Array<number>(3 + pageCount).fill(0);
+  const writeObject = (number: number, value: string): void => {
+    offsets[number] = Buffer.byteLength(body);
+    body += `${number} 0 obj\n${value}\nendobj\n`;
+  };
+  writeObject(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  const kids = Array.from({ length: pageCount }, (_, index) => `${3 + index} 0 R`);
+  writeObject(2, `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pageCount} >>`);
+  for (let index = 0; index < pageCount; index++) {
+    writeObject(3 + index, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>');
+  }
+  const xrefOffset = Buffer.byteLength(body);
+  body += `xref\n0 ${offsets.length}\n0000000000 65535 f \n`;
+  for (let number = 1; number < offsets.length; number++) {
+    body += `${String(offsets[number]).padStart(10, '0')} 00000 n \n`;
+  }
+  body += `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  return Buffer.from(body);
+}
+
+async function uploadMultimodalProofFiles(client: Anthropic) {
+  const imageFixtures = [
+    {
+      filename: 'compatibility.png',
+      mime: 'image/png',
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64',
+      ),
+    },
+    {
+      filename: 'compatibility.jpg',
+      mime: 'image/jpeg',
+      body: Buffer.from(
+        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q==',
+        'base64',
+      ),
+    },
+    {
+      filename: 'compatibility.gif',
+      mime: 'image/gif',
+      body: Buffer.from('R0lGODdhAQABAIEAAP///wAAAAAAAAAAACwAAAAAAQABAAAIBAABBAQAOw==', 'base64'),
+    },
+    {
+      filename: 'compatibility.webp',
+      mime: 'image/webp',
+      body: Buffer.from('UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAUAmJaQAA3AA/vz0AAA=', 'base64'),
+    },
+  ] as const;
+  const images = await Promise.all(
+    imageFixtures.map(async (fixture) =>
+      client.beta.files.upload({
+        file: await toFile(fixture.body, fixture.filename, { type: fixture.mime }),
+      }),
+    ),
+  );
+  const textDocument = await client.beta.files.upload({
+    file: await toFile(Buffer.from('multimodal compatibility document'), 'compatibility.txt', {
+      type: 'text/plain',
+    }),
+  });
+  const pdfDocument = await client.beta.files.upload({
+    file: await toFile(minimalPDF(1), 'compatibility.pdf', { type: 'application/pdf' }),
+  });
+  return { images, textDocument, pdfDocument };
+}
+
 async function firstItem<T>(items: AsyncIterable<T>): Promise<T> {
   for await (const item of items) return item;
   throw new Error('Expected at least one SDK page item');
@@ -264,8 +333,32 @@ async function runLiveThreads(context: ProofScenarioContext): Promise<ProofEvide
 async function runLiveEventsInput(context: ProofScenarioContext): Promise<ProofEvidence> {
   const { client } = liveContext(context);
   const { session } = await createSession(client);
+  const files = await uploadMultimodalProofFiles(client);
   const sentMessage = await client.beta.sessions.events.send(session.id, {
-    events: [{ type: 'user.message', content: [{ type: 'text', text: 'Say OK.' }] }],
+    events: [
+      {
+        type: 'user.message',
+        content: [
+          { type: 'text', text: 'Say OK.' },
+          ...files.images.map((file) => ({
+            type: 'image' as const,
+            source: { type: 'file' as const, file_id: file.id },
+          })),
+          {
+            type: 'document',
+            source: { type: 'file', file_id: files.textDocument.id },
+            context: 'compatibility context',
+            title: 'compatibility title',
+          },
+          {
+            type: 'document',
+            source: { type: 'file', file_id: files.pdfDocument.id },
+            context: 'PDF compatibility context',
+            title: 'PDF compatibility title',
+          },
+        ],
+      },
+    ],
   });
   const sentInterrupt = await client.beta.sessions.events.send(session.id, {
     events: [{ type: 'user.interrupt' }],
@@ -322,7 +415,7 @@ async function runLiveEventsInput(context: ProofScenarioContext): Promise<ProofE
     400,
     'invalid_request_error',
   );
-  const imageRejected = await rejectsAs(
+  const imageBase64Rejected = await rejectsAs(
     client.beta.sessions.events.send(session.id, {
       events: [
         {
@@ -333,8 +426,40 @@ async function runLiveEventsInput(context: ProofScenarioContext): Promise<ProofE
     }),
     400,
     'invalid_request_error',
+    'base64 source is not supported; upload the bytes via /v1/files and reference the file_id',
   );
-  const documentRejected = await rejectsAs(
+  const imageURLRejected = await rejectsAs(
+    client.beta.sessions.events.send(session.id, {
+      events: [
+        {
+          type: 'user.message',
+          content: [{ type: 'image', source: { type: 'url', url: 'https://example.test/image.png' } }],
+        },
+      ],
+    }),
+    400,
+    'invalid_request_error',
+    'url source is not supported; upload the bytes via /v1/files and reference the file_id',
+  );
+  const documentBase64Rejected = await rejectsAs(
+    client.beta.sessions.events.send(session.id, {
+      events: [
+        {
+          type: 'user.message',
+          content: [
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: 'AA==' },
+            },
+          ],
+        },
+      ],
+    }),
+    400,
+    'invalid_request_error',
+    'base64 source is not supported; upload the bytes via /v1/files and reference the file_id',
+  );
+  const documentTextRejected = await rejectsAs(
     client.beta.sessions.events.send(session.id, {
       events: [
         {
@@ -342,28 +467,71 @@ async function runLiveEventsInput(context: ProofScenarioContext): Promise<ProofE
           content: [{ type: 'document', source: { type: 'text', media_type: 'text/plain', data: 'doc' } }],
         },
       ],
-    } as never),
+    }),
     400,
     'invalid_request_error',
+    'text source is not supported; upload the bytes via /v1/files and reference the file_id',
+  );
+  const documentURLRejected = await rejectsAs(
+    client.beta.sessions.events.send(session.id, {
+      events: [
+        {
+          type: 'user.message',
+          content: [{ type: 'document', source: { type: 'url', url: 'https://example.test/document.pdf' } }],
+        },
+      ],
+    }),
+    400,
+    'invalid_request_error',
+    'url source is not supported; upload the bytes via /v1/files and reference the file_id',
+  );
+  const sentUserMessage = sentMessage.data?.find((event) => event.type === 'user.message');
+  const sentBlocks = sentUserMessage?.content ?? [];
+  const sentText = sentBlocks.find((block) => block.type === 'text');
+  const sentImageIDs = new Set(
+    sentBlocks.flatMap((block) =>
+      block.type === 'image' && block.source.type === 'file' ? [block.source.file_id] : [],
+    ),
+  );
+  const sentTextDocument = sentBlocks.some(
+    (block) =>
+      block.type === 'document' &&
+      block.source.type === 'file' &&
+      block.source.file_id === files.textDocument.id &&
+      block.context === 'compatibility context' &&
+      block.title === 'compatibility title',
+  );
+  const sentPDFDocument = sentBlocks.some(
+    (block) =>
+      block.type === 'document' &&
+      block.source.type === 'file' &&
+      block.source.file_id === files.pdfDocument.id &&
+      block.context === 'PDF compatibility context' &&
+      block.title === 'PDF compatibility title',
   );
   return {
     'T-COMPAT-EVIN-1': Array.isArray(sentMessage.data),
     'T-COMPAT-EVIN-2': Array.isArray(sentMessage.data),
     'T-COMPAT-EVIN-3': Array.isArray(sentInterrupt.data),
     'T-COMPAT-EVIN-4': Array.isArray(confirmed.data),
-    'T-COMPAT-EVIN-5': Array.isArray(sentMessage.data),
+    'T-COMPAT-EVIN-5': sentText?.text === 'Say OK.',
     'T-COMPAT-EVIN-6': customToolRejected,
     'T-COMPAT-EVIN-7': toolResultRejected,
     'T-COMPAT-EVIN-8': outcomeRejected,
     'T-COMPAT-EVIN-9': systemRejected,
     'T-COMPAT-EVIN-10': toolResultRejected && customToolRejected,
-    'T-COMPAT-EVIN-11': imageRejected,
-    'T-COMPAT-EVIN-12': documentRejected,
+    'T-COMPAT-EVIN-11':
+      files.images.every((file) => sentImageIDs.has(file.id)) && imageBase64Rejected && imageURLRejected,
+    'T-COMPAT-EVIN-12':
+      sentTextDocument &&
+      sentPDFDocument &&
+      documentBase64Rejected &&
+      documentTextRejected &&
+      documentURLRejected,
   };
 }
 
 const supportedOutputEvents: ReadonlyArray<readonly [string, string]> = [
-  ['T-COMPAT-EVOUT-1', 'user.message'],
   ['T-COMPAT-EVOUT-2', 'user.interrupt'],
   ['T-COMPAT-EVOUT-3', 'user.tool_confirmation'],
   ['T-COMPAT-EVOUT-4', 'agent.message'],
@@ -392,12 +560,22 @@ const supportedOutputEvents: ReadonlyArray<readonly [string, string]> = [
 async function runLiveEventsOutput(context: ProofScenarioContext): Promise<ProofEvidence> {
   const { client } = liveContext(context);
   const { session } = await createSession(client);
+  const files = await uploadMultimodalProofFiles(client);
   await client.beta.sessions.update(session.id, { title: unique('event-update') });
   await client.beta.sessions.events.send(session.id, {
     events: [
       {
         type: 'user.message',
-        content: [{ type: 'text', text: 'Use the Bash tool to run `printf compatibility`, then reply.' }],
+        content: [
+          { type: 'text', text: 'Use the Bash tool to run `printf compatibility`, then reply.' },
+          { type: 'image', source: { type: 'file', file_id: files.images[0]!.id } },
+          {
+            type: 'document',
+            source: { type: 'file', file_id: files.textDocument.id },
+            context: 'output compatibility context',
+            title: 'output compatibility title',
+          },
+        ],
       },
     ],
   });
@@ -421,6 +599,26 @@ async function runLiveEventsOutput(context: ProofScenarioContext): Promise<Proof
     listedEvents.push(candidate);
     if (candidate.type === 'session.error' && candidate.error?.type) errorVariants.add(candidate.error.type);
   }
+  const echoedMessage = listedEvents.find(
+    (event) =>
+      event.type === 'user.message' &&
+      event.content.some(
+        (block) =>
+          block.type === 'image' &&
+          block.source.type === 'file' &&
+          block.source.file_id === files.images[0]!.id,
+      ),
+  );
+  evidence['T-COMPAT-EVOUT-1'] =
+    echoedMessage?.type === 'user.message' &&
+    echoedMessage.content.some(
+      (block) =>
+        block.type === 'document' &&
+        block.source.type === 'file' &&
+        block.source.file_id === files.textDocument.id &&
+        block.context === 'output compatibility context' &&
+        block.title === 'output compatibility title',
+    );
   const statusTypes = new Set([
     'session.status_idle',
     'session.status_rescheduled',
@@ -774,15 +972,32 @@ async function runLiveMemory(context: ProofScenarioContext): Promise<ProofEviden
   for await (const item of client.beta.memoryStores.memories.list(store.id, { limit: 100 })) {
     if (item.type === 'memory' && item.id === memory.id) listedMemory = true;
   }
-  const version = await firstItem(
-    client.beta.memoryStores.memoryVersions.list(store.id, { memory_id: memory.id, limit: 1 }),
+  const versions = [];
+  for await (const version of client.beta.memoryStores.memoryVersions.list(store.id, {
+    memory_id: memory.id,
+    limit: 100,
+  })) {
+    versions.push(version);
+  }
+  const headVersion = versions.find((version) => version.id === updatedMemory.memory_version_id);
+  const historicalVersion = versions.find((version) => version.id !== updatedMemory.memory_version_id);
+  if (!headVersion || !historicalVersion) {
+    throw new Error(`Expected current and historical versions for memory ${memory.id}`);
+  }
+  const retrievedVersion = await client.beta.memoryStores.memoryVersions.retrieve(historicalVersion.id, {
+    memory_store_id: store.id,
+  });
+  const redactedVersion = await client.beta.memoryStores.memoryVersions.redact(historicalVersion.id, {
+    memory_store_id: store.id,
+  });
+  const liveHeadRejected = await rejectsAs(
+    client.beta.memoryStores.memoryVersions.redact(headVersion.id, {
+      memory_store_id: store.id,
+    }),
+    400,
+    'invalid_request_error',
+    'cannot redact current live memory head',
   );
-  const retrievedVersion = await client.beta.memoryStores.memoryVersions.retrieve(version.id, {
-    memory_store_id: store.id,
-  });
-  const redactedVersion = await client.beta.memoryStores.memoryVersions.redact(version.id, {
-    memory_store_id: store.id,
-  });
   const nullCreateRejected = await rejectsAs(
     client.beta.memoryStores.memories.create(store.id, {
       path: '/null-create.md',
@@ -841,9 +1056,16 @@ async function runLiveMemory(context: ProofScenarioContext): Promise<ProofEviden
     'T-COMPAT-MEM-9': updatedMemory.content === 'updated',
     'T-COMPAT-MEM-10': listedMemory,
     'T-COMPAT-MEM-11': deletedMemory.type === 'memory_deleted',
-    'T-COMPAT-MEM-12': retrievedVersion.id === version.id,
-    'T-COMPAT-MEM-13': version.memory_id === memory.id,
-    'T-COMPAT-MEM-14': redactedVersion.redacted_at !== null,
+    'T-COMPAT-MEM-12': retrievedVersion.id === historicalVersion.id,
+    'T-COMPAT-MEM-13': historicalVersion.memory_id === memory.id,
+    'T-COMPAT-MEM-14':
+      redactedVersion.redacted_at !== null &&
+      redactedVersion.redacted_by !== null &&
+      redactedVersion.content === null &&
+      redactedVersion.path === null &&
+      redactedVersion.content_sha256 === null &&
+      redactedVersion.content_size_bytes === null &&
+      liveHeadRejected,
     'T-COMPAT-MEM-19':
       nullCreateRejected && emptyMemory.content === '' && emptyMemory.content_size_bytes === 0,
     'T-COMPAT-MEM-20':

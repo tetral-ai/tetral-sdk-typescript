@@ -6,10 +6,10 @@
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
   "type": "commonjs",
-  "repository": "github:YangLi-leo/cloud-agent-sdk",
-  "homepage": "https://github.com/YangLi-leo/cloud-agent-sdk#readme",
+  "repository": "github:tetral-ai/cloud-agent-sdk-typescript",
+  "homepage": "https://github.com/tetral-ai/cloud-agent-sdk-typescript#readme",
   "bugs": {
-    "url": "https://github.com/YangLi-leo/cloud-agent-sdk/issues"
+    "url": "https://github.com/tetral-ai/cloud-agent-sdk-typescript/issues"
   },
   "license": "MIT",
   "packageManager": "yarn@1.22.22",

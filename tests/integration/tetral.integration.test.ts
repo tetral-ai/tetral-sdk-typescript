@@ -514,28 +514,49 @@ describeIntegration('Tetral live integration suite', () => {
     });
     assertMemory(memory);
     assertMemory(await client.beta.memoryStores.memories.retrieve(memory.id, { memory_store_id: store.id }));
-    assertMemory(
-      await client.beta.memoryStores.memories.update(memory.id, {
-        memory_store_id: store.id,
-        content: 'updated memory',
-        view: 'full',
-      }),
-    );
+    const updatedMemory = await client.beta.memoryStores.memories.update(memory.id, {
+      memory_store_id: store.id,
+      content: 'updated memory',
+      view: 'full',
+    });
+    assertMemory(updatedMemory);
     assertMemoryListItem(await firstPageItem(client.beta.memoryStores.memories.list(store.id, { limit: 1 })));
 
-    const version = await firstPageItem(
-      client.beta.memoryStores.memoryVersions.list(store.id, {
-        memory_id: memory.id,
-        limit: 1,
+    const versions = [];
+    for await (const version of client.beta.memoryStores.memoryVersions.list(store.id, {
+      memory_id: memory.id,
+      limit: 100,
+    })) {
+      versions.push(version);
+    }
+    const headVersion = versions.find((version) => version.id === updatedMemory.memory_version_id);
+    const historicalVersion = versions.find((version) => version.id !== updatedMemory.memory_version_id);
+    if (!headVersion || !historicalVersion) {
+      throw new Error(`Expected current and historical versions for memory ${memory.id}`);
+    }
+    assertMemoryVersion(historicalVersion);
+    assertMemoryVersion(
+      await client.beta.memoryStores.memoryVersions.retrieve(historicalVersion.id, {
+        memory_store_id: store.id,
       }),
     );
-    assertMemoryVersion(version);
-    assertMemoryVersion(
-      await client.beta.memoryStores.memoryVersions.retrieve(version.id, { memory_store_id: store.id }),
-    );
-    assertMemoryVersion(
-      await client.beta.memoryStores.memoryVersions.redact(version.id, { memory_store_id: store.id }),
-    );
+    const redactedVersion = await client.beta.memoryStores.memoryVersions.redact(historicalVersion.id, {
+      memory_store_id: store.id,
+    });
+    assertMemoryVersion(redactedVersion);
+    expect(redactedVersion).toMatchObject({
+      content: null,
+      content_sha256: null,
+      content_size_bytes: null,
+      path: null,
+    });
+    await expect(
+      client.beta.memoryStores.memoryVersions.redact(headVersion.id, { memory_store_id: store.id }),
+    ).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+      message: expect.stringContaining('cannot redact current live memory head'),
+    } satisfies Partial<APIError>);
   });
 
   test('T-COMPAT-MEM-19 rejects create content:null and accepts content:""', async () => {
