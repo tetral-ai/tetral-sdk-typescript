@@ -669,21 +669,25 @@ export interface BetaManagedAgentsMCPProbe {
 }
 
 /**
- * An HTTP response captured during a credential validation probe.
+ * HTTP response metadata captured during MCP credential validation.
  */
 export interface BetaManagedAgentsRefreshHTTPResponse {
   /**
-   * Response body. May be truncated and has sensitive values scrubbed.
+   * Response body for probe diagnostics. It may be truncated and has sensitive
+   * values scrubbed. This field is always empty on the refresh leg of
+   * `mcp_oauth_validate`.
    */
   body: string;
 
   /**
-   * Whether `body` was truncated.
+   * Whether the captured response body was truncated. On the refresh leg this
+   * may be true even though `body` is empty.
    */
   body_truncated: boolean;
 
   /**
-   * Value of the `Content-Type` response header.
+   * Value of the `Content-Type` response header for probe diagnostics. This
+   * field is always empty on the refresh leg of `mcp_oauth_validate`.
    */
   content_type: string;
 
@@ -698,7 +702,7 @@ export interface BetaManagedAgentsRefreshHTTPResponse {
  */
 export interface BetaManagedAgentsRefreshObject {
   /**
-   * An HTTP response captured during a credential validation probe.
+   * HTTP response metadata captured during the refresh-token exchange.
    */
   http_response: BetaManagedAgentsRefreshHTTPResponse | null;
 
