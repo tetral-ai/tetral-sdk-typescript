@@ -443,6 +443,7 @@ describeIntegration('Tetral live integration suite', () => {
     assertFile(file);
     assertFile(await client.beta.files.retrieveMetadata(file.id));
     assertFile(await firstPageItem(client.beta.files.list({ limit: 1 })));
+    await waitForSessionStatus(client, session.id, ['idle']);
     const resource = await client.beta.sessions.resources.add(session.id, {
       type: 'file',
       file_id: file.id,
