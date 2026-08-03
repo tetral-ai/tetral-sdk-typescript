@@ -395,47 +395,15 @@ describeIntegration('Tetral live integration suite', () => {
   test('sessions lifecycle, events, threads, files, and session resources', async () => {
     const client = integrationClient();
     const { environment, agent } = await createEnvironmentAndAgent(client);
-    const session = await client.beta.sessions.create({
+    const lifecycleSession = await client.beta.sessions.create({
       environment_id: environment.id,
       agent: { type: 'agent', id: agent.id, version: agent.version },
       vault_ids: [],
     });
-    assertSession(session);
-    assertSession(await client.beta.sessions.retrieve(session.id));
-    assertSession(await client.beta.sessions.update(session.id, { title: 'integration session' }));
+    assertSession(lifecycleSession);
+    assertSession(await client.beta.sessions.retrieve(lifecycleSession.id));
+    assertSession(await client.beta.sessions.update(lifecycleSession.id, { title: 'integration session' }));
     assertSession(await firstPageItem(client.beta.sessions.list({ limit: 1 })));
-
-    const sent = await client.beta.sessions.events.send(session.id, {
-      events: [{ type: 'user.message', content: [{ type: 'text', text: 'hello' }] }],
-    });
-    assertSendSessionEvents(sent);
-    assertSessionEvent(await firstPageItem(client.beta.sessions.events.list(session.id, { limit: 1 })));
-    const eventStream = await client.beta.sessions.events.stream(session.id);
-    for await (const event of eventStream) {
-      assertSessionEvent(event);
-      break;
-    }
-
-    const thread = await waitFor('first public session thread', async () => {
-      for await (const item of client.beta.sessions.threads.list(session.id, { limit: 1 })) {
-        return item;
-      }
-      return null;
-    });
-    assertThread(thread);
-    assertThread(await client.beta.sessions.threads.retrieve(thread.id, { session_id: session.id }));
-    assertSessionEvent(
-      await firstPageItem(
-        client.beta.sessions.threads.events.list(thread.id, { session_id: session.id, limit: 1 }),
-      ),
-    );
-    const threadStream = await client.beta.sessions.threads.events.stream(thread.id, {
-      session_id: session.id,
-    });
-    for await (const event of threadStream) {
-      assertSessionEvent(event);
-      break;
-    }
 
     const file = await client.beta.files.upload({
       file: await toFile(Buffer.from('city,revenue\nSF,42\n'), 'integration.csv'),
@@ -443,25 +411,66 @@ describeIntegration('Tetral live integration suite', () => {
     assertFile(file);
     assertFile(await client.beta.files.retrieveMetadata(file.id));
     assertFile(await firstPageItem(client.beta.files.list({ limit: 1 })));
-    await waitForSessionStatus(client, session.id, ['idle']);
-    const resource = await client.beta.sessions.resources.add(session.id, {
+    const resource = await client.beta.sessions.resources.add(lifecycleSession.id, {
       type: 'file',
       file_id: file.id,
       mount_path: '/uploads/integration.csv',
     });
     assertFileResource(resource);
     assertSessionResource(
-      await client.beta.sessions.resources.retrieve(resource.id, { session_id: session.id }),
+      await client.beta.sessions.resources.retrieve(resource.id, { session_id: lifecycleSession.id }),
     );
-    assertSessionResource(await firstPageItem(client.beta.sessions.resources.list(session.id, { limit: 1 })));
+    assertSessionResource(
+      await firstPageItem(client.beta.sessions.resources.list(lifecycleSession.id, { limit: 1 })),
+    );
     assertDeletedSessionResource(
-      await client.beta.sessions.resources.delete(resource.id, { session_id: session.id }),
+      await client.beta.sessions.resources.delete(resource.id, { session_id: lifecycleSession.id }),
     );
-    // Archive conflicts with running/rescheduling states (409); wait for the
-    // turn to settle before archiving.
-    await waitForSessionStatus(client, session.id, ['idle', 'terminated']);
-    assertSession(await client.beta.sessions.archive(session.id));
-    assertDeletedSession(await client.beta.sessions.delete(session.id));
+    assertSession(await client.beta.sessions.archive(lifecycleSession.id));
+    assertDeletedSession(await client.beta.sessions.delete(lifecycleSession.id));
+
+    // Resource mutation is idle-only against drained input. This topology has no
+    // runtime_input consumer, so event coverage uses a separate, message-bearing session.
+    const eventSession = await client.beta.sessions.create({
+      environment_id: environment.id,
+      agent: { type: 'agent', id: agent.id, version: agent.version },
+      vault_ids: [],
+    });
+    assertSession(eventSession);
+    const sent = await client.beta.sessions.events.send(eventSession.id, {
+      events: [{ type: 'user.message', content: [{ type: 'text', text: 'hello' }] }],
+    });
+    assertSendSessionEvents(sent);
+    assertSessionEvent(await firstPageItem(client.beta.sessions.events.list(eventSession.id, { limit: 1 })));
+    const eventStream = await client.beta.sessions.events.stream(eventSession.id);
+    for await (const event of eventStream) {
+      assertSessionEvent(event);
+      break;
+    }
+
+    const thread = await waitFor('first public session thread', async () => {
+      for await (const item of client.beta.sessions.threads.list(eventSession.id, { limit: 1 })) {
+        return item;
+      }
+      return null;
+    });
+    assertThread(thread);
+    assertThread(await client.beta.sessions.threads.retrieve(thread.id, { session_id: eventSession.id }));
+    assertSessionEvent(
+      await firstPageItem(
+        client.beta.sessions.threads.events.list(thread.id, {
+          session_id: eventSession.id,
+          limit: 1,
+        }),
+      ),
+    );
+    const threadStream = await client.beta.sessions.threads.events.stream(thread.id, {
+      session_id: eventSession.id,
+    });
+    for await (const event of threadStream) {
+      assertSessionEvent(event);
+      break;
+    }
   });
 
   test('skills including versions', async () => {
