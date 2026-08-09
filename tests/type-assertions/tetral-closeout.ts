@@ -72,8 +72,11 @@ const supportedCredentialAuth: Array<CredentialCreateParams['auth']> = [
   {
     type: 'provider_oauth',
     provider_id: 'openai',
-    access_mode: 'model_inference',
+    access_mode: 'oauth',
     access_token: 'provider-access-token',
+    refresh_token: 'provider-refresh-token',
+    expires_at: '2099-01-01T00:00:00Z',
+    account_id: 'provider-account',
   },
   {
     type: 'environment_variable',
