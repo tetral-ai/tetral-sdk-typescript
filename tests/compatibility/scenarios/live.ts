@@ -1419,9 +1419,11 @@ async function runLiveGaps(context: ProofScenarioContext): Promise<ProofEvidence
     auth: {
       type: 'provider_oauth',
       provider_id: 'openai',
-      access_mode: 'model_inference',
+      access_mode: 'oauth',
       access_token: 'gap-access-token',
       refresh_token: 'gap-refresh-token',
+      expires_at: '2099-01-01T00:00:00Z',
+      account_id: 'gap-account',
     },
   });
   const session = await client.beta.sessions.create({

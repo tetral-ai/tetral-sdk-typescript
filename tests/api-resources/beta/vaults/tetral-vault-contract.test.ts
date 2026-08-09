@@ -39,7 +39,7 @@ const PROVIDER_OAUTH_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
   auth: {
     type: 'provider_oauth',
     provider_id: 'openai',
-    access_mode: 'model_inference',
+    access_mode: 'oauth',
     account_id: 'acct_123',
     expires_at: '2026-01-01T01:00:00Z',
     has_refresh_token: true,
@@ -129,7 +129,7 @@ describe('Tetral Vault credential SDK contract', () => {
     expect(credential.auth).toMatchObject({
       type: 'provider_oauth',
       provider_id: 'openai',
-      access_mode: 'model_inference',
+      access_mode: 'oauth',
       has_refresh_token: true,
       account_id: 'acct_123',
     });
@@ -208,7 +208,7 @@ describe('Tetral Vault credential SDK contract', () => {
     const providerOAuthCreate: BetaManagedAgentsProviderOAuthCreateParams = {
       type: 'provider_oauth',
       provider_id: 'openai',
-      access_mode: 'model_inference',
+      access_mode: 'oauth',
       access_token: 'provider-access',
       refresh_token: 'provider-refresh',
       expires_at: '2026-01-01T01:00:00Z',
@@ -255,7 +255,7 @@ describe('Tetral Vault credential SDK contract', () => {
     const providerOAuthResponse: BetaManagedAgentsProviderOAuthAuthResponse = {
       type: 'provider_oauth',
       provider_id: 'openai',
-      access_mode: 'model_inference',
+      access_mode: 'oauth',
       expires_at: '2026-01-01T01:00:00Z',
       account_id: 'acct_123',
       has_refresh_token: true,
@@ -288,7 +288,9 @@ providerAPIKeyResponseHasNoToken.token;
 const providerOAuthResponseHasNoSecrets: BetaManagedAgentsProviderOAuthAuthResponse = {
   type: 'provider_oauth',
   provider_id: 'openai',
-  access_mode: 'model_inference',
+  access_mode: 'oauth',
+  expires_at: '2026-01-01T01:00:00Z',
+  account_id: 'acct_123',
   has_refresh_token: true,
 };
 // @ts-expect-error Provider OAuth response redacts the write-only access token.

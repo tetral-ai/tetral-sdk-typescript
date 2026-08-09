@@ -774,9 +774,19 @@ export interface BetaManagedAgentsProviderAPIKeyUpdateParams {
  */
 export interface BetaManagedAgentsProviderOAuthAuthResponse {
   /**
-   * Provider credential routing mode, for example `model_inference`.
+   * OpenAI OAuth credential routing mode.
    */
-  access_mode: string;
+  access_mode: 'oauth';
+
+  /**
+   * OpenAI account identifier associated with the OAuth tokens.
+   */
+  account_id: string;
+
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  expires_at: string;
 
   /**
    * Whether a refresh token is stored for this credential.
@@ -784,22 +794,11 @@ export interface BetaManagedAgentsProviderOAuthAuthResponse {
   has_refresh_token: boolean;
 
   /**
-   * Model provider this credential authenticates with, for example `anthropic` or
-   * `openai`.
+   * Model provider this credential authenticates with.
    */
-  provider_id: string;
+  provider_id: 'openai';
 
   type: 'provider_oauth';
-
-  /**
-   * Provider account identifier, when known.
-   */
-  account_id?: string | null;
-
-  /**
-   * A timestamp in RFC 3339 format
-   */
-  expires_at?: string | null;
 }
 
 /**
@@ -812,32 +811,31 @@ export interface BetaManagedAgentsProviderOAuthCreateParams {
   access_token: string;
 
   /**
-   * Provider credential routing mode, for example `model_inference`.
+   * OpenAI OAuth credential routing mode.
    */
-  access_mode: string;
+  access_mode: 'oauth';
 
   /**
-   * Model provider this credential authenticates with, for example `anthropic` or
-   * `openai`.
+   * OpenAI account identifier associated with the OAuth tokens.
    */
-  provider_id: string;
-
-  type: 'provider_oauth';
-
-  /**
-   * Provider account identifier, when known.
-   */
-  account_id?: string | null;
+  account_id: string;
 
   /**
    * A timestamp in RFC 3339 format
    */
-  expires_at?: string | null;
+  expires_at: string;
+
+  /**
+   * Model provider this credential authenticates with.
+   */
+  provider_id: 'openai';
 
   /**
    * OAuth refresh token. Write-only; responses expose only `has_refresh_token`.
    */
-  refresh_token?: string | null;
+  refresh_token: string;
+
+  type: 'provider_oauth';
 }
 
 /**
