@@ -7,8 +7,10 @@ This project is forked from Anthropic's official SDK. It is not affiliated with 
 ## Install
 
 ```sh
-npm install @tetral-ai/sdk
+npm install @tetral-ai/sdk@alpha
 ```
+
+Alpha releases use the `alpha` npm dist-tag and do not update `latest`.
 
 ## Quickstart
 
