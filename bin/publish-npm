@@ -14,8 +14,8 @@ if [[ "$PACKAGE_NAME" != "@tetral-ai/sdk" ]]; then
   exit 1
 fi
 
-# A prerelease must never move the stable latest tag, including the package's
-# first publication.
+# Publish prereleases under their explicit channel. npm may also initialize
+# `latest` to the first published version until a stable release replaces it.
 if [[ "$VERSION" =~ -([a-zA-Z][a-zA-Z0-9-]*) ]]; then
   TAG="${BASH_REMATCH[1]}"
 else

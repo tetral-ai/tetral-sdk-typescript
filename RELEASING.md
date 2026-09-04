@@ -4,6 +4,11 @@
 Prerelease versions publish under their prerelease identifier (`alpha`, `beta`,
 or `rc`); stable versions publish under `latest`.
 
+For a package's first-ever publication, npm also initializes `latest` to the
+only available version even when that version is published with `--tag alpha`.
+This bootstrap alias remains until the first stable release moves `latest`;
+prerelease publishing must not move it after that.
+
 ## First publication
 
 The npm package must exist before npm can attach a trusted publisher. An owner
