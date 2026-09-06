@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.110.0-alpha.2 (2026-09-06)
+
+### Features
+
+- Add optional per-repository `git_identity` to Session creation and read responses, with public TypeScript exports and usage documentation ([#7](https://github.com/tetral-ai/tetral-sdk-typescript/pull/7)). The identity is fixed at Session creation; omitting it uses the Engine default identity.
+
+### Compatibility
+
+- Validated against the Engine Session Git identity implementation and SDK integration checks ([Engine #48](https://github.com/tetral-ai/tetral/pull/48), [Engine #50](https://github.com/tetral-ai/tetral/pull/50), [Engine #53](https://github.com/tetral-ai/tetral/pull/53)).
+
 ## 0.110.0 (2026-07-02)
 
 Full Changelog: [sdk-v0.109.1...sdk-v0.110.0](https://github.com/anthropics/anthropic-sdk-typescript/compare/sdk-v0.109.1...sdk-v0.110.0)
