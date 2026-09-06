@@ -1,4 +1,5 @@
 import Anthropic from '@tetral-ai/sdk';
+import type { TetralGitIdentity as BetaGitIdentity } from '@tetral-ai/sdk/resources/beta';
 import type {
   BetaManagedAgentsGitHubRepositoryResourceParams,
   SessionCreateParams,
@@ -8,7 +9,11 @@ import type {
 import type { ResourceUpdateParams } from '@tetral-ai/sdk/resources/beta/sessions/resources';
 import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 
-const identity: TetralGitIdentity = { name: "山田 O'Brien", email: 'bot+sdk@example.com' };
+// All documented public import paths must expose the same identity contract.
+const identity: TetralGitIdentity & BetaGitIdentity & Anthropic.Beta.TetralGitIdentity = {
+  name: "山田 O'Brien",
+  email: 'bot+sdk@example.com',
+};
 const repository: BetaManagedAgentsGitHubRepositoryResourceParams = {
   type: 'github_repository',
   url: 'https://github.com/example/project',

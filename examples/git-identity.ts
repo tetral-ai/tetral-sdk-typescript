@@ -1,3 +1,5 @@
+#!/usr/bin/env -S npm run tsn -T
+
 import Anthropic from '@tetral-ai/sdk';
 
 async function main() {
