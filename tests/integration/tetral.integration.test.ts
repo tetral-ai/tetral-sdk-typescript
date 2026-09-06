@@ -469,16 +469,9 @@ describeIntegration('Tetral live integration suite', () => {
   test('Engine rejects malformed Git identities sent through the SDK', async () => {
     const client = integrationClient();
     const { environment, agent } = await createEnvironmentAndAgent(client);
-    for (const identity of [
-      null,
-      {},
-      { name: 'Bot' },
-      { email: 'bot@example.com' },
-      { name: '', email: 'bot@example.com' },
-      { name: 'Bot', email: '' },
-      { name: ' Bot', email: 'bot@example.com' },
-      { name: 'Bot', email: 'not-an-email' },
-    ]) {
+    // Exercise omission/coercion and trimming across the SDK boundary;
+    // Engine tests own the exhaustive identity validation rules.
+    for (const identity of [null, {}, { name: ' Bot', email: 'bot@example.com' }]) {
       await expectInvalidRequest(
         client.beta.sessions.create({
           agent: agent.id,

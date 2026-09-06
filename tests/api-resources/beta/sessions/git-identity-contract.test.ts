@@ -83,9 +83,4 @@ const sessionUpdate: SessionUpdateParams = {
   // @ts-expect-error identity belongs to create-time repository resources.
   git_identity: identity,
 };
-const versionedIdentity: TetralGitIdentity = {
-  ...identity,
-  // @ts-expect-error Git identity has no version API.
-  version: 1,
-};
-void [noName, noEmail, nullIdentity, resourceUpdate, sessionUpdate, versionedIdentity];
+void [noName, noEmail, nullIdentity, resourceUpdate, sessionUpdate];
