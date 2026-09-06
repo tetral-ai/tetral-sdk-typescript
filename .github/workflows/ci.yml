@@ -92,6 +92,9 @@ jobs:
         run: ./scripts/build-all
 
       - name: Run tests
+        run: node --test scripts/release.test.cjs
+
+      - name: Run SDK tests
         run: ./scripts/test
 
   examples_compile:
