@@ -491,6 +491,18 @@ export interface BetaManagedAgentsFileResourceParams {
 }
 
 /**
+ * Tetral extension: default author and committer for ordinary Git commits in one
+ * mounted repository. This is public authorship configuration, not a credential.
+ * Engine validates nonempty values, Git-safe characters, and UTF-8 byte limits
+ * (256 for name, 254 for email); the SDK sends values unchanged.
+ */
+export interface TetralGitIdentity {
+  name: string;
+
+  email: string;
+}
+
+/**
  * Mount a GitHub repository into the session's container.
  */
 export interface BetaManagedAgentsGitHubRepositoryResourceParams {
@@ -516,6 +528,14 @@ export interface BetaManagedAgentsGitHubRepositoryResourceParams {
    * Mount path in the container. Defaults to `/workspace/<repo-name>`.
    */
   mount_path?: string | null;
+
+  /**
+   * Repository-local Git identity, fixed at Session creation. Both fields are
+   * required when present; null and empty values are rejected by Engine. Omit to
+   * use Tetral Agent <session+<session_id>@agents.tetral.ai>. Token rotation does
+   * not change this identity; it has no version or update API.
+   */
+  git_identity?: TetralGitIdentity;
 }
 
 /**
@@ -1218,6 +1238,7 @@ export declare namespace Sessions {
     type BetaManagedAgentsSystemContentBlock as BetaManagedAgentsSystemContentBlock,
     type BetaManagedAgentsSystemMessageEvent as BetaManagedAgentsSystemMessageEvent,
     type BetaManagedAgentsUserToolResultEvent as BetaManagedAgentsUserToolResultEvent,
+    type TetralGitIdentity as TetralGitIdentity,
     type TetralSessionProviderSelector as TetralSessionProviderSelector,
     type TetralSessionProviderSelectors as TetralSessionProviderSelectors,
     type BetaManagedAgentsSessionsBidirectionalPageCursor as BetaManagedAgentsSessionsBidirectionalPageCursor,

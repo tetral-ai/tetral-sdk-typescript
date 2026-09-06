@@ -17,8 +17,10 @@ Pinned upstream baseline:
 
 ## 2. Type-Level Divergences
 
-There are no current type-level divergences for the restored Session
-`github_repository` credential and resource-rotation surfaces.
+Session `github_repository` creation and resource responses add the Tetral-only
+optional `git_identity: TetralGitIdentity`. Credential and token-rotation shapes
+remain aligned with upstream. Deployment request types reuse the Session resource
+type, but Deployments remain unsupported; this extension enables Session creation only.
 
 Closed alignment: `BetaManagedAgentsModel` follows the upstream known-literal
 union widened by `(string & {})`. Known IDs autocomplete, arbitrary strings
@@ -27,6 +29,11 @@ type-check, and the engine remains the runtime model gatekeeper.
 ## 3. Tetral Extensions And Behavioral Deltas
 
 Tetral-specific extensions and behavior differences are:
+
+Session repository `git_identity` declares repository-local Git authorship, not
+GitHub authentication. It is create-time-only, has no version, and is returned
+unredacted when declared. Omission preserves the Engine fallback; the SDK does
+not fill defaults or sanitize values. See [Git commit identity](README.md#git-commit-identity).
 
 | Surface                        | Tetral behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -97,6 +97,44 @@ await client.beta.sessions.events.send(session.id, {
 
 More runnable examples live in `examples/`.
 
+## Git commit identity
+
+Set `git_identity` on each GitHub repository when creating a Session:
+
+```ts
+const session = await client.beta.sessions.create({
+  agent: agent.id,
+  environment_id: environment.id,
+  vault_ids: [],
+  resources: [
+    {
+      type: 'github_repository',
+      url: 'https://github.com/example/project',
+      authorization_token: process.env['GITHUB_TOKEN']!,
+      git_identity: { name: 'Example Automation', email: 'bot@example.com' },
+    },
+  ],
+});
+```
+
+Engine stores this identity with the repository and configures its local Git
+settings when materializing the Sandbox, including on rebuild. Different
+repositories can declare different default authors and committers. Explicit Git
+command options or environment variables can still override these defaults.
+
+Omit `git_identity` to use name `Tetral Agent` and email
+`session+<session_id>@agents.tetral.ai`. When present, both `name` and `email` are
+required: `null`, empty strings, and malformed identities produce an Engine 400.
+Engine enforces UTF-8 byte limits of 256 for name and 254 for email, and rejects
+characters Git would discard; the SDK sends values unchanged.
+
+The identity is fixed at Session creation, with no update or version API. Reads
+return the declared identity unredacted, or omit the field if none was declared.
+`authorization_token` separately grants repository access, is never returned, and
+can be rotated without changing identity. This feature applies to Session
+creation; Deployments remain unsupported. A runnable example is available in
+[examples/git-identity.ts](examples/git-identity.ts).
+
 ## Compatibility
 
 See [COMPATIBILITY.md](./COMPATIBILITY.md) for the upstream baseline, Tetral extensions, type-level divergences, retained unsupported surfaces, authentication behavior, and upstream sync policy.

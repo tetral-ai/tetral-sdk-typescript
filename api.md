@@ -748,6 +748,7 @@ Types:
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsSystemContentBlock</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsSystemMessageEvent</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">BetaManagedAgentsUserToolResultEvent</a></code>
+- <code><a href="./src/resources/beta/sessions/sessions.ts">TetralGitIdentity</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">TetralSessionProviderSelector</a></code>
 - <code><a href="./src/resources/beta/sessions/sessions.ts">TetralSessionProviderSelectors</a></code>
 
