@@ -19,6 +19,7 @@ import type {
 } from '@tetral-ai/sdk/resources/beta/sessions/resources';
 import type {
   BetaManagedAgentsDeletedSession,
+  TetralGitIdentity,
   BetaManagedAgentsSession,
   BetaManagedAgentsSendSessionEvents,
 } from '@tetral-ai/sdk/resources/beta/sessions';
@@ -393,6 +394,101 @@ describeIntegration('Tetral live integration suite', () => {
     );
     assertAgent(await firstPageItem(client.beta.agents.list({ limit: 1 })));
     assertAgent(await firstPageItem(client.beta.agents.versions.list(agent.id, { limit: 1 })));
+  });
+
+  test('repository Git identities persist independently and cannot be updated', async () => {
+    const client = integrationClient();
+    const { environment, agent } = await createEnvironmentAndAgent(client);
+    const identities: Array<TetralGitIdentity | undefined> = [
+      { name: "山田 O'Brien", email: 'bot+first@example.com' },
+      { name: 'Second Bot', email: 'second@example.com' },
+      undefined,
+    ];
+    const session = await client.beta.sessions.create({
+      agent: agent.id,
+      environment_id: environment.id,
+      vault_ids: [],
+      resources: identities.map((identity, index) => ({
+        type: 'github_repository',
+        url: `https://github.com/example/repository-${index}`,
+        authorization_token: 'integration-repository-token',
+        ...(identity ? { git_identity: identity } : {}),
+      })),
+    });
+    try {
+      // This suite exercises real API persistence. It does not boot a Sandbox or clone GitHub.
+      const readback = await client.beta.sessions.retrieve(session.id);
+      const listed = [];
+      for await (const resource of client.beta.sessions.resources.list(session.id)) listed.push(resource);
+      for (const [index, identity] of identities.entries()) {
+        const url = `https://github.com/example/repository-${index}`;
+        const created = session.resources.find(
+          (resource) => resource.type === 'github_repository' && resource.url === url,
+        );
+        if (!created || created.type !== 'github_repository') throw new Error('Expected GitHub repository');
+        const retrieved = await client.beta.sessions.resources.retrieve(created.id, {
+          session_id: session.id,
+        });
+        const rotated = await client.beta.sessions.resources.update(created.id, {
+          session_id: session.id,
+          authorization_token: 'integration-rotated-token',
+        });
+        // Bypass TypeScript deliberately to verify Engine rejects changes, including
+        // setting an identity on a resource that originally omitted it.
+        await expectInvalidRequest(
+          client.beta.sessions.resources.update(created.id, {
+            session_id: session.id,
+            authorization_token: 'integration-rotated-token',
+            // @ts-expect-error Git identity cannot be changed through this API.
+            git_identity: { name: 'Changed Bot', email: 'changed@example.com' },
+          }),
+        );
+        const afterRejection = await client.beta.sessions.resources.retrieve(created.id, {
+          session_id: session.id,
+        });
+        for (const resource of [
+          created,
+          readback.resources.find((item) => item.type === 'github_repository' && item.id === created.id),
+          listed.find((item) => item.type === 'github_repository' && item.id === created.id),
+          retrieved,
+          rotated,
+          afterRejection,
+        ]) {
+          if (!resource || resource.type !== 'github_repository')
+            throw new Error('Expected GitHub repository');
+          expect(resource.git_identity).toEqual(identity);
+          expect(Object.prototype.hasOwnProperty.call(resource, 'git_identity')).toBe(identity !== undefined);
+          expect(resource).not.toHaveProperty('authorization_token');
+        }
+      }
+    } finally {
+      await client.beta.sessions.delete(session.id);
+    }
+  });
+
+  test('Engine rejects malformed Git identities sent through the SDK', async () => {
+    const client = integrationClient();
+    const { environment, agent } = await createEnvironmentAndAgent(client);
+    // Exercise omission/coercion and trimming across the SDK boundary;
+    // Engine tests own the exhaustive identity validation rules.
+    for (const identity of [null, {}, { name: ' Bot', email: 'bot@example.com' }]) {
+      await expectInvalidRequest(
+        client.beta.sessions.create({
+          agent: agent.id,
+          environment_id: environment.id,
+          vault_ids: [],
+          resources: [
+            {
+              type: 'github_repository',
+              url: 'https://github.com/example/invalid-identity',
+              authorization_token: 'integration-repository-token',
+              // Exercise malformed runtime input from untyped callers as well as invalid strings.
+              git_identity: identity as TetralGitIdentity,
+            },
+          ],
+        }),
+      );
+    }
   });
 
   test('sessions lifecycle, events, threads, files, and session resources', async () => {

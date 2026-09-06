@@ -214,6 +214,13 @@ export interface BetaManagedAgentsGitHubRepositoryResource {
   url: string;
 
   checkout?: SessionsAPI.BetaManagedAgentsBranchCheckout | SessionsAPI.BetaManagedAgentsCommitCheckout | null;
+
+  /**
+   * Unredacted identity declared at Session creation. Omitted when no identity
+   * was declared, even though the Sandbox uses the platform default. Immutable
+   * through the API, including during authorization token rotation.
+   */
+  git_identity?: SessionsAPI.TetralGitIdentity;
 }
 
 /**
@@ -302,7 +309,7 @@ export interface ResourceUpdateParams {
 
   /**
    * Body param: New authorization token for the resource. Currently only
-   * `github_repository` resources support token rotation.
+   * `github_repository` resources support token rotation. Git identity cannot be updated.
    */
   authorization_token: string;
 
