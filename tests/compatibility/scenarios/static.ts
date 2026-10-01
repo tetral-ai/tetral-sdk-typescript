@@ -148,18 +148,12 @@ const notProducedWebhookIDs = [
 
 async function runStaticEventsOutput(context: ProofScenarioContext): Promise<ProofEvidence> {
   const { engineRoot } = staticContext(context);
-  const writer = read(
-    engineRoot,
-    'services/agent-runtime-pod/packages/core/src/runtime/session-event-writer.ts',
-  );
-  const bridgeEvents = read(engineRoot, 'services/agent-runtime-bridge/bridge_api_events.go');
+  const writer = read(engineRoot, 'services/agent-runtime/packages/core/src/runtime/session-event-writer.ts');
+  const bridgeEvents = read(engineRoot, 'services/bridge/bridge_api_events.go');
+  const bridgeSettlement = read(engineRoot, 'services/bridge/bridge_api_tool_settlement.go');
   const router = read(engineRoot, 'internal/httpapi/router.go');
   const evidence: Record<string, boolean> = {};
   for (const [id, eventType] of notProducedEventTypes) evidence[id] = !writer.includes(`"${eventType}"`);
-  const allowedTypes = bridgeEvents.slice(
-    bridgeEvents.indexOf('func writeEventTypeAllowed('),
-    bridgeEvents.indexOf('type threadMutationScope struct'),
-  );
   const durableWrite = bridgeEvents.slice(
     bridgeEvents.indexOf('func (s *PostgreSQLBridgeAPIStore) WriteEvent('),
     bridgeEvents.indexOf('func normalizeServerToolUseUsage('),
@@ -168,9 +162,20 @@ async function runStaticEventsOutput(context: ProofScenarioContext): Promise<Pro
     bridgeEvents.indexOf('func (s threadMutationScope) publicProjection('),
     bridgeEvents.indexOf('func lockThreadMutationTx('),
   );
-  const durableProjection = bridgeEvents.slice(
-    bridgeEvents.indexOf('func projectRuntimeEventTx('),
-    bridgeEvents.indexOf('func mergeAssistantMessagePartTx('),
+  const toolDeclaration = bridgeEvents.slice(
+    bridgeEvents.indexOf('func normalizeRuntimeToolDeclaration('),
+    bridgeEvents.indexOf('func runtimeToolContextDelta('),
+  );
+  const toolPayload = bridgeEvents.slice(
+    bridgeEvents.indexOf('func runtimeToolEventPayloadJSON('),
+    bridgeEvents.indexOf('func normalizeRuntimeToolDeclaration('),
+  );
+  const durableSettlement = bridgeSettlement.slice(
+    bridgeSettlement.indexOf('func (s *PostgreSQLBridgeAPIStore) SettleToolResult('),
+    bridgeSettlement.indexOf('func durableToolResultExistsTx('),
+  );
+  const resultPayload = bridgeSettlement.slice(
+    bridgeSettlement.indexOf('func durableToolResultPayloadJSON('),
   );
   const mainThreadPublicProjection =
     `if s.visibility != "public" || s.role == "approval_reviewer" {\n` +
@@ -179,22 +184,41 @@ async function runStaticEventsOutput(context: ProofScenarioContext): Promise<Pro
     `\tif s.role == "main" {\n` +
     `\t\treturn "public", true\n` +
     `\t}`;
+  // MCP events are derived from typed declarations and settlements, rather than
+  // accepted as generic WriteEvent event types. Keep both durable/public paths.
   evidence['T-COMPAT-EVOUT-25'] =
-    allowedTypes.includes('"agent.mcp_tool_use"') &&
+    toolDeclaration.includes('case bridgev1.RuntimeToolEventKind_RUNTIME_TOOL_EVENT_KIND_MCP:') &&
+    toolDeclaration.includes('eventType = "agent.mcp_tool_use"') &&
+    toolPayload.includes('"input":                projection.CanonicalExecutionInput') &&
+    toolPayload.includes('"name":                 projection.ToolName') &&
+    toolPayload.includes('payload["mcp_server_name"] = projection.MCPServerName') &&
+    durableWrite.includes('toolProjection, err = normalizeRuntimeToolDeclaration(toolDeclaration)') &&
+    durableWrite.includes('eventType = toolProjection.EventType') &&
+    durableWrite.includes('payloadJSON, err = runtimeToolEventPayloadJSON(toolProjection)') &&
     durableWrite.includes('INSERT INTO session_events') &&
-    durableWrite.includes('visibility, sessionVisible := threadScope.publicProjection(eventType)') &&
+    durableWrite.includes('visibility, sessionVisible := threadScope.publicProjection(durableEventType)') &&
     publicProjection.includes(mainThreadPublicProjection) &&
-    durableProjection.includes(
-      'case "agent.mcp_tool_use":\n\t\treturn projectToolUseEventTx(ctx, tx, scope, event, now)',
+    durableWrite.includes(
+      'appendSessionEventStreamChangeTx(ctx, tx, request.GetScope(), eventID, visibility, sessionVisible, now)',
     );
   evidence['T-COMPAT-EVOUT-26'] =
-    allowedTypes.includes('"agent.mcp_tool_result"') &&
-    durableWrite.includes('INSERT INTO session_events') &&
-    durableWrite.includes('visibility, sessionVisible := threadScope.publicProjection(eventType)') &&
+    durableSettlement.includes(
+      'if toolEventType == "agent.mcp_tool_use" {\n\t\t\tresultEventType = "agent.mcp_tool_result"',
+    ) &&
+    durableSettlement.includes(
+      'payloadJSON, err := durableToolResultPayloadJSON(resultEventType, toolUseEventID, settlement)',
+    ) &&
+    durableSettlement.includes('INSERT INTO session_events') &&
+    durableSettlement.includes(
+      'visibility, sessionVisible := threadScope.publicProjection(resultEventType)',
+    ) &&
     publicProjection.includes(mainThreadPublicProjection) &&
-    durableProjection.includes(
-      'case "agent.mcp_tool_result":\n\t\treturn projectToolResultEventTx(ctx, tx, scope, event, now)',
-    );
+    durableSettlement.includes(
+      'appendSessionEventStreamChangeTx(ctx, tx, request.GetScope(), eventID, visibility, sessionVisible, now)',
+    ) &&
+    resultPayload.includes('payload["mcp_tool_use_id"] = toolUseEventID') &&
+    resultPayload.includes('payload["content"] = []map[string]string{{"type": "text", "text": text}}') &&
+    resultPayload.includes('payload["content"] = []map[string]string{{"type": "text", "text": message}}');
   evidence['T-COMPAT-EVOUT-38'] =
     !writer.includes('"billing_error"') && !writer.includes('"credential_host_unreachable_error"');
   evidence['T-COMPAT-EVOUT-39'] =
