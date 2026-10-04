@@ -17,7 +17,9 @@ const sources: Record<string, string> = {
   [eventsPath]: `package bridge
 import "github.com/tetral-ai/tetral/internal/runtimecontrol"
 func (s *PostgreSQLBridgeAPIStore) WriteEvent(request Request) {
- toolProjection, err = normalizeRuntimeToolDeclaration(toolDeclaration)
+ prepared, prepareErr := normalizeRuntimeToolDeclaration(toolDeclaration)
+ err = prepareErr
+ toolProjection = prepared.projection
  eventType = toolProjection.EventType
  payloadJSON, err = runtimeToolEventPayloadJSON(toolProjection)
  threadScope, err := runtimecontrol.LockThreadMutationTx(ctx, tx, request.GetScope())
@@ -32,6 +34,8 @@ func normalizeRuntimeToolDeclaration(declaration Declaration) {
  case bridgev1.RuntimeToolEventKind_RUNTIME_TOOL_EVENT_KIND_MCP:
  eventType = "agent.mcp_tool_use"
  }
+ projection := runtimecontrol.ToolProjection{EventType: eventType,}
+ return preparedRuntimeToolDeclaration{projection: projection, contextParts: parts}, nil
 }
 func runtimeToolEventPayloadJSON(projection Projection) {
  payload := map[string]any{
@@ -111,6 +115,29 @@ test.each<[string, string, string, string, string[]]>([
     [use],
   ],
   ['missing payload', eventsPath, 'func runtimeToolEventPayloadJSON(', 'func removedPayload(', [use]],
+  [
+    'disconnected normalization',
+    eventsPath,
+    'prepared, prepareErr := normalizeRuntimeToolDeclaration(toolDeclaration)',
+    'ignored, prepareErr := normalizeRuntimeToolDeclaration(toolDeclaration)',
+    [use],
+  ],
+  [
+    'disconnected prepared projection',
+    eventsPath,
+    'toolProjection = prepared.projection',
+    'toolProjection = ignored.projection',
+    [use],
+  ],
+  ['discarded preparation error', eventsPath, 'err = prepareErr', 'err = nil', [use]],
+  [
+    'wrong prepared return',
+    eventsPath,
+    'projection: projection, contextParts: parts',
+    'projection: ignoredProjection, contextParts: parts',
+    [use],
+  ],
+  ['wrong projected event type', eventsPath, 'EventType: eventType,', 'EventType: ignoredType,', [use]],
   [
     'wrong use type',
     eventsPath,

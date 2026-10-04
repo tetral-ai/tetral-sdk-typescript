@@ -203,7 +203,13 @@ async function runStaticEventsOutput(context: ProofScenarioContext): Promise<Pro
     toolPayload.includes('"input":                projection.CanonicalExecutionInput') &&
     toolPayload.includes('"name":                 projection.ToolName') &&
     toolPayload.includes('payload["mcp_server_name"] = projection.MCPServerName') &&
-    durableWrite.includes('toolProjection, err = normalizeRuntimeToolDeclaration(toolDeclaration)') &&
+    toolDeclaration.replace(/\s+/g, ' ').includes('EventType: eventType,') &&
+    toolDeclaration.includes(
+      'return preparedRuntimeToolDeclaration{projection: projection, contextParts: parts}, nil',
+    ) &&
+    durableWrite.includes('prepared, prepareErr := normalizeRuntimeToolDeclaration(toolDeclaration)') &&
+    durableWrite.includes('err = prepareErr') &&
+    durableWrite.includes('toolProjection = prepared.projection') &&
     durableWrite.includes('eventType = toolProjection.EventType') &&
     durableWrite.includes('payloadJSON, err = runtimeToolEventPayloadJSON(toolProjection)') &&
     durableWrite.includes(
