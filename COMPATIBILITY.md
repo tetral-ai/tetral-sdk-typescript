@@ -26,6 +26,11 @@ Closed alignment: `BetaManagedAgentsModel` follows the upstream known-literal
 union widened by `(string & {})`. Known IDs autocomplete, arbitrary strings
 type-check, and the engine remains the runtime model gatekeeper.
 
+Memory `BetaManagedAgentsActor` adds the Tetral Engine response variant
+`BetaManagedAgentsServiceActor`: `{type: 'service_actor', service_id: string}`.
+Both `created_by` and nullable `redacted_by` use the shared union; API, Session
+and User variants retain their fields and discriminators.
+
 ## 3. Tetral Extensions And Behavioral Deltas
 
 Tetral-specific extensions and behavior differences are:
@@ -54,6 +59,42 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | Cloud Environments             | Supported for cloud environments with `unrestricted`, `blocked`, or `cidr_allow_list` networking.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Provider credentials in Vault  | Supported through `provider_api_key` and OpenAI `provider_oauth`. OpenAI OAuth create requires `access_mode: "oauth"` plus access token, refresh token, expiry, and account ID.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | MCP OAuth validation refresh   | On `mcp_oauth_validate`, the refresh leg keeps `http_response.body` and `http_response.content_type` in the response shape but always returns both as empty strings. `status_code` and `body_truncated` remain available; MCP probe diagnostics are unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+
+### Engine authentication and Memory attribution
+
+Explicit `config.authentication.type: 'oidc_federation'` uses the existing SDK
+JSON JWT-bearer provider, token cache and reactive 401 retry against the Engine's
+`/v1/oauth/token`. The Engine must already trust the HTTPS issuer/audience and
+have provisioned the exact identity and eligible workspace grant. This support
+is explicit configuration, not automatic OIDC selection by default credential
+discovery. Provider API keys remain Vault credentials, not Engine authentication.
+See the [OIDC configuration example](README.md#engine-oidc-federation).
+
+Organization, federation rule, workspace and optional service-account fields are
+selectors, not identity proof or provisioning instructions. An omitted workspace
+selects the sole eligible grant; multiple eligible grants are ambiguous. `default`
+selects the configured Engine default workspace and still requires a grant.
+There is no upstream organization-default fallback. A service-account selector
+must match its service binding and cannot be supplied for a human identity.
+These Engine rules do not replace hosted Anthropic's workspace-selection rules.
+
+Memory attribution identifies the actor that performed the operation:
+
+| Credential or execution                 | Actor           | Identity field                          |
+| --------------------------------------- | --------------- | --------------------------------------- |
+| Direct service identity token           | `service_actor` | `service_id`: stable Engine identity ID |
+| Direct human identity token             | `user_actor`    | `user_id`: stable Engine identity ID    |
+| Independent or identity-derived API key | `api_actor`     | `api_key_id`: actual key ID             |
+| Runtime Session operation               | `session_actor` | `session_id`: Session ID                |
+
+The service ID is neither the upstream JWT subject nor the service-account
+selector. SDK HTTP fixture tests check received typed variants and preserve the
+older union arms. Integration rows CONN-20 and MEM-24 require the native
+`TestOIDCKeycloakSDK` composition with real HTTPS Keycloak, Auth, PostgreSQL and
+actual SDK responses. They require both identity flows, cache/revocation/retry
+observations and typed `created_by`/`redacted_by` identity checks. A fabricated
+object, raw JSON cast, source scan or skipped composition does not prove those
+rows. Source support and actual integration evidence do not imply an npm release.
 
 ### Session streaming
 

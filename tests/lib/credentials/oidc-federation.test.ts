@@ -143,9 +143,8 @@ describe('oidcFederationProvider', () => {
   });
 
   it('appends the full token-exchange hint on 401 when workspaceId is unset', async () => {
-    // Without a workspaceId the most common cause is a federation rule that
-    // spans multiple workspaces — surface the workspace-ID fix alongside the
-    // generic guidance and the Console auth-event pointer.
+    // Without a workspaceId, ambiguous selection may require an explicit selector.
+    // Keep hosted Anthropic and Engine diagnostics qualified by server.
     const mockFetch: Fetch = jest.fn().mockResolvedValue(jsonResponse({ error: 'unauthorized' }, 401));
 
     const provider = oidcFederationProvider({ ...baseConfig, fetch: mockFetch });
@@ -156,13 +155,14 @@ describe('oidcFederationProvider', () => {
       const message = (err as WorkloadIdentityError).message;
       expect(message).toContain('Ensure your federation rule matches your identity token');
       expect(message).toContain('ANTHROPIC_WORKSPACE_ID');
-      expect(message).toContain('View your authentication events');
+      expect(message).toContain('For hosted Anthropic, view your authentication events');
+      expect(message).toContain('For Tetral Engine, ask your administrator');
     }
   });
 
   it('omits the workspace-ID portion of the hint on 401 when workspaceId is set', async () => {
     // When workspaceId is already configured the workspace-ID suggestion is
-    // noise, but the generic guidance and Console auth-event pointer still apply.
+    // noise, but the generic guidance and qualified server help still apply.
     const mockFetch: Fetch = jest.fn().mockResolvedValue(jsonResponse({ error: 'unauthorized' }, 401));
 
     const provider = oidcFederationProvider({
@@ -176,7 +176,8 @@ describe('oidcFederationProvider', () => {
     } catch (err) {
       const message = (err as WorkloadIdentityError).message;
       expect(message).toContain('Ensure your federation rule');
-      expect(message).toContain('View your authentication events');
+      expect(message).toContain('For hosted Anthropic, view your authentication events');
+      expect(message).toContain('For Tetral Engine, ask your administrator');
       expect(message).not.toContain('ANTHROPIC_WORKSPACE_ID');
     }
   });
@@ -192,7 +193,8 @@ describe('oidcFederationProvider', () => {
     } catch (err) {
       const message = (err as WorkloadIdentityError).message;
       expect(message).not.toContain('Ensure your federation rule');
-      expect(message).not.toContain('View your authentication events');
+      expect(message).not.toContain('For hosted Anthropic');
+      expect(message).not.toContain('For Tetral Engine');
       expect(message).not.toContain('ANTHROPIC_WORKSPACE_ID');
     }
   });

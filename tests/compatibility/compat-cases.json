@@ -3865,11 +3865,11 @@
   },
   {
     "id": "T-COMPAT-CONN-19",
-    "name": "T-COMPAT-CONN-19 client authToken/credentials/config/profile → Bearer / OAuth",
-    "surface": "client authToken/credentials/config/profile → Bearer / OAuth",
+    "name": "T-COMPAT-CONN-19 invalid Bearer token",
+    "surface": "invalid Bearer token",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "§1.4.5: 401 authentication_error naming x-api-key (SDK Bearer/OAuth auth modes not accepted)",
+    "expectation": "Unrecognized Bearer credentials return 401 authentication_error; this does not reject supported explicit OIDC federation.",
     "locator": {
       "suite": "live",
       "scenario": "live-conn",
@@ -3987,6 +3987,34 @@
       "scenario": "live-gap",
       "assertion": "T-COMPAT-GAP-8",
       "handler": "live-gap#T-COMPAT-GAP-8"
+    }
+  },
+  {
+    "id": "T-COMPAT-CONN-20",
+    "name": "T-COMPAT-CONN-20 explicit oidc_federation authentication",
+    "surface": "explicit oidc_federation authentication",
+    "status": "supported",
+    "proof": "integration",
+    "expectation": "Native HTTPS Keycloak/Auth/SDK composition accepts provisioned human/service identities, caches workspace-scoped tokens, and re-exchanges once after revocation with one authorized effect.",
+    "locator": {
+      "suite": "integration",
+      "scenario": "integration-oidc",
+      "assertion": "T-COMPAT-CONN-20",
+      "handler": "integration-oidc#T-COMPAT-CONN-20"
+    }
+  },
+  {
+    "id": "T-COMPAT-MEM-24",
+    "name": "T-COMPAT-MEM-24 service_actor Memory attribution",
+    "surface": "service_actor Memory attribution",
+    "status": "supported",
+    "proof": "integration",
+    "expectation": "Actual SDK received created_by and redacted_by discriminate service_actor/service_id as the stable Engine identity; direct human attribution remains user_actor/user_id.",
+    "locator": {
+      "suite": "integration",
+      "scenario": "integration-oidc",
+      "assertion": "T-COMPAT-MEM-24",
+      "handler": "integration-oidc#T-COMPAT-MEM-24"
     }
   }
 ]

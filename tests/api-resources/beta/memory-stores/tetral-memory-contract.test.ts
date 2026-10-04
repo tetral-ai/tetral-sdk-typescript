@@ -13,11 +13,19 @@ import type {
 } from '@tetral-ai/sdk/resources/beta/memory-stores/memories';
 import type {
   BetaManagedAgentsMemoryVersion,
+  BetaManagedAgentsActor,
   MemoryVersionListParams,
   MemoryVersionRedactParams,
 } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
 import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import {
+  retrieveAttributedMemoryVersion,
+  redactAttributedMemoryVersion,
+} from '../../../integration/fixtures/oidc-memory-actors';
+import type { MemoryStores } from '@tetral-ai/sdk/resources/beta/memory-stores';
+import type { MemoryVersions } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
+import type { BetaManagedAgentsServiceActor } from '@tetral-ai/sdk/resources/beta/memory-stores';
 
 const MEMORY_STORE: BetaManagedAgentsMemoryStore = {
   id: 'memstore_123',
@@ -292,6 +300,74 @@ describe('Tetral Memory SDK contract', () => {
     expect(listed).toEqual(['memver_page_1', 'memver_page_2']);
     expect(redacted.redacted_at).toBe('2026-01-02T00:00:00Z');
     expect(redacted.content).toBeNull();
+  });
+
+  test.each<BetaManagedAgentsActor>([
+    { type: 'service_actor', service_id: 'identity_service_fixture' },
+    { type: 'user_actor', user_id: 'identity_human_fixture' },
+    { type: 'api_actor', api_key_id: 'key_123' },
+    { type: 'session_actor', session_id: 'sesn_123' },
+  ])('received $type attribution retains its exact identity on retrieve and redact', async (actor) => {
+    const client = new Anthropic({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (_url: any, init?: RequestInit) =>
+        jsonResponse({
+          ...MEMORY_VERSION,
+          created_by: actor,
+          redacted_by: requestMethod(init) === 'POST' ? actor : null,
+        }),
+    });
+    const retrieved = await retrieveAttributedMemoryVersion(
+      client,
+      'memver_123',
+      { memory_store_id: 'memstore_123' },
+      actor,
+    );
+    const redacted = await redactAttributedMemoryVersion(
+      client,
+      'memver_123',
+      { memory_store_id: 'memstore_123' },
+      actor,
+      actor,
+    );
+    expect(retrieved.created_by).toEqual(actor);
+    expect(retrieved.redacted_by).toBeNull();
+    expect(redacted.created_by).toEqual(actor);
+    expect(redacted.redacted_by).toEqual(actor);
+    if (retrieved.created_by.type === 'service_actor') {
+      const exported: BetaManagedAgentsServiceActor = retrieved.created_by;
+      const storeExport: MemoryStores.BetaManagedAgentsServiceActor = exported;
+      const versionExport: MemoryVersions.BetaManagedAgentsServiceActor = storeExport;
+      expect(versionExport.service_id).toBe('identity_service_fixture');
+      // @ts-expect-error A service actor identifies the service, not an API key.
+      void retrieved.created_by.api_key_id;
+    }
+    if (redacted.redacted_by?.type === 'service_actor') {
+      expect(redacted.redacted_by.service_id).toBe('identity_service_fixture');
+      // @ts-expect-error A service actor must not be narrowed as a user actor.
+      void redacted.redacted_by.user_id;
+    }
+  });
+
+  test('typed received service attribution rejects an upstream selector used as the stable identity', async () => {
+    const client = new Anthropic({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async () =>
+        jsonResponse({
+          ...MEMORY_VERSION,
+          created_by: { type: 'service_actor', service_id: 'upstream-service-selector' },
+        }),
+    });
+    await expect(
+      retrieveAttributedMemoryVersion(
+        client,
+        'memver_123',
+        { memory_store_id: 'memstore_123' },
+        { type: 'service_actor', service_id: 'identity_service_fixture' },
+      ),
+    ).rejects.toThrow('Received Memory attribution does not match the fixture identity');
   });
 
   test('memory write conflicts parse backend 409 invalid_request_error without SDK preflight', async () => {

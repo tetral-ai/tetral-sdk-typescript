@@ -113,5 +113,10 @@
     "suite": "integration",
     "source": "tests/compatibility/scenarios/integration.ts",
     "export": "integrationScenarioRunners"
+  },
+  "integration-oidc": {
+    "suite": "integration",
+    "source": "tests/compatibility/scenarios/integration.ts",
+    "export": "integrationScenarioRunners"
   }
 }

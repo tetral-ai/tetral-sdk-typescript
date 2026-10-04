@@ -48,6 +48,29 @@ resource suite above does not supply the streaming topology. Engine's owning
 streaming compositions separately cover recovery/error/interrupt Ends, child
 visibility, loss and backpressure against the identified SDK revision.
 
+## Observed OIDC and Memory actor proofs
+
+The same source-bound `test:compatibility:integration` command also dispatches
+CONN-20 and MEM-24 through Engine's `TestOIDCKeycloakSDK`. In addition to the
+streaming prerequisites above, supply the selected Engine's isolated HTTPS
+Keycloak and TLS PostgreSQL fixture environment and its installed dependency
+requirements. The command does not start those dependencies. The Engine fixture
+checks its exact clean SDK pin, so the Engine revision must explicitly adopt this
+SDK revision and the typed test helper before the rows can pass.
+
+`fixtures/oidc-memory-actors.ts` imports SDK source and awaits actual typed
+MemoryVersion retrieve/redact calls. It compares the discriminated actor identity
+against the Engine fixture's expected stable identity, for both `created_by` and
+`redacted_by`, without casting raw JSON or introducing a public runtime API.
+The Engine caller supplies the actual fixture identity ID, never the upstream
+service-account selector. Its human/service subtests retain the actual Session,
+Memory create/update/read/redact/delete flow and independent SQL assertions.
+The report validator requires executed root, both identity subtests, package
+passes, and all four named observations from their owning subtests; skips,
+missing typed observations and failed child reports fail the compatibility rows.
+SDK CI uses controlled reports to test that reconciliation, not to claim real
+Keycloak or Engine integration.
+
 ## Route Family Mapping
 
 | Route family                             | Test file                    | Asserted response types                                                                                                        | Assertion functions                                                                                                                                                                                                                                     |
