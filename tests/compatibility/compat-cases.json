@@ -1039,28 +1039,28 @@
     "id": "T-COMPAT-EVOUT-35",
     "name": "T-COMPAT-EVOUT-35 event_start (StartEvent + previews)",
     "surface": "event_start (StartEvent + previews)",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "§2: streaming previews never produced",
+    "status": "supported",
+    "proof": "integration",
+    "expectation": "Eligible public-primary Session opt-in produces exact typed event_start wrappers; ordinary Session and every Thread stream remain formal-only; thinking is start-only without body",
     "locator": {
-      "suite": "static",
-      "scenario": "static-evout",
+      "suite": "integration",
+      "scenario": "integration-preview",
       "assertion": "T-COMPAT-EVOUT-35",
-      "handler": "static-evout#T-COMPAT-EVOUT-35"
+      "handler": "integration-preview#T-COMPAT-EVOUT-35"
     }
   },
   {
     "id": "T-COMPAT-EVOUT-36",
     "name": "T-COMPAT-EVOUT-36 event_delta (DeltaEvent + DeltaContent + EventStreamParams.event_deltas)",
     "surface": "event_delta (DeltaEvent + DeltaContent + EventStreamParams.event_deltas)",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "§2: never produced; event_deltas query param accepted-and-ignored",
+    "status": "supported",
+    "proof": "integration",
+    "expectation": "Session event_deltas repeated query keys enable eligible contiguous text previews; final committed original messages reconcile before matching End; no Thread opt-in or list previews",
     "locator": {
-      "suite": "static",
-      "scenario": "static-evout",
+      "suite": "integration",
+      "scenario": "integration-preview",
       "assertion": "T-COMPAT-EVOUT-36",
-      "handler": "static-evout#T-COMPAT-EVOUT-36"
+      "handler": "integration-preview#T-COMPAT-EVOUT-36"
     }
   },
   {

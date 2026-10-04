@@ -102,8 +102,6 @@ const notProducedEventTypes: ReadonlyArray<readonly [string, string]> = [
   ['T-COMPAT-EVOUT-31', 'user.define_outcome'],
   ['T-COMPAT-EVOUT-32', 'user.tool_result'],
   ['T-COMPAT-EVOUT-33', 'system.message'],
-  ['T-COMPAT-EVOUT-35', 'event_start'],
-  ['T-COMPAT-EVOUT-36', 'event_delta'],
 ] as const;
 
 const notProducedWebhookIDs = [

@@ -2,7 +2,13 @@ import { compatCases, type CompatibilityProof } from './compat-registry';
 
 describe('SDK compatibility proof registry', () => {
   test.each(compatCases)('$name', (compatibilityCase) => {
-    const allowedProofs = new Set<CompatibilityProof>(['live', 'static', 'rejection', 'not-produced']);
+    const allowedProofs = new Set<CompatibilityProof>([
+      'live',
+      'static',
+      'integration',
+      'rejection',
+      'not-produced',
+    ]);
     expect(compatibilityCase.id).toMatch(/^T-COMPAT-[A-Z]+-[1-9][0-9]*$/);
     expect(compatibilityCase.name).toBe(`${compatibilityCase.id} ${compatibilityCase.surface}`);
     expect(compatibilityCase.expectation.trim()).not.toBe('');
@@ -11,7 +17,9 @@ describe('SDK compatibility proof registry', () => {
       `${compatibilityCase.locator.scenario}#${compatibilityCase.id}`,
     );
     expect(compatibilityCase.locator.suite).toBe(
-      compatibilityCase.proof === 'live' || compatibilityCase.proof === 'rejection' ? 'live' : 'static',
+      compatibilityCase.proof === 'integration' ? 'integration'
+      : compatibilityCase.proof === 'live' || compatibilityCase.proof === 'rejection' ? 'live'
+      : 'static',
     );
     expect(allowedProofs).toContain(compatibilityCase.proof);
     if (compatibilityCase.status === 'rejected') {
@@ -19,7 +27,7 @@ describe('SDK compatibility proof registry', () => {
     } else if (compatibilityCase.status === 'not-produced') {
       expect(compatibilityCase.proof).toBe('not-produced');
     } else {
-      expect(['live', 'static']).toContain(compatibilityCase.proof);
+      expect(['live', 'static', 'integration']).toContain(compatibilityCase.proof);
     }
   });
 

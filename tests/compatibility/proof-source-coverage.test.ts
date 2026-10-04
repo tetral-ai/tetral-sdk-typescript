@@ -20,7 +20,7 @@ function executableIDsIn(sourcePath: string): Map<string, number> {
 }
 
 describe('compatibility proof source coverage', () => {
-  test.each<CompatibilitySuite>(['live', 'static'])(
+  test.each<CompatibilitySuite>(['live', 'static', 'integration'])(
     '%s suite declares every assigned assertion ID',
     (suite) => {
       const sourceIDs = executableIDsIn(path.join(__dirname, 'scenarios', `${suite}.ts`));

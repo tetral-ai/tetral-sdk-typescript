@@ -446,10 +446,11 @@ export interface BetaManagedAgentsDeltaContent {
 /**
  * An incremental update to an event that is still being streamed. Deltas are
  * best-effort and may stop early; when the buffered event with id == event_id is
- * produced it carries the complete content. A model request that ends early (an
- * error or interrupt) produces no buffered event — its terminal
- * span.model_request_end closes the preview. Only sent on stream connections that
- * opt in via event_deltas; never appears in event history.
+ * produced it carries the complete content. Tetral publishes complete committed
+ * text before the matching span.model_request_end, including error or interrupt
+ * Ends. Incomplete or uncommitted content has no fabricated final event; End
+ * closes any remaining preview. Tetral sends previews only for the public primary
+ * thread on opted-in Session streams; they never appear in event history.
  */
 export interface BetaManagedAgentsDeltaEvent {
   /**
@@ -914,10 +915,12 @@ export interface BetaManagedAgentsSessionServerToolUse {
 /**
  * Opens a preview of a buffered event. Carries the previewed event's type and id
  * only. Followed by zero or more event_delta events with the same event id,
- * normally concluded by the buffered event carrying that id. If the producing
- * model request ends without that event (an error or interrupt mid-stream), its
- * terminal span.model_request_end closes the preview. Only sent on stream
- * connections that opt in via event_deltas; never appears in event history.
+ * normally concluded by the buffered event carrying that id. Tetral publishes
+ * already committed complete text even at an error or interrupt End; it never
+ * fabricates a final event for incomplete or uncommitted content. The matching
+ * span.model_request_end closes remaining previews. Tetral sends previews only
+ * for the public primary thread on opted-in Session streams; they never appear
+ * in event history.
  */
 export interface BetaManagedAgentsStartEvent {
   /**

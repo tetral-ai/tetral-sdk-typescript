@@ -2,6 +2,7 @@ import manifest from './proof-suites.json';
 
 import { compatCases, type CompatibilitySuite } from './compat-registry';
 import { liveScenarioRunners } from './scenarios/live';
+import { integrationScenarioRunners } from './scenarios/integration';
 import { staticScenarioRunners } from './scenarios/static';
 import type {
   CompatibilityProofExecution,
@@ -19,6 +20,7 @@ export const proofSuiteManifest = manifest as Record<string, ProofSuiteManifestE
 
 export const proofScenarioRunners: Record<string, ProofScenarioRunner> = {
   ...liveScenarioRunners,
+  ...integrationScenarioRunners,
   ...staticScenarioRunners,
 };
 

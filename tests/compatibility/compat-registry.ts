@@ -1,8 +1,8 @@
 import registry from './compat-cases.json';
 
 export type CompatibilityStatus = 'supported' | 'rejected' | 'not-produced';
-export type CompatibilityProof = 'live' | 'static' | 'rejection' | 'not-produced';
-export type CompatibilitySuite = 'live' | 'static';
+export type CompatibilityProof = 'live' | 'static' | 'integration' | 'rejection' | 'not-produced';
+export type CompatibilitySuite = 'live' | 'static' | 'integration';
 
 export interface CompatibilityProofLocator {
   suite: CompatibilitySuite;

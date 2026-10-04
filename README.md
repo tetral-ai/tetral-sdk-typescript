@@ -97,6 +97,51 @@ await client.beta.sessions.events.send(session.id, {
 
 More runnable examples live in `examples/`.
 
+## Session streaming
+
+Open the Session stream before sending a new message to receive optional
+previews from its public primary thread:
+
+```ts
+const stream = await client.beta.sessions.events.stream(session.id, {
+  event_deltas: ['agent.message', 'agent.thinking'],
+});
+try {
+  await client.beta.sessions.events.send(session.id, {
+    events: [{ type: 'user.message', content: [{ type: 'text', text: 'Hello Tetral.' }] }],
+  });
+  for await (const event of stream) {
+    console.log(event);
+    if (event.type === 'session.status_idle' || event.type === 'session.status_terminated') break;
+  }
+} finally {
+  stream.controller.abort();
+}
+```
+
+Text previews are provisional and may stop early. The complete committed
+`agent.message` replaces the preview with the same ID. Thinking previews carry
+only a notification. Reconnecting does not replay previews; history lists
+recover formal events. Complete committed text arrives before its matching
+request End even after an error or interrupt, while incomplete or uncommitted
+content has no fabricated final message. Tools can continue after request End.
+
+Omit `event_deltas` for formal-only Session delivery. Thread delivery is always
+formal-only:
+
+```ts
+const threadStream = await client.beta.sessions.threads.events.stream(threadID, {
+  session_id: session.id,
+});
+```
+
+The [streaming example](examples/session-streaming.ts) logs provisional fragments
+by event ID and complete committed messages without retaining preview state.
+`accumulateManagedAgentsEvent` can fold text fragments and replace them with a
+final message; keep a separate snapshot per event ID when messages interleave.
+The complete behavioral contract is in
+[COMPATIBILITY.md](COMPATIBILITY.md#session-streaming).
+
 ## Git commit identity
 
 Set `git_identity` on each GitHub repository when creating a Session:

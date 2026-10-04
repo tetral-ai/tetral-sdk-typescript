@@ -55,6 +55,34 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | Provider credentials in Vault  | Supported through `provider_api_key` and OpenAI `provider_oauth`. OpenAI OAuth create requires `access_mode: "oauth"` plus access token, refresh token, expiry, and account ID.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | MCP OAuth validation refresh   | On `mcp_oauth_validate`, the refresh leg keeps `http_response.body` and `http_response.content_type` in the response shape but always returns both as empty strings. `status_code` and `body_truncated` remain available; MCP probe diagnostics are unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
+### Session streaming
+
+Session `events.stream` supports optional `event_deltas: ['agent.message',
+'agent.thinking']` through the existing upstream API. Only the public primary
+thread is eligible. `agent.message` previews use `event_start` followed by
+best-effort `event_delta` text fragments; `agent.thinking` is a start-only
+notification with no thinking body or signature. Omitting `event_deltas` keeps
+Session delivery formal-only. Every Thread stream, including the primary
+Thread endpoint, remains formal-only and has no delta request parameter.
+Session and Thread event lists contain only formal events.
+
+Open the stream before sending input to observe previews for the new request.
+Previews are not replayed on reconnect, and opening during a request does not
+subscribe to that request's previews. Keep accumulated text provisional: the
+complete `agent.message` with the same ID replaces it, including when previews
+stop or lose their tail. The helper tracks one message at a time; keep a
+snapshot per event ID when messages interleave. See
+[Session streaming](README.md#session-streaming) and the
+[runnable example](examples/session-streaming.ts).
+
+Complete committed text is list-readable as soon as it commits. On SSE it is
+published in stored order immediately before the matching
+`span.model_request_end`, for both ordinary and opted-in viewers. This includes
+complete text committed before an error or interrupt End. Incomplete or
+uncommitted content has no fabricated final event; End closes remaining
+previews. Request End does not mean every tool or the whole agent turn has
+finished.
+
 ## 4. Retained Unsupported Or Deferred Surface
 
 These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; unsupported requests are rejected by Tetral backend admission with SDK-compatible errors.
@@ -64,7 +92,6 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 | Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                                                                                                               |
 | Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
 | Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
-| Session event delta streaming                                            | Retained unsupported. `event_deltas` previews and the accumulate helper are inert until the engine emits delta events.                                                             |
 | Session create `agent_with_overrides`                                    | Retained unsupported. Use the plain agent reference forms; override variants are rejected by admission.                                                                            |
 | Agent and deployment webhook event types                                 | Deferred with the Webhooks resource.                                                                                                                                               |
 | Session list reverse pagination                                          | Retained unsupported. `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged, and `prev_page` stays `null` until the engine implements reverse cursors. |
