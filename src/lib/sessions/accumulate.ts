@@ -11,9 +11,9 @@ export type AccumulatedEvent = BetaManagedAgentsAgentMessageEvent;
  * snapshot — the `msg` argument is never mutated.
  *
  * - `event_start` opens the preview: a new snapshot with empty content is
- *   returned (so `msg` may be `undefined`). Returns `undefined` when the
- *   previewed event is not an `agent.message` — this helper only tracks
- *   `agent.message` previews.
+ *   returned (so `msg` may be `undefined`). Other preview types leave the
+ *   snapshot unchanged — this helper only tracks `agent.message` previews.
+ *   Keep one snapshot per event ID and route interleaved events to that snapshot.
  * - `event_delta` is folded into `msg`: a new `delta.index` inserts the
  *   fragment as a fresh content entry; an existing index returns a copy with
  *   that entry appended to. An unrecognised fragment type on an existing

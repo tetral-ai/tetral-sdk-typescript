@@ -26,6 +26,11 @@ Closed alignment: `BetaManagedAgentsModel` follows the upstream known-literal
 union widened by `(string & {})`. Known IDs autocomplete, arbitrary strings
 type-check, and the engine remains the runtime model gatekeeper.
 
+Memory `BetaManagedAgentsActor` adds the Tetral Engine response variant
+`BetaManagedAgentsServiceActor`: `{type: 'service_actor', service_id: string}`.
+Both `created_by` and nullable `redacted_by` use the shared union; API, Session
+and User variants retain their fields and discriminators.
+
 ## 3. Tetral Extensions And Behavioral Deltas
 
 Tetral-specific extensions and behavior differences are:
@@ -55,6 +60,70 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | Provider credentials in Vault  | Supported through `provider_api_key` and OpenAI `provider_oauth`. OpenAI OAuth create requires `access_mode: "oauth"` plus access token, refresh token, expiry, and account ID.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | MCP OAuth validation refresh   | On `mcp_oauth_validate`, the refresh leg keeps `http_response.body` and `http_response.content_type` in the response shape but always returns both as empty strings. `status_code` and `body_truncated` remain available; MCP probe diagnostics are unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
+### Engine authentication and Memory attribution
+
+Explicit `config.authentication.type: 'oidc_federation'` uses the existing SDK
+JSON JWT-bearer provider, token cache and reactive 401 retry against the Engine's
+`/v1/oauth/token`. The Engine must already trust the HTTPS issuer/audience and
+have provisioned the exact identity and eligible workspace grant. This support
+is explicit configuration, not automatic OIDC selection by default credential
+discovery. Provider API keys remain Vault credentials, not Engine authentication.
+See the [OIDC configuration example](README.md#engine-oidc-federation).
+
+Organization, federation rule, workspace and optional service-account fields are
+selectors, not identity proof or provisioning instructions. An omitted workspace
+selects the sole eligible grant; multiple eligible grants are ambiguous. `default`
+selects the configured Engine default workspace and still requires a grant.
+There is no upstream organization-default fallback. A service-account selector
+must match its service binding and cannot be supplied for a human identity.
+These Engine rules do not replace hosted Anthropic's workspace-selection rules.
+
+Memory attribution identifies the actor that performed the operation:
+
+| Credential or execution                 | Actor           | Identity field                          |
+| --------------------------------------- | --------------- | --------------------------------------- |
+| Direct service identity token           | `service_actor` | `service_id`: stable Engine identity ID |
+| Direct human identity token             | `user_actor`    | `user_id`: stable Engine identity ID    |
+| Independent or identity-derived API key | `api_actor`     | `api_key_id`: actual key ID             |
+| Runtime Session operation               | `session_actor` | `session_id`: Session ID                |
+
+The service ID is neither the upstream JWT subject nor the service-account
+selector. SDK HTTP fixture tests check received typed variants and preserve the
+older union arms. Integration rows CONN-20 and MEM-24 require the native
+`TestOIDCKeycloakSDK` composition with real HTTPS Keycloak, Auth, PostgreSQL and
+actual SDK responses. They require both identity flows, cache/revocation/retry
+observations and typed `created_by`/`redacted_by` identity checks. A fabricated
+object, raw JSON cast, source scan or skipped composition does not prove those
+rows. Source support and actual integration evidence do not imply an npm release.
+
+### Session streaming
+
+Session `events.stream` supports optional `event_deltas: ['agent.message',
+'agent.thinking']` through the existing upstream API. Only the public primary
+thread is eligible. `agent.message` previews use `event_start` followed by
+best-effort `event_delta` text fragments; `agent.thinking` is a start-only
+notification with no thinking body or signature. Omitting `event_deltas` keeps
+Session delivery formal-only. Every Thread stream, including the primary
+Thread endpoint, remains formal-only and has no delta request parameter.
+Session and Thread event lists contain only formal events.
+
+Open the stream before sending input to observe previews for the new request.
+Previews are not replayed on reconnect, and opening during a request does not
+subscribe to that request's previews. Keep accumulated text provisional: the
+complete `agent.message` with the same ID replaces it, including when previews
+stop or lose their tail. The helper tracks one message at a time; keep a
+snapshot per event ID when messages interleave. See
+[Session streaming](README.md#session-streaming) and the
+[runnable example](examples/session-streaming.ts).
+
+Complete committed text is list-readable as soon as it commits. On SSE it is
+published in stored order immediately before the matching
+`span.model_request_end`, for both ordinary and opted-in viewers. This includes
+complete text committed before an error or interrupt End. Incomplete or
+uncommitted content has no fabricated final event; End closes remaining
+previews. Request End does not mean every tool or the whole agent turn has
+finished.
+
 ## 4. Retained Unsupported Or Deferred Surface
 
 These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; unsupported requests are rejected by Tetral backend admission with SDK-compatible errors.
@@ -64,7 +133,6 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 | Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                                                                                                               |
 | Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
 | Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
-| Session event delta streaming                                            | Retained unsupported. `event_deltas` previews and the accumulate helper are inert until the engine emits delta events.                                                             |
 | Session create `agent_with_overrides`                                    | Retained unsupported. Use the plain agent reference forms; override variants are rejected by admission.                                                                            |
 | Agent and deployment webhook event types                                 | Deferred with the Webhooks resource.                                                                                                                                               |
 | Session list reverse pagination                                          | Retained unsupported. `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged, and `prev_page` stays `null` until the engine implements reverse cursors. |

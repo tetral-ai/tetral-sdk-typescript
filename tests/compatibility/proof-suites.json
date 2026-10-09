@@ -108,5 +108,15 @@
     "suite": "live",
     "source": "tests/compatibility/scenarios/live.ts",
     "export": "liveScenarioRunners"
+  },
+  "integration-preview": {
+    "suite": "integration",
+    "source": "tests/compatibility/scenarios/integration.ts",
+    "export": "integrationScenarioRunners"
+  },
+  "integration-oidc": {
+    "suite": "integration",
+    "source": "tests/compatibility/scenarios/integration.ts",
+    "export": "integrationScenarioRunners"
   }
 }

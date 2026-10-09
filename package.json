@@ -40,7 +40,8 @@
     "prepare": "if ./scripts/utils/check-is-in-git-install.sh; then ./scripts/build && ./scripts/utils/git-swap.sh; fi",
     "tsn": "ts-node -r tsconfig-paths/register",
     "lint": "./scripts/lint",
-    "fix": "./scripts/format"
+    "fix": "./scripts/format",
+    "test:compatibility:integration": "ts-node -r tsconfig-paths/register scripts/test-compatibility-integration.ts"
   },
   "dependencies": {
     "standardwebhooks": "^1.0.0",

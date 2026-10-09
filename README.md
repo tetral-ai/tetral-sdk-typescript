@@ -42,6 +42,44 @@ await client.beta.sessions.events.send(session.id, {
 
 The SDK `apiKey` is a Tetral-issued API key. Anthropic provider API keys do not authenticate Tetral public APIs; store provider credentials in Vault and select them from Sessions through `providers`.
 
+## Engine OIDC federation
+
+Choose OIDC federation explicitly for an Engine that has registered your HTTPS
+issuer, audience and identity binding and provisioned an eligible workspace grant:
+
+```ts
+const client = new Anthropic({
+  apiKey: null,
+  authToken: null,
+  baseURL: 'https://your-engine.example',
+  config: {
+    authentication: {
+      type: 'oidc_federation',
+      federation_rule_id: 'your-engine-rule-id',
+      identity_token: { source: 'file', path: '/path/to/projected-identity.jwt' },
+      // service_account_id: 'your-bound-service-account', // service identities only
+    },
+    organization_id: 'your-engine-organization-id',
+    workspace_id: 'your-engine-workspace-id',
+  },
+});
+```
+
+The SDK sends the existing JSON JWT-bearer exchange to `/v1/oauth/token` at
+`baseURL`, caches the returned access token, and re-exchanges on expiry or a
+reactive 401 retry. Token exchange does not provision identities or grant access.
+Organization, federation rule, workspace and service-account IDs select existing
+Engine authority; they do not prove identity. A service-account selector must
+match the service identity's binding; human identities cannot supply it.
+
+Omitting `workspace_id` requires exactly one eligible grant. The literal
+`"default"` resolves the Engine's configured default workspace and still requires
+a grant; it does not fall back to an upstream organization default. An ambiguous
+selection or missing grant is denied. Tokens are workspace-scoped; switching
+workspaces requires a new exchange. Hosted Anthropic workspace selection follows
+its own server rules. See [COMPATIBILITY.md](./COMPATIBILITY.md#engine-authentication-and-memory-attribution)
+for Memory attribution and the proof boundaries.
+
 ## Managed Agents Example
 
 ```ts
@@ -96,6 +134,51 @@ await client.beta.sessions.events.send(session.id, {
 ```
 
 More runnable examples live in `examples/`.
+
+## Session streaming
+
+Open the Session stream before sending a new message to receive optional
+previews from its public primary thread:
+
+```ts
+const stream = await client.beta.sessions.events.stream(session.id, {
+  event_deltas: ['agent.message', 'agent.thinking'],
+});
+try {
+  await client.beta.sessions.events.send(session.id, {
+    events: [{ type: 'user.message', content: [{ type: 'text', text: 'Hello Tetral.' }] }],
+  });
+  for await (const event of stream) {
+    console.log(event);
+    if (event.type === 'session.status_idle' || event.type === 'session.status_terminated') break;
+  }
+} finally {
+  stream.controller.abort();
+}
+```
+
+Text previews are provisional and may stop early. The complete committed
+`agent.message` replaces the preview with the same ID. Thinking previews carry
+only a notification. Reconnecting does not replay previews; history lists
+recover formal events. Complete committed text arrives before its matching
+request End even after an error or interrupt, while incomplete or uncommitted
+content has no fabricated final message. Tools can continue after request End.
+
+Omit `event_deltas` for formal-only Session delivery. Thread delivery is always
+formal-only:
+
+```ts
+const threadStream = await client.beta.sessions.threads.events.stream(threadID, {
+  session_id: session.id,
+});
+```
+
+The [streaming example](examples/session-streaming.ts) logs provisional fragments
+by event ID and complete committed messages without retaining preview state.
+`accumulateManagedAgentsEvent` can fold text fragments and replace them with a
+final message; keep a separate snapshot per event ID when messages interleave.
+The complete behavioral contract is in
+[COMPATIBILITY.md](COMPATIBILITY.md#session-streaming).
 
 ## Git commit identity
 

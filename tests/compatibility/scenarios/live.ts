@@ -1381,7 +1381,7 @@ async function runLiveConnection(context: ProofScenarioContext): Promise<ProofEv
     bearerClient.beta.environments.retrieve(environment.id),
     401,
     'authentication_error',
-    'x-api-key',
+    'invalid credentials',
   );
   return {
     'T-COMPAT-CONN-1':

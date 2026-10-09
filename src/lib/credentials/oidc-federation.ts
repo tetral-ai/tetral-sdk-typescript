@@ -19,15 +19,17 @@ export type OIDCFederationConfig = {
   organizationId: string;
   serviceAccountId?: string | undefined;
   /**
-   * Optional `wrkspc_*` tagged ID, or the literal `"default"` to scope the
-   * token to the organization's default workspace. When omitted the server
-   * picks the rule's sole enabled workspace, else the org default if the rule
-   * covers it. Required when the rule enables more than one non-default
-   * workspace, or to target a specific workspace other than the one the
-   * server would pick. The minted token is workspace-scoped: per-request
-   * workspace selection (the `anthropic-workspace-id` header) is not supported
-   * for federation tokens — switching workspaces requires a new token exchange
-   * with a different `workspaceId`.
+   * Optional workspace selector, including the literal `"default"`. Resolution
+   * depends on the token server selected by baseURL. Hosted Anthropic uses its
+   * federation-rule and organization-default workspace rules. Tetral Engine
+   * requires a preprovisioned identity and an eligible workspace grant: omission
+   * selects the sole eligible grant (multiple grants are ambiguous), and `"default"`
+   * resolves the Engine's configured default workspace and still requires a grant.
+   * These selectors do not prove identity or provision access.
+   *
+   * The minted token is workspace-scoped. Changing workspaces requires a new
+   * exchange with a different workspaceId; a per-request workspace header cannot
+   * retarget an existing federation token.
    */
   workspaceId?: string | undefined;
   baseURL: string;
@@ -41,7 +43,7 @@ export type OIDCFederationConfig = {
 };
 
 /**
- * Exchanges an external OIDC JWT for an Anthropic access token via the
+ * Exchanges an external OIDC JWT for an access token at the configured server via the
  * RFC 7523 jwt-bearer grant.
  *
  * Each invocation performs a fresh token exchange. Wrap in a
@@ -99,17 +101,15 @@ export function oidcFederationProvider(config: OIDCFederationConfig): AccessToke
       const text = await resp.text().catch(() => '');
       const redacted = redactSensitive(text);
       // A 401 is hard to debug from the status code alone, so surface
-      // guidance: check the federation rule, optionally set a workspace ID
-      // (the most common fix when no workspaceId is configured), and point at
-      // the Workload identity page in Claude Console for the server-side
-      // authentication event log. Other statuses (5xx, 400, ...) get no hint.
+      // guidance for the configured server without assuming every baseURL is
+      // hosted Anthropic. Other statuses (5xx, 400, ...) get no hint.
       let hint = '';
       if (resp.status === 401) {
         const hintMiddle =
           config.workspaceId ? '' : (
-            "If your federation rule is scoped to multiple workspaces, set the ANTHROPIC_WORKSPACE_ID environment variable, the 'workspace_id' config key, or the `workspaceId` option. "
+            "If workspace selection is ambiguous, set the ANTHROPIC_WORKSPACE_ID environment variable, the 'workspace_id' config key, or the `workspaceId` option. "
           );
-        hint = ` Ensure your federation rule matches your identity token. ${hintMiddle}View your authentication events in the Workload identity page of Claude Console for more details.`;
+        hint = ` Ensure your federation rule matches your identity token. ${hintMiddle}For hosted Anthropic, view your authentication events in the Workload identity page of Claude Console. For Tetral Engine, ask your administrator to check the identity binding and eligible workspace grant.`;
       }
       throw new WorkloadIdentityError(
         `Token exchange failed with status ${resp.status}${

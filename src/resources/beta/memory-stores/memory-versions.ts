@@ -121,11 +121,12 @@ export type BetaManagedAgentsMemoryVersionsPageCursor = PageCursor<BetaManagedAg
 export type BetaManagedAgentsActor =
   | BetaManagedAgentsSessionActor
   | BetaManagedAgentsAPIActor
+  | BetaManagedAgentsServiceActor
   | BetaManagedAgentsUserActor;
 
 /**
- * Attribution for a write made directly via the public API (outside of any
- * session).
+ * Attribution for a write or redaction authenticated by an API key outside a
+ * session. On Tetral Engine this includes independent and identity-derived keys.
  */
 export interface BetaManagedAgentsAPIActor {
   /**
@@ -248,13 +249,29 @@ export interface BetaManagedAgentsSessionActor {
 }
 
 /**
- * Attribution for a write made by a human user through the Anthropic Console.
+ * Attribution for a write or redaction authenticated by a service identity
+ * token on Tetral Engine.
+ */
+export interface BetaManagedAgentsServiceActor {
+  /**
+   * Stable Engine identity ID of the service that performed the operation.
+   * This is not the upstream subject or the exchange's service_account_id selector.
+   */
+  service_id: string;
+
+  type: 'service_actor';
+}
+
+/**
+ * Attribution for a write or redaction by a human user through Anthropic Console,
+ * or authenticated directly by a human identity token on Tetral Engine.
  */
 export interface BetaManagedAgentsUserActor {
   type: 'user_actor';
 
   /**
-   * ID of the user who performed the write (a `user_...` value).
+   * ID of the user who performed the operation: a `user_...` value on Anthropic,
+   * or the stable Engine identity ID on Tetral Engine.
    */
   user_id: string;
 }
@@ -339,6 +356,7 @@ export declare namespace MemoryVersions {
     type BetaManagedAgentsMemoryVersion as BetaManagedAgentsMemoryVersion,
     type BetaManagedAgentsMemoryVersionOperation as BetaManagedAgentsMemoryVersionOperation,
     type BetaManagedAgentsSessionActor as BetaManagedAgentsSessionActor,
+    type BetaManagedAgentsServiceActor as BetaManagedAgentsServiceActor,
     type BetaManagedAgentsUserActor as BetaManagedAgentsUserActor,
     type BetaManagedAgentsMemoryVersionsPageCursor as BetaManagedAgentsMemoryVersionsPageCursor,
     type MemoryVersionRetrieveParams as MemoryVersionRetrieveParams,
