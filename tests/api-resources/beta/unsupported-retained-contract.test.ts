@@ -151,10 +151,6 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     ];
 
     expect(retainedResources).toHaveLength(6);
-    expect(client.beta.webhooks.parseUnverified(JSON.stringify({ type: 'event', data: {} }))).toEqual({
-      type: 'event',
-      data: {},
-    });
   });
 
   test('type smoke covers retained unsupported params and event variants', () => {

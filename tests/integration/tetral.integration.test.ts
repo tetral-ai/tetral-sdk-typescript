@@ -506,9 +506,16 @@ describeIntegration('Tetral live integration suite', { timeout: 120_000 }, () =>
     });
     assertFile(file);
     assertFile(await client.beta.files.retrieveMetadata(file.id));
-    const filesPage = await client.beta.files.list({ limit: 1 });
-    expectField(filesPage.next_page, 'next_page');
-    assertFile(filesPage.data[0]!);
+    const secondFile = await client.beta.files.upload({
+      file: await toFile(Buffer.from('city,revenue\nNYC,7\n'), 'integration-page.csv'),
+    });
+    const listedFileIDs: string[] = [];
+    for await (const listed of client.beta.files.list({ limit: 1 })) {
+      assertFile(listed);
+      listedFileIDs.push(listed.id);
+    }
+    expect(new Set(listedFileIDs).size).toBe(listedFileIDs.length);
+    expect(listedFileIDs).toEqual(expect.arrayContaining([file.id, secondFile.id]));
     const resource = await client.beta.sessions.resources.add(lifecycleSession.id, {
       type: 'file',
       file_id: file.id,
