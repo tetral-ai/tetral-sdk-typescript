@@ -13,9 +13,12 @@ admission; mixed-version operation is unsupported.
 
 - A supplied `anthropic-workspace-id` must occur once and match the token
   workspace; mismatched, empty, or duplicate values return 403 `permission_error`.
+- MCP OAuth credential validation returns `mcp_probe: null` when the probe
+  succeeds and `refresh: null` when no token exchange was attempted;
+  `refresh.status` is `no_refresh_token` only when the probe was rejected with
+  401 and no refresh token is stored.
 - MCP OAuth refresh checks return `http_response: null` unless refresh status
-  is `failed`; failed refresh checks retain sanitized response details. MCP
-  probe responses keep their existing behavior.
+  is `failed`; failed refresh checks retain sanitized response details.
 - Models add `lifecycle`, `deprecated_at`, `retires_at`, and `line`.
 - Memory history service actors use `service_account_actor` and
   `service_account_id`, preserving the Engine identity ID value.
@@ -44,9 +47,11 @@ admission; mixed-version operation is unsupported.
   Session/Thread responses and Sandbox/Bridge loading use the saved versions.
 
 Agent update `version` and GitHub repository `authorization_token` now follow
-upstream optional types, but Engine still requires them. New unsupported
-parameters, resources, helpers and events remain classified in
-[COMPATIBILITY.md](COMPATIBILITY.md) and the compatibility registry.
+upstream optional types, but Engine still requires them. The Tetral-only type
+`BetaManagedAgentsSessionServerToolUse` is removed; use upstream
+`BetaManagedAgentsServerToolUsage`. New unsupported parameters, resources,
+helpers and events remain classified in [COMPATIBILITY.md](COMPATIBILITY.md)
+and the compatibility registry.
 
 CI exercises the local Auth/API/event-stream topology, storage behavior and
 registered compatibility handlers. It does not cover execution paths requiring
@@ -425,6 +430,15 @@ Full Changelog: [sdk-v0.121.0...sdk-v0.122.0](https://github.com/anthropics/anth
 ### Features
 
 * **api:** beta files/skills namespaces use GA shapes; drop dated beta header pins ([45d693a](https://github.com/anthropics/anthropic-sdk-typescript/commit/45d693a66bc7fb1af66d9c4e3625f6d6f64bae59))
+
+  The beta Files and Skills namespaces (`client.beta.files`, `client.beta.skills`) no longer send the `files-api-2025-04-14` / `skills-2025-10-02` headers and return the same shapes as `client.files` / `client.skills` (with `Beta`-prefixed type names). Requests that still send those headers on raw HTTP keep receiving the beta shapes.
+
+  Changes in the beta namespaces:
+  - `client.beta.skills.delete()` now deletes a Skill together with all of its versions (previously refused while any version existed). It returns `BetaDeletedSkill` (was `SkillDeleteResponse`).
+  - Beta Messages type `BetaSkill` (the `{type, skill_id, version}` entry in `BetaContainer.skills`) is renamed `BetaContainerSkill`; the request-side `BetaSkillParams` keeps its name. `BetaSkill` now names the Skill object returned by `client.beta.skills.create()` / `retrieve()` / `list()` (replacing `SkillCreateResponse` / `SkillRetrieveResponse` / `SkillListResponse`), and skill versions are `BetaSkillVersion` / `BetaDeletedSkillVersion` (replacing `Version*Response`).
+  - `client.beta.files.list()` returns a `BetaFileMetadataPageCursor` (`PageCursor<BetaFileMetadata>` with `data` / `next_page`) and `FileListParams` paginates with `page` / `ids` (was `BetaFileMetadataPage`, a `Page<BetaFileMetadata>` with `data`, `has_more`, `first_id`, `last_id` and `before_id` / `after_id`); `for await` auto-pagination is unchanged. `BetaSkill` uses `display_name` (was `display_title`, also in `SkillCreateParams`) and `latest_version_id` (was `latest_version`), and `BetaSkillVersion` is addressed by its `skver_…` `id` (the Unix-timestamp `version` field is gone).
+
+  Migration guides: [Migrate from `files-api-2025-04-14`](https://platform.claude.com/docs/en/build-with-claude/files#migrate-from-files-api-2025-04-14) · [Migrate from `skills-2025-10-02`](https://platform.claude.com/docs/en/build-with-claude/skills-guide#migrate-from-skills-2025-10-02)
 
 
 ### Bug Fixes
