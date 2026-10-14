@@ -7,7 +7,7 @@ async function main(): Promise<void> {
   if (!engineRoot || !engineRevision || !/^[a-f0-9]{40}$/.test(engineRevision)) {
     throw new Error('Integration compatibility requires TETRAL_ENGINE_ROOT and full TETRAL_ENGINE_REVISION');
   }
-  const cases = compatCases.filter((compatibilityCase) => compatibilityCase.locator.suite === 'integration');
+  const cases = compatCases.filter((compatibilityCase) => compatibilityCase.locator?.suite === 'integration');
   const report = await executeCompatibilityProofs('integration', cases, {
     kind: 'integration',
     engineRoot,

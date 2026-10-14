@@ -21,9 +21,9 @@ class CachedProofExecution implements CompatibilityProofExecution {
   }
 
   assertSuite(compatibilityCase: CompatibilityCase): void {
-    if (compatibilityCase.locator.suite !== this.suite) {
+    if (compatibilityCase.locator?.suite !== this.suite) {
       throw new Error(
-        `${compatibilityCase.id} belongs to ${compatibilityCase.locator.suite}, not ${this.suite}`,
+        `${compatibilityCase.id} belongs to ${compatibilityCase.locator?.suite}, not ${this.suite}`,
       );
     }
   }
@@ -34,13 +34,14 @@ export async function executeCompatibilityProofs(
   cases: readonly CompatibilityCase[],
   context: ProofScenarioContext,
 ): Promise<{ executed: number; passed: number; failed: number }> {
+  if (cases.length === 0) throw new Error(`No executable compatibility cases selected for ${suite}`);
   const execution = new CachedProofExecution(suite, context);
   const failures: string[] = [];
   let passed = 0;
   for (const compatibilityCase of cases) {
     try {
       execution.assertSuite(compatibilityCase);
-      const handler = compatibilityProofHandlers[compatibilityCase.locator.handler];
+      const handler = compatibilityProofHandlers[compatibilityCase.locator!.handler];
       if (!handler) throw new Error(`No compatibility proof handler for ${compatibilityCase.id}`);
       await handler(execution);
       passed++;

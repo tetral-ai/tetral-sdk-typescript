@@ -1,9 +1,9 @@
 # Tetral Integration Suite
 
 The suite in `tetral.integration.test.ts` is compiled in CI and runs only when
-`TETRAL_COMPAT_LIVE=1`. The live compatibility launcher requires `TETRAL_BASE_URL`
-and `TETRAL_API_KEY` and checks Engine reachability before starting it. A live
-Engine run is outside normal SDK CI.
+`TETRAL_COMPAT_LIVE=1`. Engine CI starts the real local Auth, API and event-stream
+services and supplies `TETRAL_BASE_URL` and `TETRAL_API_KEY`. SDK CI compiles the
+suite; Engine CI executes it.
 
 ## Observed Session preview proofs
 
@@ -41,10 +41,8 @@ and flag overrides are disabled for this execution.
 
 SDK CI contract tests use fixture responses to verify request construction,
 parsing, helper reconciliation and type boundaries. They do not establish Engine
-production eligibility or broker behavior. `test:compatibility:static` remains
-infrastructure-free and checks the other source contracts; it no longer treats
-Runtime writer absence as proof that previews are unsupported. The generic live
-resource suite above does not supply the streaming topology. Engine's owning
+production eligibility or broker behavior. The resource integration suite
+above does not supply the streaming topology. Engine's owning
 streaming compositions separately cover recovery/error/interrupt Ends, child
 visibility, loss and backpressure against the identified SDK revision.
 

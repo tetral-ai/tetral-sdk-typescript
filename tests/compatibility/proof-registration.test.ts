@@ -1,33 +1,45 @@
 import { compatCases } from './compat-registry';
+import { executeCompatibilityProofs } from './proof-execution';
 import { compatibilityProofHandlers, proofSuiteManifest } from './proof-registration';
 
 describe('compatibility executable proof registration', () => {
-  test('binds and invokes every contract row through its exact scenario and assertion', async () => {
-    expect(Object.keys(compatibilityProofHandlers)).toHaveLength(287);
-    for (const compatibilityCase of compatCases) {
-      expect(proofSuiteManifest[compatibilityCase.locator.scenario]).toMatchObject({
-        suite: compatibilityCase.locator.suite,
-      });
-      const handler = compatibilityProofHandlers[compatibilityCase.locator.handler];
-      expect(handler).toEqual(expect.any(Function));
-      if (!handler) throw new Error(`Missing handler ${compatibilityCase.locator.handler}`);
-      let requestedScenario: string | undefined;
-      await handler({
-        evidence: async (scenario) => {
-          requestedScenario = scenario;
-          return { [compatibilityCase.id]: true };
-        },
-      });
-      expect(requestedScenario).toBe(compatibilityCase.locator.scenario);
-      await expect(handler({ evidence: async () => ({}) })).rejects.toThrow(
-        `did not produce assertion ${compatibilityCase.id}`,
-      );
+  const executableCases = compatCases.filter((entry) => entry.locator);
+
+  test('registers exactly the executable cases', () => {
+    expect(new Set(Object.keys(compatibilityProofHandlers))).toEqual(
+      new Set(executableCases.map((entry) => entry.locator!.handler)),
+    );
+    for (const entry of executableCases) {
+      expect(proofSuiteManifest[entry.locator!.scenario]?.suite).toBe('integration');
     }
   });
 
-  test('does not register extra handlers outside the authoritative registry', () => {
-    expect(new Set(Object.keys(compatibilityProofHandlers))).toEqual(
-      new Set(compatCases.map((compatibilityCase) => compatibilityCase.locator.handler)),
+  test('requires the selected scenario to produce the exact assertion with true evidence', async () => {
+    const entry = executableCases[0]!;
+    const handler = compatibilityProofHandlers[entry.locator!.handler]!;
+    let requestedScenario: string | undefined;
+    await handler({
+      evidence: async (scenario) => {
+        requestedScenario = scenario;
+        return { [entry.id]: true };
+      },
+    });
+    expect(requestedScenario).toBe(entry.locator!.scenario);
+    await expect(handler({ evidence: async () => ({ unrelated: true }) })).rejects.toThrow(
+      `did not produce assertion ${entry.id}`,
     );
+    await expect(handler({ evidence: async () => ({ [entry.id]: false }) })).rejects.toThrow(
+      'failed executable integration assertion',
+    );
+  });
+
+  test('refuses an empty selection or a documentation row as executable proof', async () => {
+    const context = { kind: 'integration' as const, engineRoot: '', engineRevision: '', sdkRoot: '' };
+    await expect(executeCompatibilityProofs('integration', [], context)).rejects.toThrow(
+      'No executable compatibility cases selected',
+    );
+    await expect(
+      executeCompatibilityProofs('integration', [compatCases.find((entry) => !entry.locator)!], context),
+    ).rejects.toThrow('1 failed');
   });
 });

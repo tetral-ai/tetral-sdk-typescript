@@ -1,8 +1,8 @@
 import registry from './compat-cases.json';
 
 export type CompatibilityStatus = 'supported' | 'rejected' | 'not-produced';
-export type CompatibilityProof = 'live' | 'static' | 'integration' | 'rejection' | 'not-produced';
-export type CompatibilitySuite = 'live' | 'static' | 'integration';
+export type CompatibilityProof = 'documented' | 'typecheck' | 'integration' | 'rejection' | 'not-produced';
+export type CompatibilitySuite = 'integration';
 
 export interface CompatibilityProofLocator {
   suite: CompatibilitySuite;
@@ -18,7 +18,8 @@ export interface CompatibilityCase {
   status: CompatibilityStatus;
   proof: CompatibilityProof;
   expectation: string;
-  locator: CompatibilityProofLocator;
+  locator?: CompatibilityProofLocator;
+  test?: string;
 }
 
 // The JSON registry is shared with Engine's Go-only static traceability gate.

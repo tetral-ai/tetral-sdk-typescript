@@ -1,9 +1,7 @@
 import manifest from './proof-suites.json';
 
 import { compatCases, type CompatibilitySuite } from './compat-registry';
-import { liveScenarioRunners } from './scenarios/live';
 import { integrationScenarioRunners } from './scenarios/integration';
-import { staticScenarioRunners } from './scenarios/static';
 import type {
   CompatibilityProofExecution,
   CompatibilityProofHandler,
@@ -19,13 +17,12 @@ export interface ProofSuiteManifestEntry {
 export const proofSuiteManifest = manifest as Record<string, ProofSuiteManifestEntry>;
 
 export const proofScenarioRunners: Record<string, ProofScenarioRunner> = {
-  ...liveScenarioRunners,
   ...integrationScenarioRunners,
-  ...staticScenarioRunners,
 };
 
 export const compatibilityProofHandlers: Record<string, CompatibilityProofHandler> = {};
 for (const compatibilityCase of compatCases) {
+  if (!compatibilityCase.locator) continue;
   const { assertion, handler, scenario, suite } = compatibilityCase.locator;
   const manifestEntry = proofSuiteManifest[scenario];
   if (!manifestEntry || manifestEntry.suite !== suite) {

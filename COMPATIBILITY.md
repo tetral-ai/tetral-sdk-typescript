@@ -142,6 +142,13 @@ Memory APIs are synchronous CRUD and versioning operations. Attach stores by
 explicit `memory_store_id` in Session resources; there is no implicit default
 store. Memory HTTP 409 responses use `invalid_request_error`.
 
+The compatibility registry records support scope separately from execution.
+Only rows with integration locators enter the compatibility proof runner.
+Documented, rejected and not-produced rows do not count as passes or skips;
+Engine's native API and persistence tests verify their owning behavior.
+The standard error unions are checked by the SDK's ordinary typecheck and
+`tests/compatibility/error-widening.test.ts`.
+
 ## 4. Retained Unsupported Or Deferred Surface
 
 These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; unsupported requests are rejected by Tetral backend admission with SDK-compatible errors.

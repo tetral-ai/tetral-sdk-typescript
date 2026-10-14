@@ -301,10 +301,11 @@ function assertMemoryVersion(version: BetaManagedAgentsMemoryVersion): void {
   expectField(version.redacted_by, 'redacted_by');
 }
 
-async function expectInvalidRequest(promise: Promise<unknown>): Promise<void> {
+async function expectInvalidRequest(promise: Promise<unknown>, reason?: string): Promise<void> {
   await expect(promise).rejects.toMatchObject({
     status: 400,
     type: 'invalid_request_error',
+    ...(reason ? { message: expect.stringContaining(reason) } : {}),
   } satisfies Partial<APIError>);
 }
 
@@ -809,19 +810,26 @@ describeIntegration('Tetral live integration suite', () => {
       }),
     );
 
+    const validAgentRequest = {
+      name: 'admission baseline',
+      model: 'anthropic/claude-opus-4-8',
+      tools: [{ type: 'tetral_agent_toolset' as const, family: 'claude' as const }],
+    };
+    assertAgent(await client.beta.agents.create(validAgentRequest));
+
     await expectInvalidRequest(
       client.beta.agents.create({
-        name: 'legacy toolset reject case',
-        model: 'anthropic/claude-opus-4-8',
-        tools: [{ type: 'agent_toolset_20260401' }],
+        ...validAgentRequest,
+        tools: [...validAgentRequest.tools, { type: 'agent_toolset_20260401' }],
       }),
+      'tools[1].type is unsupported',
     );
 
     await expectInvalidRequest(
       client.beta.agents.create({
-        name: 'custom tool reject case',
-        model: 'anthropic/claude-opus-4-8',
+        ...validAgentRequest,
         tools: [
+          ...validAgentRequest.tools,
           {
             type: 'custom',
             name: 'lookup',
@@ -830,14 +838,15 @@ describeIntegration('Tetral live integration suite', () => {
           },
         ],
       }),
+      'tools[1].type custom tools are not supported',
     );
 
     await expectInvalidRequest(
       client.beta.agents.create({
-        name: 'multiagent reject case',
-        model: 'anthropic/claude-opus-4-8',
+        ...validAgentRequest,
         multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
       }),
+      'multiagent must be null when provided',
     );
   });
 });
