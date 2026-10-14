@@ -13,7 +13,9 @@ admission; mixed-version operation is unsupported.
 
 - A supplied `anthropic-workspace-id` must occur once and match the token
   workspace; mismatched, empty, or duplicate values return 403 `permission_error`.
-- Successful MCP OAuth validation omits `http_response`; failures retain it.
+- MCP OAuth refresh checks return `http_response: null` unless refresh status
+  is `failed`; failed refresh checks retain sanitized response details. MCP
+  probe responses keep their existing behavior.
 - Models add `lifecycle`, `deprecated_at`, `retires_at`, and `line`.
 - Memory history service actors use `service_account_actor` and
   `service_account_id`, preserving the Engine identity ID value.
