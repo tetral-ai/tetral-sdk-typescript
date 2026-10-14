@@ -45,7 +45,7 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | Managed Agent model catalog    | Known IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`, `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`, `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`. `moonshotai/kimi-k2.7-code` is retired; the 5.6 generation uses the precise `openai/gpt-5.6-sol` variant ID.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Models resource                | `client.models` and `client.beta.models` support list and retrieve. Page envelopes and `limit` / `before_id` / `after_id` match upstream; catalog contents use Tetral provider/model IDs rather than Anthropic `claude-*` IDs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Model effort                   | The upstream effort selector is retained but rejected by Engine admission. The engine applies its pinned platform default for each model.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `approval_mode`                | Supported on Agents and as a Session-local `agent.approval_mode` update. Values are `full_access`, `ask_for_approval`, and `approve_for_me`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `approval_mode`                | Supported on Agents and as a Session-local `agent.approval_mode` update. Values are `full_access`, `ask_for_approval`, and `approve_for_me`. Omitted on Agent create, it resolves to `ask_for_approval`; omitted on an Agent or Session update, the current value is kept. A Session-local update applies from the next turn.                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `tetral_agent_toolset.family`  | Required on Tetral toolset declarations. Supported families are `claude` and `gpt`. Every Agent must declare exactly one `tetral_agent_toolset`: omitting it, declaring two (same or mixed family), or clearing `tools` so none remains (empty array or `null` — this supersedes the generated docstring's "send empty array or null to clear" for this entry) is a 400. A Session-local `agent.tools` update must keep the entry with the Session's pinned family — the family cannot change for a live Session; change it by updating the Agent (new version) and starting a new Session. Only the declared family's builtin tools are installed in the sandbox. `configs` / `default_config` on this declaration are rejected. |
 | MCP declarations               | Supported as credential-free curated-catalog declarations. Admission accepts the curated catalog and rejects non-catalog URLs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Agent skill references         | Supported for workspace `custom` skill references (created via `/v1/skills`). Read-only guidance, not model-facing tools.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -57,6 +57,8 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | GitHub resource URL uniqueness | Session create rejects duplicate `github_repository` URLs by comparison key: trim an optional case-sensitive `.git` suffix first, then case-fold owner/repo. Stored and echoed URLs remain verbatim. This is an undocumented upstream corner recorded as Tetral behavior.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Cloud Environments             | Supported for cloud environments with `unrestricted`, `blocked`, or `cidr_allow_list` networking.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Provider credentials in Vault  | Supported through `provider_api_key` and OpenAI `provider_oauth`. OpenAI OAuth create requires `access_mode: "oauth"` plus access token, refresh token, expiry, and account ID.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Memory list ordering           | `memories.list` accepts `order_by` (`path`, `created_at`, or `updated_at`; default `path`) and `order` (`asc` or `desc`; default `asc`). Other values return 400.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| MCP OAuth validation           | Follows the upstream null rules: `mcp_probe` is `null` when the probe succeeds; `refresh` is `null` when no token exchange was attempted, and its status is `no_refresh_token` only when the probe was rejected with 401 and no refresh token is stored. Differences: Engine refreshes before probing when the stored access token has expired or has no valid expiry time, then probes with the new token, and never refreshes after a 401; upstream refreshes after a 401 and does not re-probe. A `failed` refresh reports `http_response.status_code` and `body_truncated`, but `body` and `content_type` are always empty strings; upstream returns the scrubbed body and the real content type.                             |
 
 ### Engine authentication and Memory attribution
 
@@ -87,7 +89,7 @@ Memory attribution identifies the actor that performed the operation:
 
 The `service_account_id` is the stable Engine identity ID, not an Anthropic
 `svac_` ID, upstream JWT subject or service-account selector. SDK HTTP fixture
-tests check received typed variants and preserve the older union arms.
+tests check that every received actor variant keeps its typed identity.
 Integration rows CONN-20 and MEM-24 require the native `TestOIDCKeycloakSDK`
 composition with real HTTPS Keycloak, Auth, PostgreSQL and actual SDK responses.
 They require both identity flows, cache/revocation/retry observations and typed
@@ -125,6 +127,8 @@ uncommitted content has no fabricated final event; End closes remaining
 previews. Request End does not mean every tool or the whole agent turn has
 finished.
 
+### Files
+
 Files upload size failures return HTTP 413 `request_too_large`. If bytes are
 stored but metadata commit fails, backend cleanup removes the orphaned object
 on a best-effort basis. Downloads return durable file content.
@@ -134,6 +138,8 @@ cursors bind the workspace and `scope_id`; files are ordered oldest first and
 pagination survives deletion of the cursor's last file. `after_id` and
 `before_id` are rejected. Uploads without a filename use `unnamed`, with a fixed
 extension for known MIME types; path-qualified filenames keep only the basename.
+
+### Skills
 
 Beta Skills use the upstream GA data shape: `id`, `type`, `created_at`,
 `updated_at`, `display_name`, `latest_version_id`, and `source: {type: 'custom'}`.
@@ -156,14 +162,19 @@ Sessions referencing deleted Skills or versions return 400. Deleting the last
 version alone returns 400; deleting the latest of multiple versions falls back
 to the previous active version for future Sessions.
 
+### Memory
+
 Memory APIs are synchronous CRUD and versioning operations. Attach stores by
 explicit `memory_store_id` in Session resources; there is no implicit default
 store. Memory HTTP 409 responses use `invalid_request_error`.
 
+### Compatibility registry
+
 The compatibility registry records support scope separately from execution.
 Only rows with integration locators enter the compatibility proof runner.
-Documented, rejected and not-produced rows do not count as passes or skips;
-Engine's native API and persistence tests verify their owning behavior.
+Documented, rejected and not-produced rows are scope records: the SDK does not
+execute them, and they do not count as passes or skips. Where Engine verifies
+the behavior, Engine-native tests own that verification.
 The standard error unions are checked by the SDK's ordinary typecheck and
 `tests/compatibility/error-widening.test.ts`.
 
@@ -201,8 +212,8 @@ Memory store updates with `name: null` return 400 `invalid_request_error`.
 
 | Surface                                                                 | Scope                                                                                                    |
 | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `WorkPoller.[Symbol.asyncIterator]`                                     | No Environment work routes.                                                                              |
-| `EnvironmentWorker.run`                                                 | No Environment work routes.                                                                              |
+| `WorkPoller.[Symbol.asyncIterator]`                                     | Environment work requests return 400.                                                                    |
+| `EnvironmentWorker.run`                                                 | Environment work requests return 400.                                                                    |
 | `SessionToolRunner.[Symbol.asyncIterator]`                              | user.tool_result rejected; hosted runtime owns execution.                                                |
 | `SessionMemoryStores.download`                                          | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
 | `SessionMemoryStores.finish`                                            | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
@@ -210,7 +221,7 @@ Memory store updates with `name: null` return 400 `invalid_request_error`.
 | `SessionMemoryStores.syncIfDue`                                         | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
 | `setupSkills`                                                           | Existing Session/Skill APIs; local Skill setup remains unsupported and unverified for the hosted Engine. |
 | `beta/dreams (Dreams)`                                                  | No public Engine route for this resource.                                                                |
-| `beta/messages/messages (Messages)`                                     | No public Engine route for this resource.                                                                |
+| `beta/messages/messages (Messages)`                                     | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
 | `beta/organization/api-keys (APIKeys)`                                  | No public Engine route for this resource.                                                                |
 | `beta/organization/external-keys (ExternalKeys)`                        | No public Engine route for this resource.                                                                |
 | `beta/organization/federation/issuers (Issuers)`                        | No public Engine route for this resource.                                                                |
@@ -228,8 +239,8 @@ Memory store updates with `name: null` return 400 `invalid_request_error`.
 | `beta/organization/workspaces/workspaces (Workspaces)`                  | No public Engine route for this resource.                                                                |
 | `beta/tunnels/certificates (Certificates)`                              | No public Engine route for this resource.                                                                |
 | `beta/tunnels/tunnels (Tunnels)`                                        | No public Engine route for this resource.                                                                |
-| `beta/user-profiles (UserProfiles)`                                     | No public Engine route for this resource.                                                                |
-| `messages/messages (Messages)`                                          | No public Engine route for this resource.                                                                |
+| `beta/user-profiles (UserProfiles)`                                     | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
+| `messages/messages (Messages)`                                          | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
 
 ### Files and Skills additions in 0.122
 
@@ -268,14 +279,14 @@ not expose Engine API-key or identity administration through that upstream API.
 
 | Retained surface                                                         | Engine scope                                                      |
 | ------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `BetaToolRunner.addTools`                                                | No Messages route; tool-runner request orchestration unsupported. |
-| `BetaToolRunner.compactBeforeNextTurn`                                   | No Messages route; tool-runner request orchestration unsupported. |
-| `BetaToolRunner.deferToolCall`                                           | No Messages route; tool-runner request orchestration unsupported. |
-| `BetaToolRunner.removeTools`                                             | No Messages route; tool-runner request orchestration unsupported. |
-| `beta/deployment-runs (DeploymentRuns)`                                  | No public Engine route for this resource.                         |
-| `beta/deployments (Deployments)`                                         | No public Engine route for this resource.                         |
-| `beta/environments/work (Work)`                                          | No public Engine route for this resource.                         |
-| `beta/messages/batches (Batches)`                                        | No public Engine route for this resource.                         |
+| `BetaToolRunner.addTools`                                                | Messages calls return 400; tool-runner orchestration unsupported. |
+| `BetaToolRunner.compactBeforeNextTurn`                                   | Messages calls return 400; tool-runner orchestration unsupported. |
+| `BetaToolRunner.deferToolCall`                                           | Messages calls return 400; tool-runner orchestration unsupported. |
+| `BetaToolRunner.removeTools`                                             | Messages calls return 400; tool-runner orchestration unsupported. |
+| `beta/deployment-runs (DeploymentRuns)`                                  | 400 `invalid_request_error`: unsupported SDK surface.             |
+| `beta/deployments (Deployments)`                                         | 400 `invalid_request_error`: unsupported SDK surface.             |
+| `beta/environments/work (Work)`                                          | 400 `invalid_request_error`: unsupported SDK surface.             |
+| `beta/messages/batches (Batches)`                                        | 400 `invalid_request_error`: unsupported SDK surface.             |
 | `beta/organization/analytics/apps/chat/projects (Projects)`              | No public Engine route for this resource.                         |
 | `beta/organization/analytics/artifacts (Artifacts)`                      | No public Engine route for this resource.                         |
 | `beta/organization/analytics/connectors (Connectors)`                    | No public Engine route for this resource.                         |
@@ -301,7 +312,7 @@ not expose Engine API-key or identity administration through that upstream API.
 | `beta/organization/spend-limits/increase-requests (IncreaseRequests)`    | No public Engine route for this resource.                         |
 | `beta/organization/spend-limits/spend-limits (SpendLimits)`              | No public Engine route for this resource.                         |
 | `completions (Completions)`                                              | No public Engine route for this resource.                         |
-| `messages/batches (Batches)`                                             | No public Engine route for this resource.                         |
+| `messages/batches (Batches)`                                             | 400 `invalid_request_error`: unsupported SDK surface.             |
 | `organization/api-keys (APIKeys)`                                        | No public Engine route for this resource.                         |
 | `organization/compliance-settings (ComplianceSettings)`                  | No public Engine route for this resource.                         |
 | `organization/external-keys (ExternalKeys)`                              | No public Engine route for this resource.                         |

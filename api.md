@@ -2064,7 +2064,6 @@ Types:
 - <code><a href="./src/resources/beta/memory-stores/memory-versions.ts">BetaManagedAgentsMemoryVersionOperation</a></code>
 - <code><a href="./src/resources/beta/memory-stores/memory-versions.ts">BetaManagedAgentsServiceAccountActor</a></code>
 - <code><a href="./src/resources/beta/memory-stores/memory-versions.ts">BetaManagedAgentsSessionActor</a></code>
-- <code><a href="./src/resources/beta/memory-stores/memory-versions.ts">BetaManagedAgentsServiceActor</a></code>
 - <code><a href="./src/resources/beta/memory-stores/memory-versions.ts">BetaManagedAgentsUserActor</a></code>
 
 Methods:
