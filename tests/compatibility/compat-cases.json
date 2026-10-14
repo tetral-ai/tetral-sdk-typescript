@@ -933,8 +933,8 @@
   },
   {
     "id": "T-COMPAT-EVOUT-76",
-    "name": "T-COMPAT-EVOUT-76 webhook: BetaWebhookEventData (36-member union)",
-    "surface": "webhook: BetaWebhookEventData (36-member union)",
+    "name": "T-COMPAT-EVOUT-76 webhook: BetaWebhookEventData (union)",
+    "surface": "webhook: BetaWebhookEventData (union)",
     "status": "not-produced",
     "proof": "not-produced",
     "expectation": "entire union deferred; no engine producer"
@@ -2322,8 +2322,8 @@
     }
   },
   {
-    "id": "T-COMPAT-UPSTREAM-1",
-    "name": "T-COMPAT-UPSTREAM-1 session.usage",
+    "id": "T-COMPAT-EVOUT-79",
+    "name": "T-COMPAT-EVOUT-79 session.usage",
     "surface": "session.usage",
     "status": "not-produced",
     "proof": "not-produced",
