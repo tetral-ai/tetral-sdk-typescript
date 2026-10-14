@@ -229,7 +229,6 @@ export class Messages extends APIResource {
     options?: BetaToolRunnerRequestOptions,
   ): BetaToolRunner<true>;
   toolRunner(body: BetaToolRunnerParams, options?: BetaToolRunnerRequestOptions): BetaToolRunner<boolean>;
-
   toolRunner(body: BetaToolRunnerParams, options?: BetaToolRunnerRequestOptions): BetaToolRunner<boolean> {
     return new BetaToolRunner(this._client as Anthropic, body, options);
   }
