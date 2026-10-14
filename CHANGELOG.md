@@ -25,6 +25,7 @@ admission; mixed-version operation is unsupported.
   `service_account_id`, preserving the Engine identity ID value.
 - Sessions add `budget: null`.
 - Memory store names cannot be cleared; update with `name: null` returns 400.
+- List methods treat `page: null` as the first page.
 - Files list with `limit` and `page`, returning `next_page`; legacy cursor
   parameters return 400.
 - Missing or empty upload filenames become `unnamed` with a fixed extension for
