@@ -18,7 +18,8 @@ admission; mixed-version operation is unsupported.
   `refresh.status` is `no_refresh_token` only when the probe was rejected with
   401 and no refresh token is stored.
 - MCP OAuth refresh checks return `http_response: null` unless refresh status
-  is `failed`; failed refresh checks retain sanitized response details.
+  is `failed`; a failed refresh reports the token endpoint's status code and
+  truncation flag, with empty `body` and `content_type`.
 - Models add `lifecycle`, `deprecated_at`, `retires_at`, and `line`.
 - Memory history service actors use `service_account_actor` and
   `service_account_id`, preserving the Engine identity ID value.
