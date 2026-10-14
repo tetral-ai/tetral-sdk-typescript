@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic, { toFile } from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -29,6 +27,7 @@ describe('resource files', () => {
           page: 'page',
           scope_id: 'scope_id',
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -51,7 +50,7 @@ describe('resource files', () => {
     await expect(
       client.beta.files.delete(
         'file_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -62,7 +61,7 @@ describe('resource files', () => {
     await expect(
       client.beta.files.download(
         'file_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -84,7 +83,7 @@ describe('resource files', () => {
     await expect(
       client.beta.files.retrieveMetadata(
         'file_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -108,6 +107,7 @@ describe('resource files', () => {
       file: await toFile(Buffer.from('Example data'), 'README.md'),
       expires_in_seconds: 3600,
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 });

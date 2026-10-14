@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -26,9 +24,17 @@ describe('resource messages', () => {
   test('create: required and optional params', async () => {
     const response = await client.beta.messages.create({
       max_tokens: 1024,
-      messages: [{ content: 'Hello, world', role: 'user' }],
+      messages: [
+        {
+          content: 'Hello, world',
+          role: 'user',
+          clear_at: 'next_user_message',
+          output_config: { effort: 'low' },
+        },
+      ],
       model: 'claude-opus-5',
       cache_control: { type: 'ephemeral', ttl: '5m' },
+      compaction: { type: 'summarize', instructions: 'instructions' },
       container: {
         id: 'id',
         skills: [
@@ -99,7 +105,11 @@ describe('resource messages', () => {
         },
       ],
       temperature: 1,
-      thinking: { type: 'adaptive', display: 'summarized' },
+      thinking: {
+        type: 'adaptive',
+        block_binding: { prefix_mismatch_behavior: 'error' },
+        display: 'summarized',
+      },
       tool_choice: { type: 'auto', disable_parallel_tool_use: true },
       tools: [
         {
@@ -123,6 +133,7 @@ describe('resource messages', () => {
       top_p: 0.7,
       betas: ['message-batches-2024-09-24'],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -142,9 +153,17 @@ describe('resource messages', () => {
 
   test('countTokens: required and optional params', async () => {
     const response = await client.beta.messages.countTokens({
-      messages: [{ content: 'Hello, world', role: 'user' }],
+      messages: [
+        {
+          content: 'Hello, world',
+          role: 'user',
+          clear_at: 'next_user_message',
+          output_config: { effort: 'low' },
+        },
+      ],
       model: 'claude-opus-5',
       cache_control: { type: 'ephemeral', ttl: '5m' },
+      compaction: { type: 'summarize', instructions: 'instructions' },
       context_management: {
         edits: [
           {
@@ -196,7 +215,11 @@ describe('resource messages', () => {
           ],
         },
       ],
-      thinking: { type: 'adaptive', display: 'summarized' },
+      thinking: {
+        type: 'adaptive',
+        block_binding: { prefix_mismatch_behavior: 'error' },
+        display: 'summarized',
+      },
       tool_choice: { type: 'auto', disable_parallel_tool_use: true },
       tools: [
         {
@@ -218,6 +241,7 @@ describe('resource messages', () => {
       ],
       betas: ['message-batches-2024-09-24'],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 });
@@ -249,7 +273,7 @@ describe('create: non-streaming timeout', () => {
 
   // max_tokens large enough that the estimated non-streaming duration exceeds the 10 minute default
   const longParams = {
-    model: 'claude-sonnet-4-5',
+    model: 'claude-sonnet-5-5',
     max_tokens: 128_000,
     messages: [{ role: 'user' as const, content: 'hi' }],
   };

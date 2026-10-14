@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -8,8 +6,7 @@ const client = new Anthropic({
 });
 
 describe('resource events', () => {
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list', async () => {
+  test('list', async () => {
     const responsePromise = client.beta.sessions.events.list('sesn_011CZkZAtmR3yMPDzynEDxu7');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -20,8 +17,7 @@ describe('resource events', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list: request options and params are passed correctly', async () => {
+  test('list: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       client.beta.sessions.events.list(
@@ -34,8 +30,9 @@ describe('resource events', () => {
           limit: 0,
           order: 'asc',
           page: 'page',
-          types: ['string'],
+          types: ['user.message'],
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -59,6 +56,7 @@ describe('resource events', () => {
     const response = await client.beta.sessions.events.send('sesn_011CZkZAtmR3yMPDzynEDxu7', {
       events: [{ content: [{ text: 'Where is my order #1234?', type: 'text' }], type: 'user.message' }],
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -78,7 +76,11 @@ describe('resource events', () => {
     await expect(
       client.beta.sessions.events.stream(
         'sesn_011CZkZAtmR3yMPDzynEDxu7',
-        { event_deltas: ['agent.message'], betas: ['message-batches-2024-09-24'] },
+        {
+          event_deltas: ['agent.message'],
+          betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
+        },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);

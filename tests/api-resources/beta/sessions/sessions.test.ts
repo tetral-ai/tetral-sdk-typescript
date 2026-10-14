@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -45,6 +43,7 @@ describe('resource sessions', () => {
       title: 'Order #1234 inquiry',
       vault_ids: ['string'],
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -64,7 +63,7 @@ describe('resource sessions', () => {
     await expect(
       client.beta.sessions.retrieve(
         'sesn_011CZkZAtmR3yMPDzynEDxu7',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -81,8 +80,7 @@ describe('resource sessions', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list', async () => {
+  test('list', async () => {
     const responsePromise = client.beta.sessions.list();
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -93,8 +91,7 @@ describe('resource sessions', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list: request options and params are passed correctly', async () => {
+  test('list: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       client.beta.sessions.list(
@@ -113,6 +110,7 @@ describe('resource sessions', () => {
           page: 'page',
           statuses: ['rescheduling'],
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -135,7 +133,7 @@ describe('resource sessions', () => {
     await expect(
       client.beta.sessions.delete(
         'sesn_011CZkZAtmR3yMPDzynEDxu7',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -157,7 +155,7 @@ describe('resource sessions', () => {
     await expect(
       client.beta.sessions.archive(
         'sesn_011CZkZAtmR3yMPDzynEDxu7',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);

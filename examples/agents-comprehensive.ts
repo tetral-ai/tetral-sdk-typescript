@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npm run tsn -T
+#!/usr/bin/env node
 
 import Anthropic, { toFile } from '@tetral-ai/sdk';
 import type { TetralSessionProviderSelectors } from '@tetral-ai/sdk/resources/beta/sessions';

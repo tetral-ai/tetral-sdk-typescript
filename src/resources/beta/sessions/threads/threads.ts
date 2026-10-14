@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../../core/resource';
 import * as BetaAPI from '../../beta';
 import * as AgentsAPI from '../../agents/agents';
@@ -23,7 +21,7 @@ export class Threads extends APIResource {
    * ```ts
    * const betaManagedAgentsSessionThread =
    *   await client.beta.sessions.threads.retrieve(
-   *     'sthr_011CZkZVWa6oIjw0rgXZpnBt',
+   *     'sthr_011CZkZVWa6oJjw1rgXZpnBt',
    *     { session_id: 'sesn_011CZkZAtmR3yMPDzynEDxu7' },
    *   );
    * ```
@@ -33,11 +31,14 @@ export class Threads extends APIResource {
     params: ThreadRetrieveParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsSessionThread> {
-    const { session_id, betas } = params;
+    const { session_id, betas, workspace_id } = params;
     return this._client.get(path`/v1/sessions/${session_id}/threads/${threadID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -61,7 +62,7 @@ export class Threads extends APIResource {
     params: ThreadListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsSessionThreadsPageCursor, BetaManagedAgentsSessionThread> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList(
       path`/v1/sessions/${sessionID}/threads?beta=true`,
       PageCursor<BetaManagedAgentsSessionThread>,
@@ -69,7 +70,10 @@ export class Threads extends APIResource {
         query,
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -83,7 +87,7 @@ export class Threads extends APIResource {
    * ```ts
    * const betaManagedAgentsSessionThread =
    *   await client.beta.sessions.threads.archive(
-   *     'sthr_011CZkZVWa6oIjw0rgXZpnBt',
+   *     'sthr_011CZkZVWa6oJjw1rgXZpnBt',
    *     { session_id: 'sesn_011CZkZAtmR3yMPDzynEDxu7' },
    *   );
    * ```
@@ -93,11 +97,14 @@ export class Threads extends APIResource {
     params: ThreadArchiveParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsSessionThread> {
-    const { session_id, betas } = params;
+    const { session_id, betas, workspace_id } = params;
     return this._client.post(path`/v1/sessions/${session_id}/threads/${threadID}/archive?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -107,8 +114,41 @@ export class Threads extends APIResource {
 export type BetaManagedAgentsSessionThreadsPageCursor = PageCursor<BetaManagedAgentsSessionThread>;
 
 /**
+ * An agent that has no Agent resource, and so no `id` or `version`. It is defined
+ * inline, in a workflow run's plan or when a session thread is spawned, and is not
+ * saved.
+ */
+export interface BetaManagedAgentsInlineAgent {
+  description: string | null;
+
+  mcp_servers: Array<AgentsAPI.BetaManagedAgentsMCPServerURLDefinition>;
+
+  /**
+   * Model identifier and configuration.
+   */
+  model: AgentsAPI.BetaManagedAgentsModelConfig;
+
+  /**
+   * The name that the agent's definition gave, or one that the server assigned.
+   */
+  name: string;
+
+  skills: Array<AgentsAPI.BetaManagedAgentsAnthropicSkill | AgentsAPI.BetaManagedAgentsCustomSkill>;
+
+  system: string | null;
+
+  tools: Array<
+    | AgentsAPI.BetaManagedAgentsAgentToolset20260401
+    | AgentsAPI.BetaManagedAgentsMCPToolset
+    | AgentsAPI.BetaManagedAgentsCustomTool
+  >;
+
+  type: 'inline';
+}
+
+/**
  * An execution thread within a `session`. Each session has one primary thread plus
- * zero or more child threads spawned by the coordinator.
+ * zero or more child threads.
  */
 export interface BetaManagedAgentsSessionThread {
   /**
@@ -117,18 +157,21 @@ export interface BetaManagedAgentsSessionThread {
   id: string;
 
   /**
-   * The resolved agent a session thread runs: a saved-agent snapshot, the platform
-   * advisor entry, or an inline-defined (ephemeral) agent snapshot.
+   * Resolved agent definition for this thread. Snapshot of the agent at thread
+   * creation time.
    */
-  agent: AgentsAPI.BetaManagedAgentsSessionThreadAgent | AgentsAPI.BetaManagedAgentsAdvisor;
+  agent:
+    | AgentsAPI.BetaManagedAgentsSessionThreadAgent
+    | AgentsAPI.BetaManagedAgentsAdvisor
+    | BetaManagedAgentsInlineAgent;
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the thread was archived. Null if not archived.
    */
   archived_at: string | null;
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the thread was created.
    */
   created_at: string;
 
@@ -143,26 +186,34 @@ export interface BetaManagedAgentsSessionThread {
   session_id: string;
 
   /**
-   * Timing statistics for a session thread.
+   * Timing statistics for this thread. Null until the thread's first status
+   * transition.
    */
   stats: BetaManagedAgentsSessionThreadStats | null;
 
   /**
-   * SessionThreadStatus enum
+   * Current execution status of the thread.
    */
   status: BetaManagedAgentsSessionThreadStatus;
 
   type: 'session_thread';
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the thread was last updated.
    */
   updated_at: string;
 
   /**
-   * Cumulative token usage for a session thread across all turns.
+   * Cumulative token usage for this thread. Null until the thread's first idle
+   * transition.
    */
   usage: BetaManagedAgentsSessionThreadUsage | null;
+
+  /**
+   * Identifier of the workflow run that created the thread, or `null` for any other
+   * thread.
+   */
+  workflow_run_id: string | null;
 }
 
 /**
@@ -188,9 +239,6 @@ export interface BetaManagedAgentsSessionThreadStats {
   startup_seconds?: number;
 }
 
-/**
- * SessionThreadStatus enum
- */
 export type BetaManagedAgentsSessionThreadStatus = 'running' | 'idle' | 'rescheduling' | 'terminated';
 
 /**
@@ -205,7 +253,7 @@ export interface BetaManagedAgentsSessionThreadUsage {
   active_seconds?: number;
 
   /**
-   * Prompt-cache creation token usage broken down by cache lifetime.
+   * Tokens used to create prompt cache entries, broken down by cache TTL.
    */
   cache_creation?: SessionsAPI.BetaManagedAgentsCacheCreationUsage;
 
@@ -220,7 +268,12 @@ export interface BetaManagedAgentsSessionThreadUsage {
   input_tokens?: number;
 
   /**
-   * A monetary amount in a specific currency.
+   * Cumulative list cost of this thread across all turns, priced at public list
+   * rates. Absent until cost tracking is available for the thread. Each figure is
+   * rounded to the nearest cent independently and the session's aggregate
+   * `usage.list_cost` additionally includes session runtime, so per-thread costs do
+   * not sum exactly to the session figure; the session figure is authoritative and
+   * is what a budget is enforced against.
    */
   list_cost?: BetaAPI.BetaMonetaryAmount | null;
 
@@ -230,7 +283,8 @@ export interface BetaManagedAgentsSessionThreadUsage {
   output_tokens?: number;
 
   /**
-   * Cumulative count of server-executed tool invocations, broken down by tool.
+   * Cumulative server-executed tool usage across all turns of this thread. Absent
+   * until server-tool tracking is available for the thread.
    */
   server_tool_use?: SessionsAPI.BetaManagedAgentsServerToolUsage | null;
 }
@@ -275,11 +329,18 @@ export type BetaManagedAgentsStreamSessionThreadEvents =
   | SessionsAPI.BetaManagedAgentsStartEvent
   | SessionsAPI.BetaManagedAgentsDeltaEvent
   | SessionsAPI.BetaManagedAgentsSystemMessageEvent
-  | SessionsAPI.BetaManagedAgentsSessionUsageEvent;
+  | SessionsAPI.BetaManagedAgentsSessionUsageEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunCreatedEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunStatusEndedEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunPhaseStartedEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunPhaseEndedEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunStatusRunningEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunStatusIdleEvent
+  | EventsAPI.BetaManagedAgentsWorkflowRunErrorEvent;
 
 export interface ThreadRetrieveParams {
   /**
-   * Path param: Path parameter session_id
+   * Path param
    */
   session_id: string;
 
@@ -287,18 +348,46 @@ export interface ThreadRetrieveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface ThreadListParams extends PageCursorParams {
   /**
+   * Query param: Return only threads that have one of these statuses.
+   *
+   * Repeat the parameter to give more than one status. Leave it out to return
+   * threads of every status.
+   */
+  statuses?: Array<BetaManagedAgentsSessionThreadStatus>;
+
+  /**
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface ThreadArchiveParams {
   /**
-   * Path param: Path parameter session_id
+   * Path param
    */
   session_id: string;
 
@@ -306,12 +395,23 @@ export interface ThreadArchiveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 Threads.Events = Events;
 
 export declare namespace Threads {
   export {
+    type BetaManagedAgentsInlineAgent as BetaManagedAgentsInlineAgent,
     type BetaManagedAgentsSessionThread as BetaManagedAgentsSessionThread,
     type BetaManagedAgentsSessionThreadStats as BetaManagedAgentsSessionThreadStats,
     type BetaManagedAgentsSessionThreadStatus as BetaManagedAgentsSessionThreadStatus,

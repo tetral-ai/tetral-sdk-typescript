@@ -147,8 +147,12 @@ function customToolUse(id: string, name: string, input: Record<string, unknown> 
   return { type: 'agent.custom_tool_use', id, name, input };
 }
 
+function idle(stopReason: string): AnyEvent {
+  return { type: 'session.status_idle', id: 'ev_idle', stop_reason: { type: stopReason } };
+}
+
 function idleEndTurn(): AnyEvent {
-  return { type: 'session.status_idle', id: 'ev_idle', stop_reason: { type: 'end_turn' } };
+  return idle('end_turn');
 }
 
 /** A `session.status_idle` with `stop_reason: requires_action` — the server
@@ -270,11 +274,21 @@ describe('SessionToolRunner', () => {
   // accounting: reconcile sees history ending on an `end_turn` idle but with
   // the unowned tool_use still unanswered, so it must NOT arm the countdown —
   // the runner has not handled that call, its owner still has to.
-  test('a skipped unowned tool_use does not falsely trip the idle watchdog', async () => {
-    const { client, calls } = makeFake({
-      streams: [[]], // no live events; reconcile drives the test
-      list: [[toolUse('evt_pending', 'not_ours'), idleEndTurn()]],
-    });
+  const approvedUnowned = [
+    toolUse('evt_pending', 'not_ours', {}, 'ask'),
+    idleEndTurn(),
+    toolConfirmation('c', 'evt_pending', 'allow'),
+  ];
+  test.each([
+    {
+      kind: 'skipped',
+      seenOn: 'history',
+      fake: { list: [[toolUse('evt_pending', 'not_ours'), idleEndTurn()]], streams: [[]] },
+    },
+    { kind: 'user-approved', seenOn: 'history', fake: { list: [approvedUnowned], streams: [[]] } },
+    { kind: 'user-approved', seenOn: 'the live stream', fake: { streams: [approvedUnowned] } },
+  ])('a $kind unowned tool_use on $seenOn does not falsely trip the idle watchdog', async ({ fake }) => {
+    const { client, calls } = makeFake(fake);
     const runner = new SessionToolRunner('s', { client, tools: [], maxIdleMs: 50 });
     const out: DispatchedToolCall[] = [];
     let finished = false;
@@ -398,8 +412,8 @@ describe('SessionToolRunner', () => {
   });
 
   describe('send retries (fake timers)', () => {
-    beforeEach(() => jest.useFakeTimers());
-    afterEach(() => jest.useRealTimers());
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
 
     /** Start a runner whose first `failures` sends fail transiently; the consumer runs in the background. */
     function startFailingSend(failures: number) {
@@ -419,7 +433,7 @@ describe('SessionToolRunner', () => {
     test('keeps retrying a transiently failing send past three attempts until it lands', async () => {
       const { calls, out, consumer } = startFailingSend(5);
 
-      await jest.advanceTimersByTimeAsync(60_000);
+      await vi.advanceTimersByTimeAsync(60_000);
       await consumer;
 
       expect(calls.send).toHaveLength(6);
@@ -431,12 +445,12 @@ describe('SessionToolRunner', () => {
       const { calls, out, consumer } = startFailingSend(1_000);
 
       // Still retrying well past the old three-attempt / ~3s budget.
-      await jest.advanceTimersByTimeAsync(4 * 60_000);
+      await vi.advanceTimersByTimeAsync(4 * 60_000);
       expect(out).toHaveLength(0);
       expect(calls.send.length).toBeGreaterThan(3);
 
       // The window (>= the 300s work-item lease TTL) elapses; the call surfaces unposted.
-      await jest.advanceTimersByTimeAsync(2 * 60_000);
+      await vi.advanceTimersByTimeAsync(2 * 60_000);
       await consumer;
 
       expect(out).toHaveLength(1);
@@ -447,13 +461,13 @@ describe('SessionToolRunner', () => {
     test('a send retry window update bounds a send that is already retrying', async () => {
       const { runner, calls, out, consumer } = startFailingSend(1_000);
 
-      await jest.advanceTimersByTimeAsync(20_000);
+      await vi.advanceTimersByTimeAsync(20_000);
       expect(out).toHaveLength(0);
       const attemptsBefore = calls.send.length;
 
       // e.g. the enclosing worker's heartbeat reported a 10s lease TTL.
       runner._setSendRetryWindow(10_000);
-      await jest.advanceTimersByTimeAsync(40_000);
+      await vi.advanceTimersByTimeAsync(40_000);
       await consumer;
 
       expect(out).toHaveLength(1);
@@ -491,7 +505,7 @@ describe('SessionToolRunner', () => {
       maxIdleMs: 0,
       signal: ctl.signal,
     });
-    // If the bug is back, this hangs and Jest's per-test timeout fires.
+    // If the bug is back, this hangs and the per-test timeout fires.
     await Promise.race([
       (async () => {
         for await (const _ of runner) {
@@ -502,12 +516,19 @@ describe('SessionToolRunner', () => {
     ]);
   }, 5_000);
 
-  test('idle watchdog stops the runner maxIdleMs after an end_turn idle', async () => {
-    jest.useFakeTimers();
+  test.each(
+    ['end_turn', 'refusal', 'retries_exhausted', 'budget_reached', 'newer_than_this_sdk'].flatMap(
+      (stopReason) => [
+        // The turn ends, the session goes idle and nothing else happens.
+        { stopReason, seenOn: 'the live stream', fake: { streams: [[idle(stopReason)]] } },
+        // The turn ended before the runner attached, so only the history shows it.
+        { stopReason, seenOn: 'history', fake: { list: [[idle(stopReason)]], streams: [[]] } },
+      ],
+    ),
+  )('idle watchdog stops the runner maxIdleMs after a $stopReason idle on $seenOn', async ({ fake }) => {
+    vi.useFakeTimers();
     try {
-      // Session goes idle with end_turn and nothing else happens — the idle
-      // watchdog should stop the runner after maxIdleMs.
-      const { client } = makeFake({ streams: [[idleEndTurn()]] });
+      const { client } = makeFake(fake);
 
       const runner = new SessionToolRunner('s', { client, tools: [], maxIdleMs: 1_000 });
 
@@ -519,11 +540,40 @@ describe('SessionToolRunner', () => {
         done = true;
       })();
 
-      await jest.advanceTimersByTimeAsync(2_000);
+      await vi.advanceTimersByTimeAsync(2_000);
       await consumer;
       expect(done).toBe(true);
     } finally {
-      jest.useRealTimers();
+      vi.useRealTimers();
+    }
+  });
+
+  test.each([
+    { seenOn: 'the live stream', fake: { streams: [[idleRequiresAction(['evt_elsewhere'])]] } },
+    { seenOn: 'history', fake: { list: [[idleRequiresAction(['evt_elsewhere'])]], streams: [[]] } },
+  ])('a requires_action idle on $seenOn does not start the idle watchdog', async ({ fake }) => {
+    vi.useFakeTimers();
+    try {
+      // The session is waiting on a client, so its turn is not over.
+      const { client } = makeFake(fake);
+
+      const runner = new SessionToolRunner('s', { client, tools: [], maxIdleMs: 1_000 });
+
+      let done = false;
+      const consumer = (async () => {
+        for await (const _ of runner) {
+          // unreachable — no tool calls
+        }
+        done = true;
+      })();
+
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(done).toBe(false);
+
+      runner.abort();
+      await consumer;
+    } finally {
+      vi.useRealTimers();
     }
   });
 
@@ -920,15 +970,21 @@ describe('SessionToolRunner', () => {
     await loop;
   });
 
-  test('a deny after a live end_turn resumes the idle stop', async () => {
+  const deniedAfterIdle = [
+    toolUse('tu', 'echo', {}, 'ask'),
+    idleEndTurn(),
+    toolConfirmation('c', 'tu', 'deny'),
+  ];
+  test.each([
+    { seenOn: 'the live stream', fake: { streams: [deniedAfterIdle] } },
+    { seenOn: 'history', fake: { list: [deniedAfterIdle], streams: [[]] } },
+  ])('a deny after an end_turn on $seenOn resumes the idle stop', async ({ fake }) => {
     // The session went idle while the call was held, so the deferred arm is all
     // the runner has left — the denial itself produces no further events. It
     // must apply that arm and stop on its own instead of waiting forever.
     let runs = 0;
     const echo = makeOkTool('echo', async () => (runs++, 'ok'));
-    const { client, calls } = makeFake({
-      streams: [[toolUse('tu', 'echo', {}, 'ask'), idleEndTurn(), toolConfirmation('c', 'tu', 'deny')]],
-    });
+    const { client, calls } = makeFake(fake);
     const runner = new SessionToolRunner('s', { client, tools: [echo], maxIdleMs: 50 });
 
     const out: DispatchedToolCall[] = [];
@@ -944,6 +1000,34 @@ describe('SessionToolRunner', () => {
     expect(runs).toBe(0);
     expect(calls.send).toHaveLength(0);
     expect(out.map((c) => c.confirmation)).toEqual(['deny']);
+  });
+
+  const allowedAfterIdle = [
+    toolUse('tu', 'echo', {}, 'ask'),
+    idleEndTurn(),
+    toolConfirmation('c', 'tu', 'allow'),
+  ];
+  test.each([
+    { seenOn: 'the live stream', fake: { streams: [allowedAfterIdle] } },
+    { seenOn: 'history', fake: { list: [allowedAfterIdle], streams: [[]] } },
+  ])('an allow after an end_turn on $seenOn resumes the idle stop', async ({ fake }) => {
+    // The released call runs and posts its result, nothing else arrives, and
+    // the runner must still stop on its own.
+    const { client, calls } = makeFake(fake);
+    const runner = new SessionToolRunner('s', { client, tools: [makeOkTool('echo', 'ok')], maxIdleMs: 50 });
+
+    const out: DispatchedToolCall[] = [];
+    let done = false;
+    const loop = (async () => {
+      for await (const c of runner) out.push(c);
+      done = true;
+    })();
+    await new Promise((r) => setTimeout(r, 600));
+    expect(done).toBe(true);
+    await loop;
+
+    expect(calls.send).toHaveLength(1);
+    expect(out.map((c) => c.confirmation)).toEqual(['allow']);
   });
 
   test('a released call is not cut short by the idle countdown it deferred', async () => {

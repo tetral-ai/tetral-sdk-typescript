@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -26,11 +24,11 @@ describe('resource memoryVersions', () => {
       memory_store_id: 'memory_store_id',
       view: 'basic',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list', async () => {
+  test('list', async () => {
     const responsePromise = client.beta.memoryStores.memoryVersions.list('memory_store_id');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -41,8 +39,7 @@ describe('resource memoryVersions', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list: request options and params are passed correctly', async () => {
+  test('list: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       client.beta.memoryStores.memoryVersions.list(
@@ -59,6 +56,7 @@ describe('resource memoryVersions', () => {
           session_id: 'session_id',
           view: 'basic',
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -82,6 +80,7 @@ describe('resource memoryVersions', () => {
     const response = await client.beta.memoryStores.memoryVersions.redact('memory_version_id', {
       memory_store_id: 'memory_store_id',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 });

@@ -178,6 +178,24 @@ describe('client credentials integration', () => {
     });
   });
 
+  it('joins the oauth beta to request betas with a comma and no space', async () => {
+    const client = new Anthropic({
+      apiKey: null,
+      credentials: async () => ({ token: 'my-access-token', expiresAt: farFuture() }),
+      fetch: async (_url, init) => {
+        expect(getHeader(init, 'anthropic-beta')).toBe(`files-api-2025-04-14,${OAUTH_API_BETA_HEADER}`);
+        return jsonResponse(VALID_MSG_RESPONSE);
+      },
+    });
+
+    await client.beta.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 1,
+      messages: [{ role: 'user', content: 'hi' }],
+      betas: ['files-api-2025-04-14'],
+    });
+  });
+
   it('does not synthesize OIDC credentials from env vars implicitly (chain-off)', async () => {
     const tokenPath = path.join(testDir, 'id-token');
     fs.writeFileSync(tokenPath, 'my-jwt');
@@ -549,6 +567,40 @@ describe('client credentials integration', () => {
     }
 
     expect(seenWs).toEqual(['ws-shared', 'ws-shared']);
+  });
+
+  it('per-request workspace_id overrides the profile workspace_id header', async () => {
+    process.env['ANTHROPIC_CONFIG_DIR'] = testDir;
+    fs.mkdirSync(path.join(testDir, 'configs'), { recursive: true });
+    fs.mkdirSync(path.join(testDir, 'credentials'), { recursive: true });
+    fs.writeFileSync(
+      path.join(testDir, 'configs', 'default.json'),
+      JSON.stringify({ workspace_id: 'ws-profile', authentication: { type: 'user_oauth' } }),
+    );
+    fs.writeFileSync(
+      path.join(testDir, 'credentials', 'default.json'),
+      JSON.stringify({ access_token: 'tok', expires_at: farFuture() }),
+      { mode: 0o600 },
+    );
+
+    const seenWs: (string | null)[] = [];
+    const client = new Anthropic({
+      profile: 'default',
+      fetch: async (_url: any, init?: RequestInit) => {
+        seenWs.push(getHeader(init, 'anthropic-workspace-id'));
+        return jsonResponse(VALID_MSG_RESPONSE);
+      },
+    });
+
+    await client.messages.create({ model: 'claude-opus-4-8', max_tokens: 1, messages: [] });
+    await client.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 1,
+      messages: [],
+      workspace_id: 'ws-request',
+    });
+
+    expect(seenWs).toEqual(['ws-profile', 'ws-request']);
   });
 
   it('pins withOptions({apiKey: undefined}) and ({credentials: null}) override semantics', async () => {

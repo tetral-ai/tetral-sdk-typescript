@@ -506,7 +506,8 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
         break;
       }
       case 'message_stop': {
-        this._addMessageParam(messageSnapshot);
+        // Assertion needed until the generated request and response types of `tool_listing` agree.
+        this._addMessageParam(messageSnapshot as BetaMessageParam);
         this._addMessage(
           maybeParseBetaMessage(messageSnapshot, this.#params, { logger: this.#logger }),
           true,
@@ -603,6 +604,10 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
           snapshot.context_management = event.context_management;
         }
 
+        if (event.input_transformations != null) {
+          snapshot.input_transformations = event.input_transformations;
+        }
+
         // The remaining usage counters are cumulative whole-message totals that are
         // omitted when they don't apply, so overwrite when present and never add.
         if (event.usage.input_tokens != null) {
@@ -691,11 +696,13 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
           }
           case 'compaction_delta': {
             if (snapshotContent?.type === 'compaction') {
-              snapshot.content[event.index] = {
-                ...snapshotContent,
-                content: (snapshotContent.content || '') + event.delta.content,
-                encrypted_content: event.delta.encrypted_content,
-              };
+              // The delta carries the block's final value (null content = failed compaction), so assign.
+              const block = { ...snapshotContent, content: event.delta.content };
+              // beta-gated key: only copy it when the server sent it
+              if ('encrypted_content' in event.delta) {
+                block.encrypted_content = event.delta.encrypted_content;
+              }
+              snapshot.content[event.index] = block;
             }
             break;
           }

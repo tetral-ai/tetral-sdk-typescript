@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import type { Anthropic } from '../../../client';
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
@@ -34,7 +32,7 @@ export class Events extends APIResource {
     params: EventListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsSessionEventsPageCursor, BetaManagedAgentsSessionEvent> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList(
       path`/v1/sessions/${sessionID}/events?beta=true`,
       PageCursor<BetaManagedAgentsSessionEvent>,
@@ -42,7 +40,10 @@ export class Events extends APIResource {
         query,
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -78,12 +79,15 @@ export class Events extends APIResource {
     params: EventSendParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsSendSessionEvents> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/sessions/${sessionID}/events?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -105,12 +109,15 @@ export class Events extends APIResource {
     params: EventStreamParams | undefined = {},
     options?: RequestOptions,
   ): APIPromise<Stream<BetaManagedAgentsStreamSessionEvents>> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.get(path`/v1/sessions/${sessionID}/events/stream?beta=true`, {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
       stream: true,
@@ -144,6 +151,52 @@ export class Events extends APIResource {
 export type BetaManagedAgentsSessionEventsPageCursor = PageCursor<BetaManagedAgentsSessionEvent>;
 
 /**
+ * The server's per-invocation judgement under the auto permission policy. Its type
+ * always equals the event's top-level evaluated_permission. Open union: clients
+ * must tolerate unknown variants.
+ */
+export type BetaManagedAgentsAgentAutoEvaluatedPermission =
+  | BetaManagedAgentsAgentAutoEvaluatedPermissionAllow
+  | BetaManagedAgentsAgentAutoEvaluatedPermissionAsk
+  | BetaManagedAgentsAgentAutoEvaluatedPermissionDeny;
+
+/**
+ * The server judged the invocation safe to execute without client approval.
+ */
+export interface BetaManagedAgentsAgentAutoEvaluatedPermissionAllow {
+  type: 'allow';
+}
+
+/**
+ * The server reached no judgement; the invocation is held for client approval.
+ */
+export interface BetaManagedAgentsAgentAutoEvaluatedPermissionAsk {
+  /**
+   * The judgement's grounds in registry-bound terms, for client branching and audit
+   * rather than end-user display. Open registry; currently "indeterminate" (no
+   * judgement was reached). Clients must tolerate values outside this set.
+   */
+  reason_code: string;
+
+  type: 'ask';
+}
+
+/**
+ * The server judged the invocation high-risk; it does not execute and a synthetic
+ * error tool result is appended.
+ */
+export interface BetaManagedAgentsAgentAutoEvaluatedPermissionDeny {
+  /**
+   * The judgement's grounds in registry-bound terms. Open registry; currently
+   * "high_risk" (judged high-risk; the call does not run). Clients must tolerate
+   * values outside this set.
+   */
+  reason_code: string;
+
+  type: 'deny';
+}
+
+/**
  * Event emitted when the agent calls a custom tool. The session goes idle until
  * the client sends a `user.custom_tool_result` event with the result.
  */
@@ -164,7 +217,7 @@ export interface BetaManagedAgentsAgentCustomToolUseEvent {
   name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this tool use was processed.
    */
   processed_at: string;
 
@@ -173,10 +226,14 @@ export interface BetaManagedAgentsAgentCustomToolUseEvent {
   /**
    * When set, this event was cross-posted from a subagent's thread to surface its
    * custom tool use on the primary thread's stream. Empty on the thread's own
-   * events. Echo this on a `user.custom_tool_result` event to route the result back.
+   * events. Informational only: the server routes the matching
+   * `user.custom_tool_result` by `custom_tool_use_id`, so clients do not send it
+   * back.
    */
   session_thread_id?: string | null;
 }
+
+export type BetaManagedAgentsAgentEvaluatedPermission = 'allow' | 'ask' | 'deny';
 
 /**
  * Event representing the result of an MCP tool execution.
@@ -193,7 +250,7 @@ export interface BetaManagedAgentsAgentMCPToolResultEvent {
   mcp_tool_use_id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this event was processed.
    */
   processed_at: string;
 
@@ -240,22 +297,33 @@ export interface BetaManagedAgentsAgentMCPToolUseEvent {
   name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this event was processed.
    */
   processed_at: string;
 
   type: 'agent.mcp_tool_use';
 
   /**
-   * AgentEvaluatedPermission enum
+   * The evaluated permission policy for this tool invocation.
    */
-  evaluated_permission?: 'allow' | 'ask' | 'deny';
+  evaluated_permission?: BetaManagedAgentsAgentEvaluatedPermission;
+
+  /**
+   * Which resolved permission_policy produced evaluated_permission: always_allow,
+   * always_ask, or auto (with the server's per-invocation judgement). Absent only
+   * when the server refused the call before any policy applied (for example, the
+   * named tool is not enabled in the session); such a refusal has
+   * evaluated_permission deny. An event recorded before this field existed reads as
+   * the arm its evaluated_permission implies (always_allow for allow, always_ask for
+   * ask).
+   */
+  evaluation?: BetaManagedAgentsAgentToolEvaluation;
 
   /**
    * When set, this event was cross-posted from a subagent's thread to surface its
    * permission request on the primary thread's stream. Empty on the thread's own
-   * events. Echo this on a `user.tool_confirmation` event to route the approval
-   * back.
+   * events. Informational only: the server routes the matching
+   * `user.tool_confirmation` by `tool_use_id`, so clients do not send it back.
    */
   session_thread_id?: string | null;
 }
@@ -275,7 +343,7 @@ export interface BetaManagedAgentsAgentMessageEvent {
   content: Array<BetaManagedAgentsTextBlock | BetaManagedAgentsRedactedBlock>;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this response was generated.
    */
   processed_at: string;
 
@@ -293,7 +361,7 @@ export interface BetaManagedAgentsAgentThinkingEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this thinking was produced.
    */
   processed_at: string;
 
@@ -310,7 +378,7 @@ export interface BetaManagedAgentsAgentThreadContextCompactedEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when compaction was processed.
    */
   processed_at: string;
 
@@ -343,7 +411,7 @@ export interface BetaManagedAgentsAgentThreadMessageReceivedEvent {
   from_session_thread_id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the message was received.
    */
   processed_at: string;
 
@@ -377,7 +445,7 @@ export interface BetaManagedAgentsAgentThreadMessageSentEvent {
   >;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the message was sent.
    */
   processed_at: string;
 
@@ -396,6 +464,45 @@ export interface BetaManagedAgentsAgentThreadMessageSentEvent {
 }
 
 /**
+ * Names the resolved permission_policy that produced evaluated_permission, and
+ * under auto carries the judgement. Open union: clients must tolerate unknown
+ * variants.
+ */
+export type BetaManagedAgentsAgentToolEvaluation =
+  | BetaManagedAgentsAgentToolEvaluationAlwaysAllow
+  | BetaManagedAgentsAgentToolEvaluationAlwaysAsk
+  | BetaManagedAgentsAgentToolEvaluationAuto;
+
+/**
+ * The resolved permission_policy was always_allow; accompanies
+ * evaluated_permission "allow".
+ */
+export interface BetaManagedAgentsAgentToolEvaluationAlwaysAllow {
+  type: 'always_allow';
+}
+
+/**
+ * The resolved permission_policy was always_ask; accompanies evaluated_permission
+ * "ask".
+ */
+export interface BetaManagedAgentsAgentToolEvaluationAlwaysAsk {
+  type: 'always_ask';
+}
+
+/**
+ * The resolved permission_policy was auto: the server judged this invocation
+ * individually.
+ */
+export interface BetaManagedAgentsAgentToolEvaluationAuto {
+  /**
+   * The server's judgement for this invocation.
+   */
+  evaluated_permission: BetaManagedAgentsAgentAutoEvaluatedPermission;
+
+  type: 'auto';
+}
+
+/**
  * Event representing the result of an agent tool execution.
  */
 export interface BetaManagedAgentsAgentToolResultEvent {
@@ -405,7 +512,7 @@ export interface BetaManagedAgentsAgentToolResultEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this event was processed.
    */
   processed_at: string;
 
@@ -452,22 +559,34 @@ export interface BetaManagedAgentsAgentToolUseEvent {
   name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this event was processed.
    */
   processed_at: string;
 
   type: 'agent.tool_use';
 
   /**
-   * AgentEvaluatedPermission enum
+   * The evaluated permission policy for this tool invocation.
    */
-  evaluated_permission?: 'allow' | 'ask' | 'deny';
+  evaluated_permission?: BetaManagedAgentsAgentEvaluatedPermission;
+
+  /**
+   * Which resolved permission_policy produced evaluated_permission: always_allow,
+   * always_ask, or auto (with the server's per-invocation judgement). Absent only
+   * when the server refused the call before any policy applied (for example, the
+   * named tool is not enabled in the session); such a refusal has
+   * evaluated_permission deny. An event recorded before this field existed reads as
+   * the arm its evaluated_permission implies (always_allow for allow, always_ask for
+   * ask).
+   */
+  evaluation?: BetaManagedAgentsAgentToolEvaluation;
 
   /**
    * When set, this event was cross-posted from a subagent's thread to surface its
    * permission request on the primary thread's stream. Empty on the thread's own
-   * events. Echo this on a `user.tool_confirmation` event to route the approval
-   * back.
+   * events. Informational only: the server routes the matching
+   * `user.tool_confirmation` or `user.tool_result` by `tool_use_id`, so clients do
+   * not send it back.
    */
   session_thread_id?: string | null;
 }
@@ -519,7 +638,7 @@ export interface BetaManagedAgentsBillingError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -545,7 +664,7 @@ export interface BetaManagedAgentsCredentialHostUnreachableError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -566,7 +685,7 @@ export interface BetaManagedAgentsCredentialHostUnreachableError {
  */
 export interface BetaManagedAgentsDocumentBlock {
   /**
-   * Union type for document source variants.
+   * The source of the document data.
    */
   source:
     | BetaManagedAgentsBase64DocumentSource
@@ -652,7 +771,7 @@ export interface BetaManagedAgentsFileRubricParams {
  */
 export interface BetaManagedAgentsImageBlock {
   /**
-   * Union type for image source variants.
+   * The source of the image data.
    */
   source:
     | BetaManagedAgentsBase64ImageSource
@@ -660,6 +779,20 @@ export interface BetaManagedAgentsImageBlock {
     | BetaManagedAgentsFileImageSource;
 
   type: 'image';
+}
+
+/**
+ * No run was created, because the session was at its limit of open workflow runs,
+ * which are runs that have not ended. Only `workflow_run.error` carries this type.
+ */
+export interface BetaManagedAgentsMaxWorkflowRunsWorkflowRunError {
+  /**
+   * Short explanation written by the server. It never contains content from the run
+   * or its agents.
+   */
+  message: string;
+
+  type: 'max_workflow_runs_error';
 }
 
 /**
@@ -677,7 +810,7 @@ export interface BetaManagedAgentsMCPAuthenticationFailedError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -702,7 +835,7 @@ export interface BetaManagedAgentsMCPConnectionFailedError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -723,7 +856,7 @@ export interface BetaManagedAgentsModelOverloadedError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -743,7 +876,7 @@ export interface BetaManagedAgentsModelRateLimitedError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -763,7 +896,7 @@ export interface BetaManagedAgentsModelRequestFailedError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
@@ -791,10 +924,159 @@ export interface BetaManagedAgentsPlainTextDocumentSource {
 }
 
 /**
+ * The plan, a program that the agent wrote, failed, or the server refused it.
+ */
+export interface BetaManagedAgentsProgramWorkflowRunError {
+  /**
+   * Short explanation written by the server. It never contains content from the run
+   * or its agents.
+   */
+  message: string;
+
+  type: 'program_error';
+}
+
+/**
  * Placeholder for content withheld by Anthropic model policy.
  */
 export interface BetaManagedAgentsRedactedBlock {
   type: 'redacted';
+}
+
+/**
+ * The repository host rejected the credentials, or required credentials and
+ * received none.
+ */
+export interface BetaManagedAgentsRepositoryAuthenticationError {
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  /**
+   * URL of the repository that could not be cloned. Null when it could not be
+   * identified.
+   */
+  repository_url: string | null;
+
+  /**
+   * What the client should do next. Always `retrying`: the session keeps running
+   * without the repository.
+   */
+  retry_status:
+    | BetaManagedAgentsRetryStatusRetrying
+    | BetaManagedAgentsRetryStatusExhausted
+    | BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'repository_authentication_error';
+}
+
+/**
+ * The requested branch or commit does not exist in the repository.
+ */
+export interface BetaManagedAgentsRepositoryCheckoutError {
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  /**
+   * URL of the repository that could not be cloned. Null when it could not be
+   * identified.
+   */
+  repository_url: string | null;
+
+  /**
+   * What the client should do next. Always `retrying`: the session keeps running
+   * without the repository.
+   */
+  retry_status:
+    | BetaManagedAgentsRetryStatusRetrying
+    | BetaManagedAgentsRetryStatusExhausted
+    | BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'repository_checkout_error';
+}
+
+/**
+ * The repository could not be cloned.
+ */
+export interface BetaManagedAgentsRepositoryCloneError {
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  /**
+   * URL of the repository that could not be cloned. Null when it could not be
+   * identified.
+   */
+  repository_url: string | null;
+
+  /**
+   * What the client should do next. Always `retrying`: the session keeps running
+   * without the repository.
+   */
+  retry_status:
+    | BetaManagedAgentsRetryStatusRetrying
+    | BetaManagedAgentsRetryStatusExhausted
+    | BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'repository_clone_error';
+}
+
+/**
+ * The repository host refused access to the repository.
+ */
+export interface BetaManagedAgentsRepositoryForbiddenError {
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  /**
+   * URL of the repository that could not be cloned. Null when it could not be
+   * identified.
+   */
+  repository_url: string | null;
+
+  /**
+   * What the client should do next. Always `retrying`: the session keeps running
+   * without the repository.
+   */
+  retry_status:
+    | BetaManagedAgentsRetryStatusRetrying
+    | BetaManagedAgentsRetryStatusExhausted
+    | BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'repository_forbidden_error';
+}
+
+/**
+ * The repository host reported the repository as not found.
+ */
+export interface BetaManagedAgentsRepositoryNotFoundError {
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  /**
+   * URL of the repository that could not be cloned. Null when it could not be
+   * identified.
+   */
+  repository_url: string | null;
+
+  /**
+   * What the client should do next. Always `retrying`: the session keeps running
+   * without the repository.
+   */
+  retry_status:
+    | BetaManagedAgentsRetryStatusRetrying
+    | BetaManagedAgentsRetryStatusExhausted
+    | BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'repository_not_found_error';
 }
 
 /**
@@ -827,7 +1109,7 @@ export interface BetaManagedAgentsRetryStatusTerminal {
  */
 export interface BetaManagedAgentsSearchResultBlock {
   /**
-   * Citation settings for a search result.
+   * Citation settings for this search result.
    */
   citations: BetaManagedAgentsSearchResultCitations;
 
@@ -910,7 +1192,7 @@ export interface BetaManagedAgentsSessionDeletedEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the session was deleted.
    */
   processed_at: string;
 
@@ -933,11 +1215,6 @@ export interface BetaManagedAgentsSessionErrorEvent {
    */
   id: string;
 
-  /**
-   * An unknown or unexpected error occurred during session execution. A fallback
-   * variant; clients that don't recognize a new error code can match on
-   * `retry_status` and `message` alone.
-   */
   error:
     | BetaManagedAgentsUnknownError
     | BetaManagedAgentsModelOverloadedError
@@ -946,10 +1223,15 @@ export interface BetaManagedAgentsSessionErrorEvent {
     | BetaManagedAgentsMCPConnectionFailedError
     | BetaManagedAgentsMCPAuthenticationFailedError
     | BetaManagedAgentsBillingError
-    | BetaManagedAgentsCredentialHostUnreachableError;
+    | BetaManagedAgentsCredentialHostUnreachableError
+    | BetaManagedAgentsRepositoryAuthenticationError
+    | BetaManagedAgentsRepositoryForbiddenError
+    | BetaManagedAgentsRepositoryNotFoundError
+    | BetaManagedAgentsRepositoryCheckoutError
+    | BetaManagedAgentsRepositoryCloneError;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the error occurred.
    */
   processed_at: string;
 
@@ -994,7 +1276,87 @@ export type BetaManagedAgentsSessionEvent =
   | BetaManagedAgentsSessionThreadStatusRescheduledEvent
   | SessionsAPI.BetaManagedAgentsSessionUpdatedEvent
   | SessionsAPI.BetaManagedAgentsSystemMessageEvent
-  | SessionsAPI.BetaManagedAgentsSessionUsageEvent;
+  | SessionsAPI.BetaManagedAgentsSessionUsageEvent
+  | BetaManagedAgentsWorkflowRunCreatedEvent
+  | BetaManagedAgentsWorkflowRunStatusEndedEvent
+  | BetaManagedAgentsWorkflowRunPhaseStartedEvent
+  | BetaManagedAgentsWorkflowRunPhaseEndedEvent
+  | BetaManagedAgentsWorkflowRunStatusRunningEvent
+  | BetaManagedAgentsWorkflowRunStatusIdleEvent
+  | BetaManagedAgentsWorkflowRunErrorEvent;
+
+/**
+ * The `type` of a session event.
+ */
+export type BetaManagedAgentsSessionEventType =
+  | 'user.message'
+  | 'user.interrupt'
+  | 'user.tool_confirmation'
+  | 'user.custom_tool_result'
+  | 'agent.custom_tool_use'
+  | 'agent.message'
+  | 'agent.thinking'
+  | 'agent.mcp_tool_use'
+  | 'agent.mcp_tool_result'
+  | 'agent.tool_use'
+  | 'agent.tool_result'
+  | 'agent.thread_message_received'
+  | 'agent.thread_message_sent'
+  | 'agent.thread_context_compacted'
+  | 'session.error'
+  | 'session.status_rescheduled'
+  | 'session.status_running'
+  | 'session.status_idle'
+  | 'session.status_terminated'
+  | 'session.thread_created'
+  | 'span.outcome_evaluation_start'
+  | 'span.outcome_evaluation_end'
+  | 'span.model_request_start'
+  | 'span.model_request_end'
+  | 'span.outcome_evaluation_ongoing'
+  | 'user.define_outcome'
+  | 'session.thread_status_running'
+  | 'session.thread_status_idle'
+  | 'session.thread_status_terminated'
+  | 'user.tool_result'
+  | 'session.thread_status_rescheduled'
+  | 'session.updated'
+  | 'system.message'
+  | 'session.usage'
+  | 'workflow_run.created'
+  | 'workflow_run.status_running'
+  | 'workflow_run.status_idle'
+  | 'workflow_run.status_ended'
+  | 'workflow_run.error'
+  | 'workflow_run.phase_started'
+  | 'workflow_run.phase_ended';
+
+/**
+ * The turn ended because the model's response was refused, for example by a safety
+ * classifier.
+ */
+export interface BetaManagedAgentsSessionRefusal {
+  type: 'refusal';
+}
+
+/**
+ * Structured information about a refusal.
+ */
+export interface BetaManagedAgentsSessionRefusalStopDetails {
+  /**
+   * The policy category that triggered the refusal, or `null` when there is no named
+   * category. New values can be added over time.
+   */
+  category: 'cyber' | 'bio' | 'frontier_llm' | 'reasoning_extraction' | 'general_harms' | null;
+
+  /**
+   * Human-readable explanation of the refusal, or `null` when none is available. The
+   * wording can change, so do not parse it.
+   */
+  explanation: string | null;
+
+  type: 'refusal';
+}
 
 /**
  * The agent is idle waiting on one or more blocking user-input events (tool
@@ -1029,18 +1391,22 @@ export interface BetaManagedAgentsSessionStatusIdleEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of status change.
    */
   processed_at: string;
 
   /**
-   * The agent completed its turn naturally and is ready for the next user message.
+   * Structured information about why the session stopped. `null` when there is
+   * nothing more to report.
    */
+  stop_details: BetaManagedAgentsSessionRefusalStopDetails | null;
+
   stop_reason:
     | BetaManagedAgentsSessionEndTurn
     | BetaManagedAgentsSessionRequiresAction
     | BetaManagedAgentsSessionRetriesExhausted
-    | BetaManagedAgentsSessionBudgetReached;
+    | BetaManagedAgentsSessionBudgetReached
+    | BetaManagedAgentsSessionRefusal;
 
   type: 'session.status_idle';
 }
@@ -1056,7 +1422,7 @@ export interface BetaManagedAgentsSessionStatusRescheduledEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of status change.
    */
   processed_at: string;
 
@@ -1073,7 +1439,7 @@ export interface BetaManagedAgentsSessionStatusRunningEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of status change.
    */
   processed_at: string;
 
@@ -1090,7 +1456,7 @@ export interface BetaManagedAgentsSessionStatusTerminatedEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of status change.
    */
   processed_at: string;
 
@@ -1098,8 +1464,8 @@ export interface BetaManagedAgentsSessionStatusTerminatedEvent {
 }
 
 /**
- * Emitted when a subagent is spawned as a new thread. Written to the parent
- * thread's output stream so clients observing the session see child creation.
+ * Emitted when a child thread is created. Written to the parent thread's output
+ * stream so clients observing the session see child creation.
  */
 export interface BetaManagedAgentsSessionThreadCreatedEvent {
   /**
@@ -1113,7 +1479,7 @@ export interface BetaManagedAgentsSessionThreadCreatedEvent {
   agent_name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the thread was created.
    */
   processed_at: string;
 
@@ -1123,6 +1489,12 @@ export interface BetaManagedAgentsSessionThreadCreatedEvent {
   session_thread_id: string;
 
   type: 'session.thread_created';
+
+  /**
+   * Identifier of the workflow run that created the thread, or `null` for any other
+   * thread.
+   */
+  workflow_run_id: string | null;
 }
 
 /**
@@ -1141,7 +1513,7 @@ export interface BetaManagedAgentsSessionThreadStatusIdleEvent {
   agent_name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of the status transition.
    */
   processed_at: string;
 
@@ -1151,13 +1523,17 @@ export interface BetaManagedAgentsSessionThreadStatusIdleEvent {
   session_thread_id: string;
 
   /**
-   * The agent completed its turn naturally and is ready for the next user message.
+   * Structured information about why the thread stopped. `null` when there is
+   * nothing more to report.
    */
+  stop_details: BetaManagedAgentsSessionRefusalStopDetails | null;
+
   stop_reason:
     | BetaManagedAgentsSessionEndTurn
     | BetaManagedAgentsSessionRequiresAction
     | BetaManagedAgentsSessionRetriesExhausted
-    | BetaManagedAgentsSessionBudgetReached;
+    | BetaManagedAgentsSessionBudgetReached
+    | BetaManagedAgentsSessionRefusal;
 
   type: 'session.thread_status_idle';
 }
@@ -1179,7 +1555,7 @@ export interface BetaManagedAgentsSessionThreadStatusRescheduledEvent {
   agent_name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of the status transition.
    */
   processed_at: string;
 
@@ -1207,7 +1583,7 @@ export interface BetaManagedAgentsSessionThreadStatusRunningEvent {
   agent_name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of the status transition.
    */
   processed_at: string;
 
@@ -1235,7 +1611,7 @@ export interface BetaManagedAgentsSessionThreadStatusTerminatedEvent {
   agent_name: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp of the status transition.
    */
   processed_at: string;
 
@@ -1259,7 +1635,7 @@ export interface BetaManagedAgentsSessionUsageSnapshot {
   active_seconds?: number;
 
   /**
-   * Prompt-cache creation token usage broken down by cache lifetime.
+   * Tokens used to create prompt cache entries, broken down by cache TTL.
    */
   cache_creation?: SessionsAPI.BetaManagedAgentsCacheCreationUsage;
 
@@ -1274,7 +1650,8 @@ export interface BetaManagedAgentsSessionUsageSnapshot {
   input_tokens?: number;
 
   /**
-   * A monetary amount in a specific currency.
+   * Cumulative list cost of the session across all turns, priced at public list
+   * rates.
    */
   list_cost?: BetaAPI.BetaMonetaryAmount;
 
@@ -1284,7 +1661,7 @@ export interface BetaManagedAgentsSessionUsageSnapshot {
   output_tokens?: number;
 
   /**
-   * Cumulative count of server-executed tool invocations, broken down by tool.
+   * Cumulative server-executed tool usage across all turns.
    */
   server_tool_use?: SessionsAPI.BetaManagedAgentsServerToolUsage;
 }
@@ -1309,12 +1686,12 @@ export interface BetaManagedAgentsSpanModelRequestEndEvent {
   model_request_start_id: string;
 
   /**
-   * Token usage for a single model request.
+   * Token usage for this model request.
    */
   model_usage: BetaManagedAgentsSpanModelUsage;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the model request completed.
    */
   processed_at: string;
 
@@ -1331,7 +1708,7 @@ export interface BetaManagedAgentsSpanModelRequestStartEvent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the model request started.
    */
   processed_at: string;
 
@@ -1363,9 +1740,8 @@ export interface BetaManagedAgentsSpanModelUsage {
   output_tokens: number;
 
   /**
-   * Inference speed mode. `fast` provides significantly faster output token
-   * generation at premium pricing. Not all models support `fast`; invalid
-   * combinations are rejected at create time.
+   * Inference speed tier this request actually ran at. Mirrors `usage.speed` on
+   * /v1/messages. Only present when the fast-mode beta is active.
    */
   speed?: 'standard' | 'fast' | null;
 }
@@ -1405,7 +1781,7 @@ export interface BetaManagedAgentsSpanOutcomeEvaluationEndEvent {
   outcome_id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when outcome evaluation ended.
    */
   processed_at: string;
 
@@ -1423,7 +1799,8 @@ export interface BetaManagedAgentsSpanOutcomeEvaluationEndEvent {
   type: 'span.outcome_evaluation_end';
 
   /**
-   * Token usage for a single model request.
+   * Aggregate token usage for this evaluation cycle. Sums across all grader model
+   * requests within the cycle.
    */
   usage: BetaManagedAgentsSpanModelUsage;
 }
@@ -1452,7 +1829,7 @@ export interface BetaManagedAgentsSpanOutcomeEvaluationOngoingEvent {
   outcome_id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this heartbeat was emitted.
    */
   processed_at: string;
 
@@ -1480,7 +1857,7 @@ export interface BetaManagedAgentsSpanOutcomeEvaluationStartEvent {
   outcome_id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when outcome evaluation started.
    */
   processed_at: string;
 
@@ -1527,7 +1904,14 @@ export type BetaManagedAgentsStreamSessionEvents =
   | SessionsAPI.BetaManagedAgentsStartEvent
   | SessionsAPI.BetaManagedAgentsDeltaEvent
   | SessionsAPI.BetaManagedAgentsSystemMessageEvent
-  | SessionsAPI.BetaManagedAgentsSessionUsageEvent;
+  | SessionsAPI.BetaManagedAgentsSessionUsageEvent
+  | BetaManagedAgentsWorkflowRunCreatedEvent
+  | BetaManagedAgentsWorkflowRunStatusEndedEvent
+  | BetaManagedAgentsWorkflowRunPhaseStartedEvent
+  | BetaManagedAgentsWorkflowRunPhaseEndedEvent
+  | BetaManagedAgentsWorkflowRunStatusRunningEvent
+  | BetaManagedAgentsWorkflowRunStatusIdleEvent
+  | BetaManagedAgentsWorkflowRunErrorEvent;
 
 /**
  * Privileged context for the accompanying turn and all subsequent turns, appended
@@ -1584,6 +1968,32 @@ export interface BetaManagedAgentsTextRubricParams {
 }
 
 /**
+ * The run exceeded the limit on the number of threads that a run can create.
+ */
+export interface BetaManagedAgentsThreadLimitWorkflowRunError {
+  /**
+   * Short explanation written by the server. It never contains content from the run
+   * or its agents.
+   */
+  message: string;
+
+  type: 'thread_limit_error';
+}
+
+/**
+ * The run reached its time limit.
+ */
+export interface BetaManagedAgentsTimeoutWorkflowRunError {
+  /**
+   * Short explanation written by the server. It never contains content from the run
+   * or its agents.
+   */
+  message: string;
+
+  type: 'timeout_error';
+}
+
+/**
  * An unknown or unexpected error occurred during session execution. A fallback
  * variant; clients that don't recognize a new error code can match on
  * `retry_status` and `message` alone.
@@ -1595,12 +2005,25 @@ export interface BetaManagedAgentsUnknownError {
   message: string;
 
   /**
-   * What the client should do next in response to this error.
+   * What the client should do next.
    */
   retry_status:
     | BetaManagedAgentsRetryStatusRetrying
     | BetaManagedAgentsRetryStatusExhausted
     | BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'unknown_error';
+}
+
+/**
+ * A failure that has no type of its own.
+ */
+export interface BetaManagedAgentsUnknownWorkflowRunError {
+  /**
+   * Short explanation written by the server. It never contains content from the run
+   * or its agents.
+   */
+  message: string;
 
   type: 'unknown_error';
 }
@@ -1664,13 +2087,13 @@ export interface BetaManagedAgentsUserCustomToolResultEvent {
   is_error?: boolean | null;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when this result was processed.
    */
   processed_at?: string | null;
 
   /**
-   * Routes this result to a subagent thread. Copy from the `agent.custom_tool_use`
-   * event's `session_thread_id`.
+   * Set by the server to the subagent thread this result was routed to. Omitted when
+   * it was routed to the primary thread.
    */
   session_thread_id?: string | null;
 }
@@ -1732,12 +2155,13 @@ export interface BetaManagedAgentsUserDefineOutcomeEvent {
   outcome_id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the outcome was accepted.
    */
   processed_at: string;
 
   /**
-   * Rubric for grading the quality of an outcome.
+   * How to grade the outcome. File rubrics are currently resolved to their text
+   * content; clients should handle both variants.
    */
   rubric: BetaManagedAgentsFileRubric | BetaManagedAgentsTextRubric;
 
@@ -1755,7 +2179,7 @@ export interface BetaManagedAgentsUserDefineOutcomeEventParams {
   description: string;
 
   /**
-   * Rubric for grading the quality of an outcome.
+   * How to grade the outcome. Text or file reference.
    */
   rubric: BetaManagedAgentsFileRubricParams | BetaManagedAgentsTextRubricParams;
 
@@ -1779,7 +2203,7 @@ export interface BetaManagedAgentsUserInterruptEvent {
   type: 'user.interrupt';
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the interrupt was processed.
    */
   processed_at?: string | null;
 
@@ -1827,7 +2251,7 @@ export interface BetaManagedAgentsUserMessageEvent {
   type: 'user.message';
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the agent finished processing this message.
    */
   processed_at?: string | null;
 }
@@ -1859,7 +2283,7 @@ export interface BetaManagedAgentsUserToolConfirmationEvent {
   id: string;
 
   /**
-   * UserToolConfirmationResult enum
+   * The confirmation result: 'allow' or 'deny'.
    */
   result: 'allow' | 'deny';
 
@@ -1880,14 +2304,13 @@ export interface BetaManagedAgentsUserToolConfirmationEvent {
   deny_message?: string | null;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Timestamp when the confirmation was processed.
    */
   processed_at?: string | null;
 
   /**
-   * When set, the confirmation routes to this subagent's thread rather than the
-   * primary. Echo this from the `session_thread_id` on the `agent.tool_use` or
-   * `agent.mcp_tool_use` event that prompted the approval.
+   * Set by the server to the subagent thread this confirmation was routed to.
+   * Omitted when it was routed to the primary thread.
    */
   session_thread_id?: string | null;
 }
@@ -1897,7 +2320,7 @@ export interface BetaManagedAgentsUserToolConfirmationEvent {
  */
 export interface BetaManagedAgentsUserToolConfirmationEventParams {
   /**
-   * UserToolConfirmationResult enum
+   * The confirmation result: 'allow' or 'deny'.
    */
   result: 'allow' | 'deny';
 
@@ -1950,6 +2373,291 @@ export interface BetaManagedAgentsUserToolResultEventParams {
   is_error?: boolean | null;
 }
 
+/**
+ * A workflow run was created. A workflow run is background work that the session's
+ * agent starts. Emitted once per run, before the run's other `workflow_run.*`
+ * events.
+ */
+export interface BetaManagedAgentsWorkflowRunCreatedEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Description that the agent gave the run, passed on as written, or `null` if it
+   * gave none.
+   */
+  description: string | null;
+
+  /**
+   * Name that the agent gave the run, passed on as written, or a name that the
+   * server assigned.
+   */
+  name: string;
+
+  /**
+   * The phases that the run's plan declares, in the plan's order. Can be empty.
+   */
+  phases: Array<BetaManagedAgentsWorkflowRunPhase>;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  type: 'workflow_run.created';
+
+  /**
+   * Identifier of the run. The same value is on all of the run's `workflow_run.*`
+   * events.
+   */
+  workflow_run_id: string;
+}
+
+/**
+ * Why a workflow run did not finish, or was not created. More types may be added.
+ * On `workflow_run.status_ended`, for a `type` you do not recognize, rely on the
+ * event's `result.type`.
+ */
+export type BetaManagedAgentsWorkflowRunError =
+  | BetaManagedAgentsTimeoutWorkflowRunError
+  | BetaManagedAgentsProgramWorkflowRunError
+  | BetaManagedAgentsUnknownWorkflowRunError
+  | BetaManagedAgentsThreadLimitWorkflowRunError
+  | BetaManagedAgentsMaxWorkflowRunsWorkflowRunError;
+
+/**
+ * A workflow run met an error, or an error kept a run from being created. A run
+ * that ends with a `result.type` of `error` emits this event before its
+ * `workflow_run.status_ended`, with the same `error`.
+ */
+export interface BetaManagedAgentsWorkflowRunErrorEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Why the run did not finish, or was not created.
+   */
+  error: BetaManagedAgentsWorkflowRunError;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  type: 'workflow_run.error';
+
+  /**
+   * Identifier of the run that met the error, or `null` when the error kept a run
+   * from being created.
+   */
+  workflow_run_id: string | null;
+}
+
+/**
+ * A phase that a workflow run's plan declares.
+ */
+export interface BetaManagedAgentsWorkflowRunPhase {
+  /**
+   * Unique identifier for the phase.
+   */
+  id: string;
+
+  /**
+   * Description that the agent gave the phase, passed on as written, or `null` if it
+   * gave none.
+   */
+  description: string | null;
+
+  /**
+   * Name that the agent gave the phase, passed on as written.
+   */
+  name: string;
+}
+
+/**
+ * A workflow run's plan left a phase, or the run's end closed it. Emitted once for
+ * every `workflow_run.phase_started` event, before the run's
+ * `workflow_run.status_ended` event. The event does not say whether the plan
+ * finished the phase's work, or why it left.
+ */
+export interface BetaManagedAgentsWorkflowRunPhaseEndedEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Identifier of the `workflow_run.phase_started` event that opened the phase.
+   */
+  phase_started_id: string;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  type: 'workflow_run.phase_ended';
+
+  /**
+   * Identifier of the run. The same value is on all of the run's `workflow_run.*`
+   * events.
+   */
+  workflow_run_id: string;
+
+  /**
+   * Identifier of the phase, as in `phases` on the run's `workflow_run.created`
+   * event.
+   */
+  workflow_run_phase_id: string;
+}
+
+/**
+ * A workflow run's plan entered a phase.
+ */
+export interface BetaManagedAgentsWorkflowRunPhaseStartedEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  type: 'workflow_run.phase_started';
+
+  /**
+   * Identifier of the run. The same value is on all of the run's `workflow_run.*`
+   * events.
+   */
+  workflow_run_id: string;
+
+  /**
+   * Identifier of the phase, as in `phases` on the run's `workflow_run.created`
+   * event.
+   */
+  workflow_run_phase_id: string;
+}
+
+/**
+ * How a workflow run ended.
+ */
+export type BetaManagedAgentsWorkflowRunResult =
+  | BetaManagedAgentsWorkflowRunResultCompleted
+  | BetaManagedAgentsWorkflowRunResultError
+  | BetaManagedAgentsWorkflowRunResultStopped;
+
+/**
+ * The run's plan, a program that the agent wrote, finished. This does not say
+ * whether the work succeeded.
+ */
+export interface BetaManagedAgentsWorkflowRunResultCompleted {
+  type: 'completed';
+}
+
+/**
+ * The run failed or reached its time limit.
+ */
+export interface BetaManagedAgentsWorkflowRunResultError {
+  /**
+   * Why the run did not finish.
+   */
+  error: BetaManagedAgentsWorkflowRunError;
+
+  type: 'error';
+}
+
+/**
+ * The agent stopped the run.
+ */
+export interface BetaManagedAgentsWorkflowRunResultStopped {
+  type: 'stopped';
+}
+
+/**
+ * A workflow run ended. Emitted once per run, as the last of the run's
+ * `workflow_run.*` events.
+ */
+export interface BetaManagedAgentsWorkflowRunStatusEndedEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  /**
+   * How the run ended.
+   */
+  result: BetaManagedAgentsWorkflowRunResult;
+
+  type: 'workflow_run.status_ended';
+
+  /**
+   * Identifier of the run. The same value is on all of the run's `workflow_run.*`
+   * events.
+   */
+  workflow_run_id: string;
+}
+
+/**
+ * A workflow run is idle. Emitted each time the run goes idle, whatever the cause.
+ * If the run ends while idle, no `workflow_run.status_running` comes between this
+ * event and its `workflow_run.status_ended`.
+ */
+export interface BetaManagedAgentsWorkflowRunStatusIdleEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  type: 'workflow_run.status_idle';
+
+  /**
+   * Identifier of the run. The same value is on all of the run's `workflow_run.*`
+   * events.
+   */
+  workflow_run_id: string;
+}
+
+/**
+ * A workflow run is running. Emitted when the run starts to execute, and each time
+ * it resumes after being idle. A run that starts idle emits
+ * `workflow_run.status_idle` first.
+ */
+export interface BetaManagedAgentsWorkflowRunStatusRunningEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  /**
+   * Timestamp when this event was processed.
+   */
+  processed_at: string;
+
+  type: 'workflow_run.status_running';
+
+  /**
+   * Identifier of the run. The same value is on all of the run's `workflow_run.*`
+   * events.
+   */
+  workflow_run_id: string;
+}
+
 export interface EventListParams extends PageCursorParams {
   /**
    * Query param: Return events created after this time (exclusive). Compared against
@@ -1977,7 +2685,7 @@ export interface EventListParams extends PageCursorParams {
 
   /**
    * Query param: Sort direction for results, ordered by the event's `processed_at`.
-   * Defaults to asc (chronological).
+   * Defaults to `asc` (chronological).
    */
   order?: 'asc' | 'desc';
 
@@ -1986,12 +2694,22 @@ export interface EventListParams extends PageCursorParams {
    * events (for example, `user.message` or `agent.tool_use`). Omit to return all
    * event types.
    */
-  types?: Array<string>;
+  types?: Array<BetaManagedAgentsSessionEventType>;
 
   /**
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EventSendParams {
@@ -2004,6 +2722,16 @@ export interface EventSendParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EventStreamParams {
@@ -2025,6 +2753,16 @@ export interface EventStreamParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export { SessionToolRunner, type SessionToolRunnerOptions } from '../../../lib/tools/SessionToolRunner';
@@ -2035,7 +2773,12 @@ export declare namespace Events {
   export { SessionToolRunner };
 
   export {
+    type BetaManagedAgentsAgentAutoEvaluatedPermission as BetaManagedAgentsAgentAutoEvaluatedPermission,
+    type BetaManagedAgentsAgentAutoEvaluatedPermissionAllow as BetaManagedAgentsAgentAutoEvaluatedPermissionAllow,
+    type BetaManagedAgentsAgentAutoEvaluatedPermissionAsk as BetaManagedAgentsAgentAutoEvaluatedPermissionAsk,
+    type BetaManagedAgentsAgentAutoEvaluatedPermissionDeny as BetaManagedAgentsAgentAutoEvaluatedPermissionDeny,
     type BetaManagedAgentsAgentCustomToolUseEvent as BetaManagedAgentsAgentCustomToolUseEvent,
+    type BetaManagedAgentsAgentEvaluatedPermission as BetaManagedAgentsAgentEvaluatedPermission,
     type BetaManagedAgentsAgentMCPToolResultEvent as BetaManagedAgentsAgentMCPToolResultEvent,
     type BetaManagedAgentsAgentMCPToolUseEvent as BetaManagedAgentsAgentMCPToolUseEvent,
     type BetaManagedAgentsAgentMessageEvent as BetaManagedAgentsAgentMessageEvent,
@@ -2043,6 +2786,10 @@ export declare namespace Events {
     type BetaManagedAgentsAgentThreadContextCompactedEvent as BetaManagedAgentsAgentThreadContextCompactedEvent,
     type BetaManagedAgentsAgentThreadMessageReceivedEvent as BetaManagedAgentsAgentThreadMessageReceivedEvent,
     type BetaManagedAgentsAgentThreadMessageSentEvent as BetaManagedAgentsAgentThreadMessageSentEvent,
+    type BetaManagedAgentsAgentToolEvaluation as BetaManagedAgentsAgentToolEvaluation,
+    type BetaManagedAgentsAgentToolEvaluationAlwaysAllow as BetaManagedAgentsAgentToolEvaluationAlwaysAllow,
+    type BetaManagedAgentsAgentToolEvaluationAlwaysAsk as BetaManagedAgentsAgentToolEvaluationAlwaysAsk,
+    type BetaManagedAgentsAgentToolEvaluationAuto as BetaManagedAgentsAgentToolEvaluationAuto,
     type BetaManagedAgentsAgentToolResultEvent as BetaManagedAgentsAgentToolResultEvent,
     type BetaManagedAgentsAgentToolUseEvent as BetaManagedAgentsAgentToolUseEvent,
     type BetaManagedAgentsBase64DocumentSource as BetaManagedAgentsBase64DocumentSource,
@@ -2056,13 +2803,20 @@ export declare namespace Events {
     type BetaManagedAgentsFileRubric as BetaManagedAgentsFileRubric,
     type BetaManagedAgentsFileRubricParams as BetaManagedAgentsFileRubricParams,
     type BetaManagedAgentsImageBlock as BetaManagedAgentsImageBlock,
+    type BetaManagedAgentsMaxWorkflowRunsWorkflowRunError as BetaManagedAgentsMaxWorkflowRunsWorkflowRunError,
     type BetaManagedAgentsMCPAuthenticationFailedError as BetaManagedAgentsMCPAuthenticationFailedError,
     type BetaManagedAgentsMCPConnectionFailedError as BetaManagedAgentsMCPConnectionFailedError,
     type BetaManagedAgentsModelOverloadedError as BetaManagedAgentsModelOverloadedError,
     type BetaManagedAgentsModelRateLimitedError as BetaManagedAgentsModelRateLimitedError,
     type BetaManagedAgentsModelRequestFailedError as BetaManagedAgentsModelRequestFailedError,
     type BetaManagedAgentsPlainTextDocumentSource as BetaManagedAgentsPlainTextDocumentSource,
+    type BetaManagedAgentsProgramWorkflowRunError as BetaManagedAgentsProgramWorkflowRunError,
     type BetaManagedAgentsRedactedBlock as BetaManagedAgentsRedactedBlock,
+    type BetaManagedAgentsRepositoryAuthenticationError as BetaManagedAgentsRepositoryAuthenticationError,
+    type BetaManagedAgentsRepositoryCheckoutError as BetaManagedAgentsRepositoryCheckoutError,
+    type BetaManagedAgentsRepositoryCloneError as BetaManagedAgentsRepositoryCloneError,
+    type BetaManagedAgentsRepositoryForbiddenError as BetaManagedAgentsRepositoryForbiddenError,
+    type BetaManagedAgentsRepositoryNotFoundError as BetaManagedAgentsRepositoryNotFoundError,
     type BetaManagedAgentsRetryStatusExhausted as BetaManagedAgentsRetryStatusExhausted,
     type BetaManagedAgentsRetryStatusRetrying as BetaManagedAgentsRetryStatusRetrying,
     type BetaManagedAgentsRetryStatusTerminal as BetaManagedAgentsRetryStatusTerminal,
@@ -2075,6 +2829,9 @@ export declare namespace Events {
     type BetaManagedAgentsSessionEndTurn as BetaManagedAgentsSessionEndTurn,
     type BetaManagedAgentsSessionErrorEvent as BetaManagedAgentsSessionErrorEvent,
     type BetaManagedAgentsSessionEvent as BetaManagedAgentsSessionEvent,
+    type BetaManagedAgentsSessionEventType as BetaManagedAgentsSessionEventType,
+    type BetaManagedAgentsSessionRefusal as BetaManagedAgentsSessionRefusal,
+    type BetaManagedAgentsSessionRefusalStopDetails as BetaManagedAgentsSessionRefusalStopDetails,
     type BetaManagedAgentsSessionRequiresAction as BetaManagedAgentsSessionRequiresAction,
     type BetaManagedAgentsSessionRetriesExhausted as BetaManagedAgentsSessionRetriesExhausted,
     type BetaManagedAgentsSessionStatusIdleEvent as BetaManagedAgentsSessionStatusIdleEvent,
@@ -2098,7 +2855,10 @@ export declare namespace Events {
     type BetaManagedAgentsTextBlock as BetaManagedAgentsTextBlock,
     type BetaManagedAgentsTextRubric as BetaManagedAgentsTextRubric,
     type BetaManagedAgentsTextRubricParams as BetaManagedAgentsTextRubricParams,
+    type BetaManagedAgentsThreadLimitWorkflowRunError as BetaManagedAgentsThreadLimitWorkflowRunError,
+    type BetaManagedAgentsTimeoutWorkflowRunError as BetaManagedAgentsTimeoutWorkflowRunError,
     type BetaManagedAgentsUnknownError as BetaManagedAgentsUnknownError,
+    type BetaManagedAgentsUnknownWorkflowRunError as BetaManagedAgentsUnknownWorkflowRunError,
     type BetaManagedAgentsURLDocumentSource as BetaManagedAgentsURLDocumentSource,
     type BetaManagedAgentsURLImageSource as BetaManagedAgentsURLImageSource,
     type BetaManagedAgentsUserCustomToolResultEvent as BetaManagedAgentsUserCustomToolResultEvent,
@@ -2112,6 +2872,19 @@ export declare namespace Events {
     type BetaManagedAgentsUserToolConfirmationEvent as BetaManagedAgentsUserToolConfirmationEvent,
     type BetaManagedAgentsUserToolConfirmationEventParams as BetaManagedAgentsUserToolConfirmationEventParams,
     type BetaManagedAgentsUserToolResultEventParams as BetaManagedAgentsUserToolResultEventParams,
+    type BetaManagedAgentsWorkflowRunCreatedEvent as BetaManagedAgentsWorkflowRunCreatedEvent,
+    type BetaManagedAgentsWorkflowRunError as BetaManagedAgentsWorkflowRunError,
+    type BetaManagedAgentsWorkflowRunErrorEvent as BetaManagedAgentsWorkflowRunErrorEvent,
+    type BetaManagedAgentsWorkflowRunPhase as BetaManagedAgentsWorkflowRunPhase,
+    type BetaManagedAgentsWorkflowRunPhaseEndedEvent as BetaManagedAgentsWorkflowRunPhaseEndedEvent,
+    type BetaManagedAgentsWorkflowRunPhaseStartedEvent as BetaManagedAgentsWorkflowRunPhaseStartedEvent,
+    type BetaManagedAgentsWorkflowRunResult as BetaManagedAgentsWorkflowRunResult,
+    type BetaManagedAgentsWorkflowRunResultCompleted as BetaManagedAgentsWorkflowRunResultCompleted,
+    type BetaManagedAgentsWorkflowRunResultError as BetaManagedAgentsWorkflowRunResultError,
+    type BetaManagedAgentsWorkflowRunResultStopped as BetaManagedAgentsWorkflowRunResultStopped,
+    type BetaManagedAgentsWorkflowRunStatusEndedEvent as BetaManagedAgentsWorkflowRunStatusEndedEvent,
+    type BetaManagedAgentsWorkflowRunStatusIdleEvent as BetaManagedAgentsWorkflowRunStatusIdleEvent,
+    type BetaManagedAgentsWorkflowRunStatusRunningEvent as BetaManagedAgentsWorkflowRunStatusRunningEvent,
     type BetaManagedAgentsSessionEventsPageCursor as BetaManagedAgentsSessionEventsPageCursor,
     type EventListParams as EventListParams,
     type EventSendParams as EventSendParams,

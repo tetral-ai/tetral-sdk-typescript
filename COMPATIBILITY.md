@@ -12,8 +12,8 @@ Pinned upstream baseline:
 
 | Item                        | Value                                      |
 | --------------------------- | ------------------------------------------ |
-| Upstream package version    | `0.122.0`                                  |
-| Last synced upstream commit | `7f3898c525b1a1486c85b3808f03935418fed0b8` |
+| Upstream package version    | `0.133.0`                                  |
+| Last synced upstream commit | `2979ed5cef4b2f059b95af23e08728c01e588f86` |
 
 ## 2. Type-Level Divergences
 
@@ -240,6 +240,84 @@ Memory store updates with `name: null` return 400 `invalid_request_error`.
   against the hosted Engine. Its upstream helper now resolves `latest` through
   GET and downloads by returned version ID; Engine's own mount uses the uploaded
   package root as described in §3.
+
+### Additions through 0.133
+
+On supported routes, `workspace_id` sends `anthropic-workspace-id`. A single
+value matching the token workspace is supported; a different, empty, or repeated
+header returns 403 `permission_error`. This does not grant access to another
+workspace or enable an otherwise unsupported route.
+
+GitHub repository `authorization_token` is optional in upstream SDK types, but
+Engine still requires it, including for public repositories: omission returns
+400 `invalid_request_error` with `authorization_token is required`. Tokens remain
+write-only and rotatable. Memory store `description` is a string, empty when unset.
+
+`ThreadListParams.statuses`, model-list `lifecycle`, per-tool `permission_policy`
+with `type: auto`, multiagent configuration, and other retained unsupported
+parameters are rejected with 400. The registry lists each parameter and its
+supported parent scope; a type being available does not enable its behavior.
+The seven `workflow_run.*` events, refusal/repository-error event variants, and
+optional tool `evaluation` fields are not produced. Idle events emit
+`stop_details: null`; Thread-created events and Thread objects emit
+`workflow_run_id: null`. No workflow execution or refusal details are implied.
+
+The following resources and helpers are retained from upstream but have no
+supported Engine request path. This includes GA `client.organization`; it does
+not expose Engine API-key or identity administration through that upstream API.
+
+| Retained surface                                                         | Engine scope                                                      |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| `BetaToolRunner.addTools`                                                | No Messages route; tool-runner request orchestration unsupported. |
+| `BetaToolRunner.compactBeforeNextTurn`                                   | No Messages route; tool-runner request orchestration unsupported. |
+| `BetaToolRunner.deferToolCall`                                           | No Messages route; tool-runner request orchestration unsupported. |
+| `BetaToolRunner.removeTools`                                             | No Messages route; tool-runner request orchestration unsupported. |
+| `beta/deployment-runs (DeploymentRuns)`                                  | No public Engine route for this resource.                         |
+| `beta/deployments (Deployments)`                                         | No public Engine route for this resource.                         |
+| `beta/environments/work (Work)`                                          | No public Engine route for this resource.                         |
+| `beta/messages/batches (Batches)`                                        | No public Engine route for this resource.                         |
+| `beta/organization/analytics/apps/chat/projects (Projects)`              | No public Engine route for this resource.                         |
+| `beta/organization/analytics/artifacts (Artifacts)`                      | No public Engine route for this resource.                         |
+| `beta/organization/analytics/connectors (Connectors)`                    | No public Engine route for this resource.                         |
+| `beta/organization/analytics/cost-report (CostReport)`                   | No public Engine route for this resource.                         |
+| `beta/organization/analytics/plugins (Plugins)`                          | No public Engine route for this resource.                         |
+| `beta/organization/analytics/skills (Skills)`                            | No public Engine route for this resource.                         |
+| `beta/organization/analytics/summaries (Summaries)`                      | No public Engine route for this resource.                         |
+| `beta/organization/analytics/usage-report (UsageReport)`                 | No public Engine route for this resource.                         |
+| `beta/organization/analytics/user-cost-report (UserCostReport)`          | No public Engine route for this resource.                         |
+| `beta/organization/analytics/user-usage-report (UserUsageReport)`        | No public Engine route for this resource.                         |
+| `beta/organization/analytics/users (Users)`                              | No public Engine route for this resource.                         |
+| `beta/organization/compliance-settings (ComplianceSettings)`             | No public Engine route for this resource.                         |
+| `beta/organization/plugin-marketplaces (PluginMarketplaces)`             | No public Engine route for this resource.                         |
+| `beta/organization/plugins/installation-settings (InstallationSettings)` | No public Engine route for this resource.                         |
+| `beta/organization/plugins/plugins (Plugins)`                            | No public Engine route for this resource.                         |
+| `beta/organization/plugins/shares (Shares)`                              | No public Engine route for this resource.                         |
+| `beta/organization/plugins/versions (Versions)`                          | No public Engine route for this resource.                         |
+| `beta/organization/rbac-groups/members (Members)`                        | No public Engine route for this resource.                         |
+| `beta/organization/rbac-groups/rbac-groups (RBACGroups)`                 | No public Engine route for this resource.                         |
+| `beta/organization/rbac-roles/permissions (Permissions)`                 | No public Engine route for this resource.                         |
+| `beta/organization/rbac-roles/rbac-roles (RBACRoles)`                    | No public Engine route for this resource.                         |
+| `beta/organization/spend-limits/effective (Effective)`                   | No public Engine route for this resource.                         |
+| `beta/organization/spend-limits/increase-requests (IncreaseRequests)`    | No public Engine route for this resource.                         |
+| `beta/organization/spend-limits/spend-limits (SpendLimits)`              | No public Engine route for this resource.                         |
+| `completions (Completions)`                                              | No public Engine route for this resource.                         |
+| `messages/batches (Batches)`                                             | No public Engine route for this resource.                         |
+| `organization/api-keys (APIKeys)`                                        | No public Engine route for this resource.                         |
+| `organization/compliance-settings (ComplianceSettings)`                  | No public Engine route for this resource.                         |
+| `organization/external-keys (ExternalKeys)`                              | No public Engine route for this resource.                         |
+| `organization/federation/issuers (Issuers)`                              | No public Engine route for this resource.                         |
+| `organization/federation/rules/rules (Rules)`                            | No public Engine route for this resource.                         |
+| `organization/federation/rules/workspaces (Workspaces)`                  | No public Engine route for this resource.                         |
+| `organization/invites (Invites)`                                         | No public Engine route for this resource.                         |
+| `organization/organization (Organization)`                               | No public Engine route for this resource.                         |
+| `organization/rate-limits (RateLimits)`                                  | No public Engine route for this resource.                         |
+| `organization/service-accounts/service-accounts (ServiceAccounts)`       | No public Engine route for this resource.                         |
+| `organization/service-accounts/workspaces (Workspaces)`                  | No public Engine route for this resource.                         |
+| `organization/users (Users)`                                             | No public Engine route for this resource.                         |
+| `organization/workspaces/members (Members)`                              | No public Engine route for this resource.                         |
+| `organization/workspaces/rate-limits (RateLimits)`                       | No public Engine route for this resource.                         |
+| `organization/workspaces/service-accounts (ServiceAccounts)`             | No public Engine route for this resource.                         |
+| `organization/workspaces/workspaces (Workspaces)`                        | No public Engine route for this resource.                         |
 
 ## 5. Authentication And Upstream Sync
 

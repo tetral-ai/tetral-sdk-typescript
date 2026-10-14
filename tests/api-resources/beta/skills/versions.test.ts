@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic, { toFile } from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -25,6 +23,7 @@ describe('resource versions', () => {
     const response = await client.beta.skills.versions.create('skill_id', {
       files: [await toFile(Buffer.from('Example data'), 'README.md')],
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -43,6 +42,7 @@ describe('resource versions', () => {
     const response = await client.beta.skills.versions.retrieve('version', {
       skill_id: 'skill_id',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -66,6 +66,7 @@ describe('resource versions', () => {
           limit: 1,
           page: 'page',
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -87,6 +88,7 @@ describe('resource versions', () => {
     const response = await client.beta.skills.versions.delete('version', {
       skill_id: 'skill_id',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -94,6 +96,7 @@ describe('resource versions', () => {
     const response = await client.beta.skills.versions.download('version', {
       skill_id: 'skill_id',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 });

@@ -2872,5 +2872,1773 @@
     "status": "supported",
     "proof": "documented",
     "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-100",
+    "name": "T-COMPAT-UPSTREAM-100 workflow_run.created",
+    "surface": "workflow_run.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-101",
+    "name": "T-COMPAT-UPSTREAM-101 workflow_run.error",
+    "surface": "workflow_run.error",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-102",
+    "name": "T-COMPAT-UPSTREAM-102 workflow_run.phase_ended",
+    "surface": "workflow_run.phase_ended",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-103",
+    "name": "T-COMPAT-UPSTREAM-103 workflow_run.phase_started",
+    "surface": "workflow_run.phase_started",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-104",
+    "name": "T-COMPAT-UPSTREAM-104 workflow_run.status_ended",
+    "surface": "workflow_run.status_ended",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-105",
+    "name": "T-COMPAT-UPSTREAM-105 workflow_run.status_idle",
+    "surface": "workflow_run.status_idle",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-106",
+    "name": "T-COMPAT-UPSTREAM-106 workflow_run.status_running",
+    "surface": "workflow_run.status_running",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-107",
+    "name": "T-COMPAT-UPSTREAM-107 BetaManagedAgentsAgentMCPToolUseEvent.evaluation",
+    "surface": "BetaManagedAgentsAgentMCPToolUseEvent.evaluation",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Optional evaluation field omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-108",
+    "name": "T-COMPAT-UPSTREAM-108 BetaManagedAgentsAgentToolUseEvent.evaluation",
+    "surface": "BetaManagedAgentsAgentToolUseEvent.evaluation",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Optional evaluation field omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-109",
+    "name": "T-COMPAT-UPSTREAM-109 BetaManagedAgentsRepositoryAuthenticationError.type",
+    "surface": "BetaManagedAgentsRepositoryAuthenticationError.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-110",
+    "name": "T-COMPAT-UPSTREAM-110 BetaManagedAgentsRepositoryCheckoutError.type",
+    "surface": "BetaManagedAgentsRepositoryCheckoutError.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-111",
+    "name": "T-COMPAT-UPSTREAM-111 BetaManagedAgentsRepositoryCloneError.type",
+    "surface": "BetaManagedAgentsRepositoryCloneError.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-112",
+    "name": "T-COMPAT-UPSTREAM-112 BetaManagedAgentsRepositoryForbiddenError.type",
+    "surface": "BetaManagedAgentsRepositoryForbiddenError.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-113",
+    "name": "T-COMPAT-UPSTREAM-113 BetaManagedAgentsRepositoryNotFoundError.type",
+    "surface": "BetaManagedAgentsRepositoryNotFoundError.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-114",
+    "name": "T-COMPAT-UPSTREAM-114 BetaManagedAgentsSessionRefusal.type",
+    "surface": "BetaManagedAgentsSessionRefusal.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-115",
+    "name": "T-COMPAT-UPSTREAM-115 BetaManagedAgentsSessionRefusalStopDetails.type",
+    "surface": "BetaManagedAgentsSessionRefusalStopDetails.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-120",
+    "name": "T-COMPAT-UPSTREAM-120 AgentArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "AgentArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-121",
+    "name": "T-COMPAT-UPSTREAM-121 AgentArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "AgentArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-122",
+    "name": "T-COMPAT-UPSTREAM-122 AgentCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "AgentCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-123",
+    "name": "T-COMPAT-UPSTREAM-123 AgentCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "AgentCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-124",
+    "name": "T-COMPAT-UPSTREAM-124 AgentListParams.workspace_id \u2014 matches token workspace",
+    "surface": "AgentListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-125",
+    "name": "T-COMPAT-UPSTREAM-125 AgentListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "AgentListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-126",
+    "name": "T-COMPAT-UPSTREAM-126 AgentRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "AgentRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-127",
+    "name": "T-COMPAT-UPSTREAM-127 AgentRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "AgentRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-128",
+    "name": "T-COMPAT-UPSTREAM-128 AgentUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "AgentUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-129",
+    "name": "T-COMPAT-UPSTREAM-129 AgentUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "AgentUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-130",
+    "name": "T-COMPAT-UPSTREAM-130 BetaManagedAgentsAgentToolsetDefaultConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsAgentToolsetDefaultConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-131",
+    "name": "T-COMPAT-UPSTREAM-131 BetaManagedAgentsBashToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsBashToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-132",
+    "name": "T-COMPAT-UPSTREAM-132 BetaManagedAgentsEditToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsEditToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-133",
+    "name": "T-COMPAT-UPSTREAM-133 BetaManagedAgentsGlobToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsGlobToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-134",
+    "name": "T-COMPAT-UPSTREAM-134 BetaManagedAgentsGrepToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsGrepToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-135",
+    "name": "T-COMPAT-UPSTREAM-135 BetaManagedAgentsMCPToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsMCPToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-136",
+    "name": "T-COMPAT-UPSTREAM-136 BetaManagedAgentsMCPToolsetDefaultConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsMCPToolsetDefaultConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-137",
+    "name": "T-COMPAT-UPSTREAM-137 BetaManagedAgentsMultiagent20261001Params.advisor",
+    "surface": "BetaManagedAgentsMultiagent20261001Params.advisor",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-138",
+    "name": "T-COMPAT-UPSTREAM-138 BetaManagedAgentsMultiagent20261001Params.subagents",
+    "surface": "BetaManagedAgentsMultiagent20261001Params.subagents",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-139",
+    "name": "T-COMPAT-UPSTREAM-139 BetaManagedAgentsMultiagent20261001Params.type",
+    "surface": "BetaManagedAgentsMultiagent20261001Params.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-140",
+    "name": "T-COMPAT-UPSTREAM-140 BetaManagedAgentsMultiagent20261001Params.workflows",
+    "surface": "BetaManagedAgentsMultiagent20261001Params.workflows",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-141",
+    "name": "T-COMPAT-UPSTREAM-141 BetaManagedAgentsMultiagentAdvisorDisabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentAdvisorDisabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-142",
+    "name": "T-COMPAT-UPSTREAM-142 BetaManagedAgentsMultiagentAdvisorEnabledParams.model",
+    "surface": "BetaManagedAgentsMultiagentAdvisorEnabledParams.model",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-143",
+    "name": "T-COMPAT-UPSTREAM-143 BetaManagedAgentsMultiagentAdvisorEnabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentAdvisorEnabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-144",
+    "name": "T-COMPAT-UPSTREAM-144 BetaManagedAgentsMultiagentInlineAgentsDisabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentInlineAgentsDisabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-145",
+    "name": "T-COMPAT-UPSTREAM-145 BetaManagedAgentsMultiagentInlineAgentsEnabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentInlineAgentsEnabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-146",
+    "name": "T-COMPAT-UPSTREAM-146 BetaManagedAgentsMultiagentSubagentsDisabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentSubagentsDisabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-147",
+    "name": "T-COMPAT-UPSTREAM-147 BetaManagedAgentsMultiagentSubagentsEnabledParams.inline_agents",
+    "surface": "BetaManagedAgentsMultiagentSubagentsEnabledParams.inline_agents",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-148",
+    "name": "T-COMPAT-UPSTREAM-148 BetaManagedAgentsMultiagentSubagentsEnabledParams.predefined_agents",
+    "surface": "BetaManagedAgentsMultiagentSubagentsEnabledParams.predefined_agents",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-149",
+    "name": "T-COMPAT-UPSTREAM-149 BetaManagedAgentsMultiagentSubagentsEnabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentSubagentsEnabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-150",
+    "name": "T-COMPAT-UPSTREAM-150 BetaManagedAgentsMultiagentWorkflowsDisabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentWorkflowsDisabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-151",
+    "name": "T-COMPAT-UPSTREAM-151 BetaManagedAgentsMultiagentWorkflowsEnabledParams.inline_agents",
+    "surface": "BetaManagedAgentsMultiagentWorkflowsEnabledParams.inline_agents",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-152",
+    "name": "T-COMPAT-UPSTREAM-152 BetaManagedAgentsMultiagentWorkflowsEnabledParams.predefined_agents",
+    "surface": "BetaManagedAgentsMultiagentWorkflowsEnabledParams.predefined_agents",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-153",
+    "name": "T-COMPAT-UPSTREAM-153 BetaManagedAgentsMultiagentWorkflowsEnabledParams.type",
+    "surface": "BetaManagedAgentsMultiagentWorkflowsEnabledParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-154",
+    "name": "T-COMPAT-UPSTREAM-154 BetaManagedAgentsReadToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsReadToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-155",
+    "name": "T-COMPAT-UPSTREAM-155 BetaManagedAgentsWebFetchToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsWebFetchToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-156",
+    "name": "T-COMPAT-UPSTREAM-156 BetaManagedAgentsWebFetchToolConfigParams.url_sources",
+    "surface": "BetaManagedAgentsWebFetchToolConfigParams.url_sources",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-157",
+    "name": "T-COMPAT-UPSTREAM-157 BetaManagedAgentsWebFetchURLSourcesParams.client_tool_results",
+    "surface": "BetaManagedAgentsWebFetchURLSourcesParams.client_tool_results",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: official toolset/configuration unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-158",
+    "name": "T-COMPAT-UPSTREAM-158 BetaManagedAgentsWebFetchURLSourcesParams.server_tool_results",
+    "surface": "BetaManagedAgentsWebFetchURLSourcesParams.server_tool_results",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: official toolset/configuration unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-159",
+    "name": "T-COMPAT-UPSTREAM-159 BetaManagedAgentsWebFetchURLSourcesParams.user_input",
+    "surface": "BetaManagedAgentsWebFetchURLSourcesParams.user_input",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: official toolset/configuration unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-160",
+    "name": "T-COMPAT-UPSTREAM-160 BetaManagedAgentsWebSearchToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsWebSearchToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-161",
+    "name": "T-COMPAT-UPSTREAM-161 BetaManagedAgentsWriteToolConfigParams.permission_policy = auto",
+    "surface": "BetaManagedAgentsWriteToolConfigParams.permission_policy = auto",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: permission_policy.type auto is unsupported on supported mcp_toolset; official agent_toolset_20260401 is rejected independently."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-162",
+    "name": "T-COMPAT-UPSTREAM-162 VersionListParams.workspace_id \u2014 matches token workspace",
+    "surface": "VersionListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-163",
+    "name": "T-COMPAT-UPSTREAM-163 VersionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VersionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-164",
+    "name": "T-COMPAT-UPSTREAM-164 EnvironmentArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "EnvironmentArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-165",
+    "name": "T-COMPAT-UPSTREAM-165 EnvironmentArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EnvironmentArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-166",
+    "name": "T-COMPAT-UPSTREAM-166 EnvironmentCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "EnvironmentCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-167",
+    "name": "T-COMPAT-UPSTREAM-167 EnvironmentCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EnvironmentCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-168",
+    "name": "T-COMPAT-UPSTREAM-168 EnvironmentDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "EnvironmentDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-169",
+    "name": "T-COMPAT-UPSTREAM-169 EnvironmentDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EnvironmentDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-170",
+    "name": "T-COMPAT-UPSTREAM-170 EnvironmentListParams.workspace_id \u2014 matches token workspace",
+    "surface": "EnvironmentListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-171",
+    "name": "T-COMPAT-UPSTREAM-171 EnvironmentListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EnvironmentListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-172",
+    "name": "T-COMPAT-UPSTREAM-172 EnvironmentRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "EnvironmentRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-173",
+    "name": "T-COMPAT-UPSTREAM-173 EnvironmentRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EnvironmentRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-174",
+    "name": "T-COMPAT-UPSTREAM-174 EnvironmentUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "EnvironmentUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-175",
+    "name": "T-COMPAT-UPSTREAM-175 EnvironmentUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EnvironmentUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-176",
+    "name": "T-COMPAT-UPSTREAM-176 FileDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "FileDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-177",
+    "name": "T-COMPAT-UPSTREAM-177 FileDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "FileDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-178",
+    "name": "T-COMPAT-UPSTREAM-178 FileDownloadParams.workspace_id \u2014 matches token workspace",
+    "surface": "FileDownloadParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-179",
+    "name": "T-COMPAT-UPSTREAM-179 FileDownloadParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "FileDownloadParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-180",
+    "name": "T-COMPAT-UPSTREAM-180 FileListParams.workspace_id \u2014 matches token workspace",
+    "surface": "FileListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-181",
+    "name": "T-COMPAT-UPSTREAM-181 FileListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "FileListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-182",
+    "name": "T-COMPAT-UPSTREAM-182 FileRetrieveMetadataParams.workspace_id \u2014 matches token workspace",
+    "surface": "FileRetrieveMetadataParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-183",
+    "name": "T-COMPAT-UPSTREAM-183 FileRetrieveMetadataParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "FileRetrieveMetadataParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-184",
+    "name": "T-COMPAT-UPSTREAM-184 FileUploadParams.workspace_id \u2014 matches token workspace",
+    "surface": "FileUploadParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-185",
+    "name": "T-COMPAT-UPSTREAM-185 FileUploadParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "FileUploadParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-186",
+    "name": "T-COMPAT-UPSTREAM-186 MemoryCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-187",
+    "name": "T-COMPAT-UPSTREAM-187 MemoryCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-188",
+    "name": "T-COMPAT-UPSTREAM-188 MemoryDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-189",
+    "name": "T-COMPAT-UPSTREAM-189 MemoryDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-190",
+    "name": "T-COMPAT-UPSTREAM-190 MemoryListParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-191",
+    "name": "T-COMPAT-UPSTREAM-191 MemoryListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-192",
+    "name": "T-COMPAT-UPSTREAM-192 MemoryRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-193",
+    "name": "T-COMPAT-UPSTREAM-193 MemoryRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-194",
+    "name": "T-COMPAT-UPSTREAM-194 MemoryUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-195",
+    "name": "T-COMPAT-UPSTREAM-195 MemoryUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-196",
+    "name": "T-COMPAT-UPSTREAM-196 MemoryStoreArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryStoreArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-197",
+    "name": "T-COMPAT-UPSTREAM-197 MemoryStoreArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryStoreArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-198",
+    "name": "T-COMPAT-UPSTREAM-198 MemoryStoreCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryStoreCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-199",
+    "name": "T-COMPAT-UPSTREAM-199 MemoryStoreCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryStoreCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-200",
+    "name": "T-COMPAT-UPSTREAM-200 MemoryStoreDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryStoreDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-201",
+    "name": "T-COMPAT-UPSTREAM-201 MemoryStoreDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryStoreDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-202",
+    "name": "T-COMPAT-UPSTREAM-202 MemoryStoreListParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryStoreListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-203",
+    "name": "T-COMPAT-UPSTREAM-203 MemoryStoreListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryStoreListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-204",
+    "name": "T-COMPAT-UPSTREAM-204 MemoryStoreRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryStoreRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-205",
+    "name": "T-COMPAT-UPSTREAM-205 MemoryStoreRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryStoreRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-206",
+    "name": "T-COMPAT-UPSTREAM-206 MemoryStoreUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryStoreUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-207",
+    "name": "T-COMPAT-UPSTREAM-207 MemoryStoreUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryStoreUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-208",
+    "name": "T-COMPAT-UPSTREAM-208 MemoryVersionListParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryVersionListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-209",
+    "name": "T-COMPAT-UPSTREAM-209 MemoryVersionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryVersionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-210",
+    "name": "T-COMPAT-UPSTREAM-210 MemoryVersionRedactParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryVersionRedactParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-211",
+    "name": "T-COMPAT-UPSTREAM-211 MemoryVersionRedactParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryVersionRedactParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-212",
+    "name": "T-COMPAT-UPSTREAM-212 MemoryVersionRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "MemoryVersionRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-213",
+    "name": "T-COMPAT-UPSTREAM-213 MemoryVersionRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "MemoryVersionRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-214",
+    "name": "T-COMPAT-UPSTREAM-214 ModelListParams.lifecycle",
+    "surface": "ModelListParams.lifecycle",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown query parameter."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-215",
+    "name": "T-COMPAT-UPSTREAM-215 ModelListParams.workspace_id \u2014 matches token workspace",
+    "surface": "ModelListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-216",
+    "name": "T-COMPAT-UPSTREAM-216 ModelListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ModelListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-217",
+    "name": "T-COMPAT-UPSTREAM-217 ModelRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "ModelRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-218",
+    "name": "T-COMPAT-UPSTREAM-218 ModelRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ModelRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-219",
+    "name": "T-COMPAT-UPSTREAM-219 EventListParams.workspace_id \u2014 matches token workspace",
+    "surface": "EventListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-220",
+    "name": "T-COMPAT-UPSTREAM-220 EventListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EventListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-221",
+    "name": "T-COMPAT-UPSTREAM-221 EventSendParams.workspace_id \u2014 matches token workspace",
+    "surface": "EventSendParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-222",
+    "name": "T-COMPAT-UPSTREAM-222 EventSendParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EventSendParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-223",
+    "name": "T-COMPAT-UPSTREAM-223 EventStreamParams.workspace_id \u2014 matches token workspace",
+    "surface": "EventStreamParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-224",
+    "name": "T-COMPAT-UPSTREAM-224 EventStreamParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EventStreamParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-225",
+    "name": "T-COMPAT-UPSTREAM-225 ResourceAddParams.workspace_id \u2014 matches token workspace",
+    "surface": "ResourceAddParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-226",
+    "name": "T-COMPAT-UPSTREAM-226 ResourceAddParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ResourceAddParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-227",
+    "name": "T-COMPAT-UPSTREAM-227 ResourceDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "ResourceDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-228",
+    "name": "T-COMPAT-UPSTREAM-228 ResourceDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ResourceDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-229",
+    "name": "T-COMPAT-UPSTREAM-229 ResourceListParams.workspace_id \u2014 matches token workspace",
+    "surface": "ResourceListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-230",
+    "name": "T-COMPAT-UPSTREAM-230 ResourceListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ResourceListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-231",
+    "name": "T-COMPAT-UPSTREAM-231 ResourceRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "ResourceRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-232",
+    "name": "T-COMPAT-UPSTREAM-232 ResourceRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ResourceRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-233",
+    "name": "T-COMPAT-UPSTREAM-233 ResourceUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "ResourceUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-234",
+    "name": "T-COMPAT-UPSTREAM-234 ResourceUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ResourceUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-235",
+    "name": "T-COMPAT-UPSTREAM-235 BetaManagedAgentsGitHubRepositoryResourceParams.authorization_token omitted",
+    "surface": "BetaManagedAgentsGitHubRepositoryResourceParams.authorization_token omitted",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: authorization_token is required."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-236",
+    "name": "T-COMPAT-UPSTREAM-236 SessionArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "SessionArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-237",
+    "name": "T-COMPAT-UPSTREAM-237 SessionArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SessionArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-238",
+    "name": "T-COMPAT-UPSTREAM-238 SessionCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "SessionCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-239",
+    "name": "T-COMPAT-UPSTREAM-239 SessionCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SessionCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-240",
+    "name": "T-COMPAT-UPSTREAM-240 SessionDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "SessionDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-241",
+    "name": "T-COMPAT-UPSTREAM-241 SessionDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SessionDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-242",
+    "name": "T-COMPAT-UPSTREAM-242 SessionListParams.workspace_id \u2014 matches token workspace",
+    "surface": "SessionListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-243",
+    "name": "T-COMPAT-UPSTREAM-243 SessionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SessionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-244",
+    "name": "T-COMPAT-UPSTREAM-244 SessionRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "SessionRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-245",
+    "name": "T-COMPAT-UPSTREAM-245 SessionRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SessionRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-246",
+    "name": "T-COMPAT-UPSTREAM-246 SessionUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "SessionUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-247",
+    "name": "T-COMPAT-UPSTREAM-247 SessionUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SessionUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-248",
+    "name": "T-COMPAT-UPSTREAM-248 EventListParams.workspace_id \u2014 matches token workspace",
+    "surface": "EventListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-249",
+    "name": "T-COMPAT-UPSTREAM-249 EventListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EventListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-250",
+    "name": "T-COMPAT-UPSTREAM-250 EventStreamParams.workspace_id \u2014 matches token workspace",
+    "surface": "EventStreamParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-251",
+    "name": "T-COMPAT-UPSTREAM-251 EventStreamParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "EventStreamParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-252",
+    "name": "T-COMPAT-UPSTREAM-252 ThreadArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "ThreadArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-253",
+    "name": "T-COMPAT-UPSTREAM-253 ThreadArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ThreadArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-254",
+    "name": "T-COMPAT-UPSTREAM-254 ThreadListParams.statuses",
+    "surface": "ThreadListParams.statuses",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown query parameter."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-255",
+    "name": "T-COMPAT-UPSTREAM-255 ThreadListParams.workspace_id \u2014 matches token workspace",
+    "surface": "ThreadListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-256",
+    "name": "T-COMPAT-UPSTREAM-256 ThreadListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ThreadListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-257",
+    "name": "T-COMPAT-UPSTREAM-257 ThreadRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "ThreadRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-258",
+    "name": "T-COMPAT-UPSTREAM-258 ThreadRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ThreadRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-259",
+    "name": "T-COMPAT-UPSTREAM-259 SkillCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "SkillCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-260",
+    "name": "T-COMPAT-UPSTREAM-260 SkillCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SkillCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-261",
+    "name": "T-COMPAT-UPSTREAM-261 SkillDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "SkillDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-262",
+    "name": "T-COMPAT-UPSTREAM-262 SkillDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SkillDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-263",
+    "name": "T-COMPAT-UPSTREAM-263 SkillListParams.workspace_id \u2014 matches token workspace",
+    "surface": "SkillListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-264",
+    "name": "T-COMPAT-UPSTREAM-264 SkillListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SkillListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-265",
+    "name": "T-COMPAT-UPSTREAM-265 SkillRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "SkillRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-266",
+    "name": "T-COMPAT-UPSTREAM-266 SkillRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "SkillRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-267",
+    "name": "T-COMPAT-UPSTREAM-267 VersionCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "VersionCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-268",
+    "name": "T-COMPAT-UPSTREAM-268 VersionCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VersionCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-269",
+    "name": "T-COMPAT-UPSTREAM-269 VersionDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "VersionDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-270",
+    "name": "T-COMPAT-UPSTREAM-270 VersionDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VersionDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-271",
+    "name": "T-COMPAT-UPSTREAM-271 VersionDownloadParams.workspace_id \u2014 matches token workspace",
+    "surface": "VersionDownloadParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-272",
+    "name": "T-COMPAT-UPSTREAM-272 VersionDownloadParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VersionDownloadParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-273",
+    "name": "T-COMPAT-UPSTREAM-273 VersionListParams.workspace_id \u2014 matches token workspace",
+    "surface": "VersionListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-274",
+    "name": "T-COMPAT-UPSTREAM-274 VersionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VersionListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-275",
+    "name": "T-COMPAT-UPSTREAM-275 VersionRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "VersionRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-276",
+    "name": "T-COMPAT-UPSTREAM-276 VersionRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VersionRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-277",
+    "name": "T-COMPAT-UPSTREAM-277 CredentialArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-278",
+    "name": "T-COMPAT-UPSTREAM-278 CredentialArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-279",
+    "name": "T-COMPAT-UPSTREAM-279 CredentialCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-280",
+    "name": "T-COMPAT-UPSTREAM-280 CredentialCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-281",
+    "name": "T-COMPAT-UPSTREAM-281 CredentialDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-282",
+    "name": "T-COMPAT-UPSTREAM-282 CredentialDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-283",
+    "name": "T-COMPAT-UPSTREAM-283 CredentialListParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-284",
+    "name": "T-COMPAT-UPSTREAM-284 CredentialListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-285",
+    "name": "T-COMPAT-UPSTREAM-285 CredentialMCPOAuthValidateParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialMCPOAuthValidateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-286",
+    "name": "T-COMPAT-UPSTREAM-286 CredentialMCPOAuthValidateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialMCPOAuthValidateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-287",
+    "name": "T-COMPAT-UPSTREAM-287 CredentialRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-288",
+    "name": "T-COMPAT-UPSTREAM-288 CredentialRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-289",
+    "name": "T-COMPAT-UPSTREAM-289 CredentialUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "CredentialUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-290",
+    "name": "T-COMPAT-UPSTREAM-290 CredentialUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "CredentialUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-291",
+    "name": "T-COMPAT-UPSTREAM-291 VaultArchiveParams.workspace_id \u2014 matches token workspace",
+    "surface": "VaultArchiveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-292",
+    "name": "T-COMPAT-UPSTREAM-292 VaultArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VaultArchiveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-293",
+    "name": "T-COMPAT-UPSTREAM-293 VaultCreateParams.workspace_id \u2014 matches token workspace",
+    "surface": "VaultCreateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-294",
+    "name": "T-COMPAT-UPSTREAM-294 VaultCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VaultCreateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-295",
+    "name": "T-COMPAT-UPSTREAM-295 VaultDeleteParams.workspace_id \u2014 matches token workspace",
+    "surface": "VaultDeleteParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-296",
+    "name": "T-COMPAT-UPSTREAM-296 VaultDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VaultDeleteParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-297",
+    "name": "T-COMPAT-UPSTREAM-297 VaultListParams.workspace_id \u2014 matches token workspace",
+    "surface": "VaultListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-298",
+    "name": "T-COMPAT-UPSTREAM-298 VaultListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VaultListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-299",
+    "name": "T-COMPAT-UPSTREAM-299 VaultRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "VaultRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-300",
+    "name": "T-COMPAT-UPSTREAM-300 VaultRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VaultRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-301",
+    "name": "T-COMPAT-UPSTREAM-301 VaultUpdateParams.workspace_id \u2014 matches token workspace",
+    "surface": "VaultUpdateParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-302",
+    "name": "T-COMPAT-UPSTREAM-302 VaultUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "VaultUpdateParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-303",
+    "name": "T-COMPAT-UPSTREAM-303 ModelListParams.lifecycle",
+    "surface": "ModelListParams.lifecycle",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown query parameter."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-304",
+    "name": "T-COMPAT-UPSTREAM-304 ModelListParams.workspace_id \u2014 matches token workspace",
+    "surface": "ModelListParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-305",
+    "name": "T-COMPAT-UPSTREAM-305 ModelListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ModelListParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-306",
+    "name": "T-COMPAT-UPSTREAM-306 ModelRetrieveParams.workspace_id \u2014 matches token workspace",
+    "surface": "ModelRetrieveParams.workspace_id \u2014 matches token workspace",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "A single anthropic-workspace-id header matching the token workspace is accepted; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-307",
+    "name": "T-COMPAT-UPSTREAM-307 ModelRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "surface": "ModelRetrieveParams.workspace_id \u2014 mismatched, empty or duplicate header",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "403 permission_error when anthropic-workspace-id mismatches the token workspace, is empty, or is duplicated; shared Engine request-admission tests own this contract."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-354",
+    "name": "T-COMPAT-UPSTREAM-354 BetaModelCapabilities.compaction",
+    "surface": "BetaModelCapabilities.compaction",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Parent capabilities is null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-355",
+    "name": "T-COMPAT-UPSTREAM-355 BetaModelCapabilities.server_tools",
+    "surface": "BetaModelCapabilities.server_tools",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Parent capabilities is null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-356",
+    "name": "T-COMPAT-UPSTREAM-356 BetaModelInfo.deprecated_at",
+    "surface": "BetaModelInfo.deprecated_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-357",
+    "name": "T-COMPAT-UPSTREAM-357 BetaModelInfo.lifecycle",
+    "surface": "BetaModelInfo.lifecycle",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-358",
+    "name": "T-COMPAT-UPSTREAM-358 BetaModelInfo.line",
+    "surface": "BetaModelInfo.line",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-359",
+    "name": "T-COMPAT-UPSTREAM-359 BetaModelInfo.retires_at",
+    "surface": "BetaModelInfo.retires_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-360",
+    "name": "T-COMPAT-UPSTREAM-360 BetaThinkingTypes.disabled",
+    "surface": "BetaThinkingTypes.disabled",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Parent capabilities is null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-361",
+    "name": "T-COMPAT-UPSTREAM-361 BetaManagedAgentsSessionStatusIdleEvent.stop_details",
+    "surface": "BetaManagedAgentsSessionStatusIdleEvent.stop_details",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Engine emits this field as explicit null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-362",
+    "name": "T-COMPAT-UPSTREAM-362 BetaManagedAgentsSessionThreadCreatedEvent.workflow_run_id",
+    "surface": "BetaManagedAgentsSessionThreadCreatedEvent.workflow_run_id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Engine emits this field as explicit null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-363",
+    "name": "T-COMPAT-UPSTREAM-363 BetaManagedAgentsSessionThreadStatusIdleEvent.stop_details",
+    "surface": "BetaManagedAgentsSessionThreadStatusIdleEvent.stop_details",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Engine emits this field as explicit null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-364",
+    "name": "T-COMPAT-UPSTREAM-364 BetaManagedAgentsSessionThread.workflow_run_id",
+    "surface": "BetaManagedAgentsSessionThread.workflow_run_id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Engine emits this field as explicit null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-365",
+    "name": "T-COMPAT-UPSTREAM-365 ModelCapabilities.server_tools",
+    "surface": "ModelCapabilities.server_tools",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Parent capabilities is null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-366",
+    "name": "T-COMPAT-UPSTREAM-366 ModelInfo.deprecated_at",
+    "surface": "ModelInfo.deprecated_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-367",
+    "name": "T-COMPAT-UPSTREAM-367 ModelInfo.lifecycle",
+    "surface": "ModelInfo.lifecycle",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-368",
+    "name": "T-COMPAT-UPSTREAM-368 ModelInfo.line",
+    "surface": "ModelInfo.line",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-369",
+    "name": "T-COMPAT-UPSTREAM-369 ModelInfo.retires_at",
+    "surface": "ModelInfo.retires_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Models expose lifecycle:active, deprecated_at:null, retires_at:null, and Anthropic line names (null for other providers)."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-370",
+    "name": "T-COMPAT-UPSTREAM-370 ThinkingTypes.disabled",
+    "surface": "ThinkingTypes.disabled",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Parent capabilities is null."
   }
 ]

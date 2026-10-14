@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -26,6 +24,7 @@ describe('resource rateLimits', () => {
         'workspace_id',
         {
           group_type: 'batch',
+          include_inherited: true,
           limit: 1,
           page: 'page',
         },

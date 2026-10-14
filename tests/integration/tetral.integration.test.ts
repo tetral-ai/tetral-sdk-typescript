@@ -328,9 +328,7 @@ async function createEnvironmentAndAgent(client: Anthropic): Promise<{
   return { environment, agent };
 }
 
-describeIntegration('Tetral live integration suite', () => {
-  jest.setTimeout(120_000);
-
+describeIntegration('Tetral live integration suite', { timeout: 120_000 }, () => {
   test('vaults and all supported credential auth variants', async () => {
     const client = integrationClient();
     const vault = await client.beta.vaults.create({ display_name: `integration-vault-${Date.now()}` });

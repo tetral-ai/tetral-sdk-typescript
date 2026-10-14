@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic, { toFile } from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -26,6 +24,7 @@ describe('resource skills', () => {
       files: [await toFile(Buffer.from('Example data'), 'README.md')],
       display_name: 'display_name',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -45,7 +44,7 @@ describe('resource skills', () => {
     await expect(
       client.beta.skills.retrieve(
         'skill_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -71,6 +70,7 @@ describe('resource skills', () => {
           page: 'page',
           source: 'source',
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -93,7 +93,7 @@ describe('resource skills', () => {
     await expect(
       client.beta.skills.delete(
         'skill_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);

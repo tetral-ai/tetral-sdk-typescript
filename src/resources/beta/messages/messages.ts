@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { AnthropicError } from '../../../error';
 import { Anthropic } from '../../../client';
 import * as BatchesAPI from './batches';
@@ -48,7 +46,10 @@ import {
 
 const DEPRECATED_MODELS: {
   [K in Model]?: string;
-} = {};
+} = {
+  'claude-sonnet-4-5': 'November 30th, 2026',
+  'claude-sonnet-4-5-20250929': 'November 30th, 2026',
+};
 
 const MODELS_TO_WARN_WITH_THINKING_ENABLED: Model[] = ['claude-mythos-preview', 'claude-opus-4-6'];
 
@@ -90,7 +91,7 @@ export class Messages extends APIResource {
     // Transform deprecated output_format to output_config.format
     const modifiedParams = transformOutputFormat(params);
 
-    const { betas, user_profile_id, ...body } = modifiedParams;
+    const { betas, user_profile_id, workspace_id, ...body } = modifiedParams;
 
     if (body.model in DEPRECATED_MODELS) {
       console.warn(
@@ -127,6 +128,7 @@ export class Messages extends APIResource {
         {
           ...(betas?.toString() != null ? { 'anthropic-beta': betas?.toString() } : undefined),
           ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
         },
         helperHeader,
         options?.headers,
@@ -203,7 +205,7 @@ export class Messages extends APIResource {
     // Transform deprecated output_format to output_config.format
     const modifiedParams = transformOutputFormat(params);
 
-    const { betas, user_profile_id, ...body } = modifiedParams;
+    const { betas, user_profile_id, workspace_id, ...body } = modifiedParams;
     return this._client.post('/v1/messages/count_tokens?beta=true', {
       body,
       ...options,
@@ -211,6 +213,7 @@ export class Messages extends APIResource {
         {
           'anthropic-beta': [...(betas ?? []), 'token-counting-2024-11-01'].toString(),
           ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
         },
         options?.headers,
       ]),
@@ -564,6 +567,11 @@ export interface BetaBashCodeExecutionToolResultErrorParam {
 }
 
 /**
+ * Where to act: either a viewport coordinate or an element reference.
+ */
+export type BetaBrowserClickTarget = BetaBrowserCoordinateTarget | BetaBrowserRefTarget;
+
+/**
  * `close_tab`'s config overrides.
  */
 export interface BetaBrowserCloseTabConfig {
@@ -579,6 +587,55 @@ export interface BetaBrowserCloseTabConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Close the tab with the given tab_id.
+ */
+export interface BetaBrowserCloseTabInput {
+  /**
+   * The tab to close.
+   */
+  tab_id: string;
+}
+
+export interface BetaBrowserCloseTabToolUseBlock {
+  id: string;
+
+  /**
+   * Close the tab with the given tab_id.
+   */
+  input: BetaBrowserCloseTabInput;
+
+  name: 'close_tab';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
+ * A point in the browser viewport, in viewport pixels (the same frame as a
+ * full-viewport screenshot).
+ */
+export interface BetaBrowserCoordinateTarget {
+  type: 'coordinate';
+
+  /**
+   * Pixels from the left edge of the viewport.
+   */
+  x: number;
+
+  /**
+   * Pixels from the top edge of the viewport.
+   */
+  y: number;
 }
 
 /**
@@ -600,6 +657,48 @@ export interface BetaBrowserDoubleClickConfig {
 }
 
 /**
+ * Double left-click at a viewport coordinate or on an element by reference.
+ */
+export interface BetaBrowserDoubleClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BetaBrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserDoubleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Double left-click at a viewport coordinate or on an element by reference.
+   */
+  input: BetaBrowserDoubleClickInput;
+
+  name: 'double_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `file_upload`'s config overrides.
  */
 export interface BetaBrowserFileUploadConfig {
@@ -615,6 +714,57 @@ export interface BetaBrowserFileUploadConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Set the value of a file-input element to one or more files. The target must be
+ * an element reference; at least one of paths or document_ids is required.
+ */
+export interface BetaBrowserFileUploadInput {
+  /**
+   * An element on the page, identified by a reference from a prior `read_page` or
+   * `find` result. References are scoped to the tab that produced them and become
+   * stale after navigation or a major re-render.
+   */
+  target: BetaBrowserRefTarget;
+
+  /**
+   * References to files the harness has staged, for deployments where the browser
+   * executor cannot read the caller's filesystem.
+   */
+  document_ids?: Array<string> | null;
+
+  /**
+   * File paths on the browser executor's filesystem.
+   */
+  paths?: Array<string> | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserFileUploadToolUseBlock {
+  id: string;
+
+  /**
+   * Set the value of a file-input element to one or more files. The target must be
+   * an element reference; at least one of paths or document_ids is required.
+   */
+  input: BetaBrowserFileUploadInput;
+
+  name: 'file_upload';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -636,6 +786,44 @@ export interface BetaBrowserFindConfig {
 }
 
 /**
+ * Find elements matching a natural-language description (e.g. "search bar", "add
+ * to cart button") and return up to 20 matches with element references.
+ */
+export interface BetaBrowserFindInput {
+  /**
+   * Natural-language description of the element(s) to find.
+   */
+  query: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserFindToolUseBlock {
+  id: string;
+
+  /**
+   * Find elements matching a natural-language description (e.g. "search bar", "add
+   * to cart button") and return up to 20 matches with element references.
+   */
+  input: BetaBrowserFindInput;
+
+  name: 'find';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `form_input`'s config overrides.
  */
 export interface BetaBrowserFormInputConfig {
@@ -654,6 +842,53 @@ export interface BetaBrowserFormInputConfig {
 }
 
 /**
+ * Set the value of a form element (input, textarea, select, checkbox). Use a
+ * boolean for checkboxes, an option value or text for selects.
+ */
+export interface BetaBrowserFormInputInput {
+  /**
+   * An element on the page, identified by a reference from a prior `read_page` or
+   * `find` result. References are scoped to the tab that produced them and become
+   * stale after navigation or a major re-render.
+   */
+  target: BetaBrowserRefTarget;
+
+  /**
+   * The value to set.
+   */
+  value: BetaBrowserFormInputValue;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserFormInputToolUseBlock {
+  id: string;
+
+  /**
+   * Set the value of a form element (input, textarea, select, checkbox). Use a
+   * boolean for checkboxes, an option value or text for selects.
+   */
+  input: BetaBrowserFormInputInput;
+
+  name: 'form_input';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+export type BetaBrowserFormInputValue = string | number | boolean;
+
+/**
  * `get_page_text`'s config overrides.
  */
 export interface BetaBrowserGetPageTextConfig {
@@ -669,6 +904,39 @@ export interface BetaBrowserGetPageTextConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Return the page's visible text content as plain text, prioritizing article
+ * content. Suited to articles, documentation, and other text-heavy pages.
+ */
+export interface BetaBrowserGetPageTextInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserGetPageTextToolUseBlock {
+  id: string;
+
+  /**
+   * Return the page's visible text content as plain text, prioritizing article
+   * content. Suited to articles, documentation, and other text-heavy pages.
+   */
+  input: BetaBrowserGetPageTextInput;
+
+  name: 'get_page_text';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -690,6 +958,49 @@ export interface BetaBrowserHoldKeyConfig {
 }
 
 /**
+ * Hold a key or key chord down for a duration, then release it. Uses the same key
+ * names and "+" chord syntax as the key action.
+ */
+export interface BetaBrowserHoldKeyInput {
+  /**
+   * Seconds to hold the key down (maximum 30).
+   */
+  duration: number;
+
+  /**
+   * The key or chord to hold.
+   */
+  text: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserHoldKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Hold a key or key chord down for a duration, then release it. Uses the same key
+   * names and "+" chord syntax as the key action.
+   */
+  input: BetaBrowserHoldKeyInput;
+
+  name: 'hold_key';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `hover`'s config overrides.
  */
 export interface BetaBrowserHoverConfig {
@@ -705,6 +1016,42 @@ export interface BetaBrowserHoverConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Move the cursor to a coordinate or element without clicking.
+ */
+export interface BetaBrowserHoverInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BetaBrowserClickTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserHoverToolUseBlock {
+  id: string;
+
+  /**
+   * Move the cursor to a coordinate or element without clicking.
+   */
+  input: BetaBrowserHoverInput;
+
+  name: 'hover';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -726,6 +1073,46 @@ export interface BetaBrowserJavascriptExecConfig {
 }
 
 /**
+ * Execute JavaScript in the page context and return the value of the last
+ * expression. The code runs with access to the DOM, `window`, and page variables.
+ * Write the expression you want evaluated — do NOT use `return`.
+ */
+export interface BetaBrowserJavascriptExecInput {
+  /**
+   * JavaScript to execute in the page context.
+   */
+  text: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserJavascriptExecToolUseBlock {
+  id: string;
+
+  /**
+   * Execute JavaScript in the page context and return the value of the last
+   * expression. The code runs with access to the DOM, `window`, and page variables.
+   * Write the expression you want evaluated — do NOT use `return`.
+   */
+  input: BetaBrowserJavascriptExecInput;
+
+  name: 'javascript_exec';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `key`'s config overrides.
  */
 export interface BetaBrowserKeyConfig {
@@ -741,6 +1128,53 @@ export interface BetaBrowserKeyConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Press a key or key chord. Use "+" to combine modifiers with a key (e.g.
+ * "ctrl+a", "cmd+shift+p") and space to sequence presses (e.g. "Backspace
+ * Backspace Delete"). Common names like "Return", "Tab", "Escape", "BackSpace" are
+ * supported.
+ */
+export interface BetaBrowserKeyInput {
+  /**
+   * The key, chord, or space-separated sequence to press.
+   */
+  text: string;
+
+  /**
+   * Number of times to repeat. Default 1.
+   */
+  repeat?: number | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Press a key or key chord. Use "+" to combine modifiers with a key (e.g.
+   * "ctrl+a", "cmd+shift+p") and space to sequence presses (e.g. "Backspace
+   * Backspace Delete"). Common names like "Return", "Tab", "Escape", "BackSpace" are
+   * supported.
+   */
+  input: BetaBrowserKeyInput;
+
+  name: 'key';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -780,6 +1214,91 @@ export interface BetaBrowserLeftClickDragConfig {
 }
 
 /**
+ * Press at `from`, drag to `target`, release. Both must be coordinate targets.
+ */
+export interface BetaBrowserLeftClickDragInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  from: BetaBrowserCoordinateTarget;
+
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BetaBrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserLeftClickDragToolUseBlock {
+  id: string;
+
+  /**
+   * Press at `from`, drag to `target`, release. Both must be coordinate targets.
+   */
+  input: BetaBrowserLeftClickDragInput;
+
+  name: 'left_click_drag';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
+ * Left-click at a viewport coordinate or on an element by reference.
+ */
+export interface BetaBrowserLeftClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BetaBrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserLeftClickToolUseBlock {
+  id: string;
+
+  /**
+   * Left-click at a viewport coordinate or on an element by reference.
+   */
+  input: BetaBrowserLeftClickInput;
+
+  name: 'left_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `left_mouse_down`'s config overrides.
  */
 export interface BetaBrowserLeftMouseDownConfig {
@@ -795,6 +1314,45 @@ export interface BetaBrowserLeftMouseDownConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Press and hold the left mouse button at a viewport coordinate. Pair with
+ * left_mouse_up to perform a custom drag.
+ */
+export interface BetaBrowserLeftMouseDownInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BetaBrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserLeftMouseDownToolUseBlock {
+  id: string;
+
+  /**
+   * Press and hold the left mouse button at a viewport coordinate. Pair with
+   * left_mouse_up to perform a custom drag.
+   */
+  input: BetaBrowserLeftMouseDownInput;
+
+  name: 'left_mouse_down';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -816,6 +1374,43 @@ export interface BetaBrowserLeftMouseUpConfig {
 }
 
 /**
+ * Release the left mouse button at a viewport coordinate.
+ */
+export interface BetaBrowserLeftMouseUpInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BetaBrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserLeftMouseUpToolUseBlock {
+  id: string;
+
+  /**
+   * Release the left mouse button at a viewport coordinate.
+   */
+  input: BetaBrowserLeftMouseUpInput;
+
+  name: 'left_mouse_up';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `list_tabs`'s config overrides.
  */
 export interface BetaBrowserListTabsConfig {
@@ -834,6 +1429,136 @@ export interface BetaBrowserListTabsConfig {
 }
 
 /**
+ * List all open tabs with each tab's tab_id, title, and URL.
+ */
+export interface BetaBrowserListTabsInput {}
+
+export interface BetaBrowserListTabsToolUseBlock {
+  id: string;
+
+  /**
+   * List all open tabs with each tab's tab_id, title, and URL.
+   */
+  input: BetaBrowserListTabsInput;
+
+  name: 'list_tabs';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
+ * The `input` of a browser toolset member `tool_use` block: the member's own
+ * parameters.
+ */
+export type BetaBrowserMemberInput =
+  | BetaBrowserNavigateInput
+  | BetaBrowserListTabsInput
+  | BetaBrowserNewTabInput
+  | BetaBrowserSwitchTabInput
+  | BetaBrowserCloseTabInput
+  | BetaBrowserReadPageInput
+  | BetaBrowserGetPageTextInput
+  | BetaBrowserReadConsoleInput
+  | BetaBrowserReadNetworkInput
+  | BetaBrowserFindInput
+  | BetaBrowserFormInputInput
+  | BetaBrowserFileUploadInput
+  | BetaBrowserScrollToInput
+  | BetaBrowserScreenshotInput
+  | BetaBrowserZoomInput
+  | BetaBrowserLeftClickInput
+  | BetaBrowserRightClickInput
+  | BetaBrowserMiddleClickInput
+  | BetaBrowserDoubleClickInput
+  | BetaBrowserTripleClickInput
+  | BetaBrowserHoverInput
+  | BetaBrowserLeftClickDragInput
+  | BetaBrowserLeftMouseDownInput
+  | BetaBrowserLeftMouseUpInput
+  | BetaBrowserMouseMoveInput
+  | BetaBrowserScrollInput
+  | BetaBrowserTypeInput
+  | BetaBrowserKeyInput
+  | BetaBrowserHoldKeyInput
+  | BetaBrowserWaitInput
+  | BetaBrowserJavascriptExecInput;
+
+export type BetaBrowserMemberName =
+  | 'navigate'
+  | 'list_tabs'
+  | 'new_tab'
+  | 'switch_tab'
+  | 'close_tab'
+  | 'read_page'
+  | 'get_page_text'
+  | 'read_console'
+  | 'read_network'
+  | 'find'
+  | 'form_input'
+  | 'file_upload'
+  | 'scroll_to'
+  | 'screenshot'
+  | 'zoom'
+  | 'left_click'
+  | 'right_click'
+  | 'middle_click'
+  | 'double_click'
+  | 'triple_click'
+  | 'hover'
+  | 'left_click_drag'
+  | 'left_mouse_down'
+  | 'left_mouse_up'
+  | 'mouse_move'
+  | 'scroll'
+  | 'type'
+  | 'key'
+  | 'hold_key'
+  | 'wait'
+  | 'javascript_exec';
+
+export const BETA_BROWSER_MEMBER_NAME_VALUES = [
+  'navigate',
+  'list_tabs',
+  'new_tab',
+  'switch_tab',
+  'close_tab',
+  'read_page',
+  'get_page_text',
+  'read_console',
+  'read_network',
+  'find',
+  'form_input',
+  'file_upload',
+  'scroll_to',
+  'screenshot',
+  'zoom',
+  'left_click',
+  'right_click',
+  'middle_click',
+  'double_click',
+  'triple_click',
+  'hover',
+  'left_click_drag',
+  'left_mouse_down',
+  'left_mouse_up',
+  'mouse_move',
+  'scroll',
+  'type',
+  'key',
+  'hold_key',
+  'wait',
+  'javascript_exec',
+] as const;
+
+/**
  * `middle_click`'s config overrides.
  */
 export interface BetaBrowserMiddleClickConfig {
@@ -849,6 +1574,48 @@ export interface BetaBrowserMiddleClickConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Middle-click at a viewport coordinate or on an element by reference.
+ */
+export interface BetaBrowserMiddleClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BetaBrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserMiddleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Middle-click at a viewport coordinate or on an element by reference.
+   */
+  input: BetaBrowserMiddleClickInput;
+
+  name: 'middle_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -870,6 +1637,43 @@ export interface BetaBrowserMouseMoveConfig {
 }
 
 /**
+ * Move the pointer to a viewport coordinate without clicking.
+ */
+export interface BetaBrowserMouseMoveInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BetaBrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserMouseMoveToolUseBlock {
+  id: string;
+
+  /**
+   * Move the pointer to a viewport coordinate without clicking.
+   */
+  input: BetaBrowserMouseMoveInput;
+
+  name: 'mouse_move';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `navigate`'s config overrides.
  */
 export interface BetaBrowserNavigateConfig {
@@ -885,6 +1689,44 @@ export interface BetaBrowserNavigateConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Navigate to a URL, or go back/forward/reload in history. The protocol may be
+ * omitted (defaults to https://).
+ */
+export interface BetaBrowserNavigateInput {
+  /**
+   * The URL to navigate to, or "back" / "forward" / "reload" for history navigation.
+   */
+  url: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserNavigateToolUseBlock {
+  id: string;
+
+  /**
+   * Navigate to a URL, or go back/forward/reload in history. The protocol may be
+   * omitted (defaults to https://).
+   */
+  input: BetaBrowserNavigateInput;
+
+  name: 'navigate';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -906,6 +1748,32 @@ export interface BetaBrowserNewTabConfig {
 }
 
 /**
+ * Open a new empty tab and return its tab_id.
+ */
+export interface BetaBrowserNewTabInput {}
+
+export interface BetaBrowserNewTabToolUseBlock {
+  id: string;
+
+  /**
+   * Open a new empty tab and return its tab_id.
+   */
+  input: BetaBrowserNewTabInput;
+
+  name: 'new_tab';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `read_console`'s config overrides.
  */
 export interface BetaBrowserReadConsoleConfig {
@@ -921,6 +1789,41 @@ export interface BetaBrowserReadConsoleConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Return console output (log entries, errors, warnings) accumulated since the
+ * driver attached to the tab and since the last read, one line per entry. An empty
+ * result does not mean no traffic for a tab that predates attach.
+ */
+export interface BetaBrowserReadConsoleInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserReadConsoleToolUseBlock {
+  id: string;
+
+  /**
+   * Return console output (log entries, errors, warnings) accumulated since the
+   * driver attached to the tab and since the last read, one line per entry. An empty
+   * result does not mean no traffic for a tab that predates attach.
+   */
+  input: BetaBrowserReadConsoleInput;
+
+  name: 'read_console';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -942,6 +1845,41 @@ export interface BetaBrowserReadNetworkConfig {
 }
 
 /**
+ * Return the network requests (method, URL, status, MIME type, timing) recorded
+ * since the driver attached to the tab and since the last read, one line per
+ * entry. An empty result does not mean no traffic for a tab that predates attach.
+ */
+export interface BetaBrowserReadNetworkInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserReadNetworkToolUseBlock {
+  id: string;
+
+  /**
+   * Return the network requests (method, URL, status, MIME type, timing) recorded
+   * since the driver attached to the tab and since the last read, one line per
+   * entry. An empty result does not mean no traffic for a tab that predates attach.
+   */
+  input: BetaBrowserReadNetworkInput;
+
+  name: 'read_network';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `read_page`'s config overrides.
  */
 export interface BetaBrowserReadPageConfig {
@@ -957,6 +1895,76 @@ export interface BetaBrowserReadPageConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+export type BetaBrowserReadPageFilter = 'all' | 'interactive';
+
+/**
+ * Return a structured accessibility tree of the page (or the subtree rooted at
+ * `ref`), with element references like [ref_7] that can be used as targets on
+ * later actions. Output is capped at 50,000 characters — narrow with `ref` or a
+ * smaller `depth` when exceeded.
+ */
+export interface BetaBrowserReadPageInput {
+  /**
+   * Maximum tree depth. Default 15.
+   */
+  depth?: number | null;
+
+  /**
+   * Which elements to include. Omitted: every visible element. "interactive":
+   * interactive elements only. "all": additionally includes off-viewport elements.
+   */
+  filter?: BetaBrowserReadPageFilter | null;
+
+  /**
+   * Element reference to read a subtree from. Omit to read from the page root.
+   */
+  ref?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserReadPageToolUseBlock {
+  id: string;
+
+  /**
+   * Return a structured accessibility tree of the page (or the subtree rooted at
+   * `ref`), with element references like [ref_7] that can be used as targets on
+   * later actions. Output is capped at 50,000 characters — narrow with `ref` or a
+   * smaller `depth` when exceeded.
+   */
+  input: BetaBrowserReadPageInput;
+
+  name: 'read_page';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
+ * An element on the page, identified by a reference from a prior `read_page` or
+ * `find` result. References are scoped to the tab that produced them and become
+ * stale after navigation or a major re-render.
+ */
+export interface BetaBrowserRefTarget {
+  /**
+   * An element reference (e.g. "ref_7") returned by a prior `read_page` or `find`
+   * result.
+   */
+  ref: string;
+
+  type: 'ref';
 }
 
 /**
@@ -978,6 +1986,48 @@ export interface BetaBrowserRightClickConfig {
 }
 
 /**
+ * Right-click at a viewport coordinate or on an element by reference.
+ */
+export interface BetaBrowserRightClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BetaBrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserRightClickToolUseBlock {
+  id: string;
+
+  /**
+   * Right-click at a viewport coordinate or on an element by reference.
+   */
+  input: BetaBrowserRightClickInput;
+
+  name: 'right_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `screenshot`'s config overrides.
  */
 export interface BetaBrowserScreenshotConfig {
@@ -993,6 +2043,37 @@ export interface BetaBrowserScreenshotConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Capture the current browser viewport.
+ */
+export interface BetaBrowserScreenshotInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserScreenshotToolUseBlock {
+  id: string;
+
+  /**
+   * Capture the current browser viewport.
+   */
+  input: BetaBrowserScreenshotInput;
+
+  name: 'screenshot';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -1013,6 +2094,31 @@ export interface BetaBrowserScrollConfig {
   enabled?: boolean | null;
 }
 
+export type BetaBrowserScrollDirection = 'up' | 'down' | 'left' | 'right';
+
+/**
+ * Scroll at a viewport position. `target` must be a coordinate target.
+ */
+export interface BetaBrowserScrollInput {
+  scroll_direction: BetaBrowserScrollDirection;
+
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BetaBrowserCoordinateTarget;
+
+  /**
+   * Scroll-wheel notches (1–10). Default 3.
+   */
+  scroll_amount?: number | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
 /**
  * `scroll_to`'s config overrides.
  */
@@ -1029,6 +2135,65 @@ export interface BetaBrowserScrollToConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Scroll an element into view.
+ */
+export interface BetaBrowserScrollToInput {
+  /**
+   * An element on the page, identified by a reference from a prior `read_page` or
+   * `find` result. References are scoped to the tab that produced them and become
+   * stale after navigation or a major re-render.
+   */
+  target: BetaBrowserRefTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserScrollToToolUseBlock {
+  id: string;
+
+  /**
+   * Scroll an element into view.
+   */
+  input: BetaBrowserScrollToInput;
+
+  name: 'scroll_to';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+export interface BetaBrowserScrollToolUseBlock {
+  id: string;
+
+  /**
+   * Scroll at a viewport position. `target` must be a coordinate target.
+   */
+  input: BetaBrowserScrollInput;
+
+  name: 'scroll';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -1061,14 +2226,6 @@ export interface BetaBrowserStateBlockParam {
   state_changes?: Array<BetaBrowserStateChange> | null;
 }
 
-/**
- * A tab this call's execution opened that remains open at its end — the creation
- * delta of the `tabs` inventory, not an event log.
- *
- * Carries only the `tab_id`; the tab's `title` and `url` live on its `tabs` entry,
- * which must include the same `tab_id`. A tab opened during a failed call gets no
- * deferred `tab_opened`; it simply appears in the next result's `tabs` inventory.
- */
 export type BetaBrowserStateChange =
   | BetaBrowserStateChangeTabOpened
   | BetaBrowserStateChangeDownloadStarted
@@ -1215,6 +2372,72 @@ export interface BetaBrowserSwitchTabConfig {
 }
 
 /**
+ * Make the tab with the given tab_id the active tab — the tab that actions without
+ * a tab_id apply to.
+ */
+export interface BetaBrowserSwitchTabInput {
+  /**
+   * The tab to switch to.
+   */
+  tab_id: string;
+}
+
+export interface BetaBrowserSwitchTabToolUseBlock {
+  id: string;
+
+  /**
+   * Make the tab with the given tab_id the active tab — the tab that actions without
+   * a tab_id apply to.
+   */
+  input: BetaBrowserSwitchTabInput;
+
+  name: 'switch_tab';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+export type BetaBrowserToolUseBlock =
+  | BetaBrowserNavigateToolUseBlock
+  | BetaBrowserListTabsToolUseBlock
+  | BetaBrowserNewTabToolUseBlock
+  | BetaBrowserSwitchTabToolUseBlock
+  | BetaBrowserCloseTabToolUseBlock
+  | BetaBrowserReadPageToolUseBlock
+  | BetaBrowserGetPageTextToolUseBlock
+  | BetaBrowserReadConsoleToolUseBlock
+  | BetaBrowserReadNetworkToolUseBlock
+  | BetaBrowserFindToolUseBlock
+  | BetaBrowserFormInputToolUseBlock
+  | BetaBrowserFileUploadToolUseBlock
+  | BetaBrowserScrollToToolUseBlock
+  | BetaBrowserScreenshotToolUseBlock
+  | BetaBrowserZoomToolUseBlock
+  | BetaBrowserLeftClickToolUseBlock
+  | BetaBrowserRightClickToolUseBlock
+  | BetaBrowserMiddleClickToolUseBlock
+  | BetaBrowserDoubleClickToolUseBlock
+  | BetaBrowserTripleClickToolUseBlock
+  | BetaBrowserHoverToolUseBlock
+  | BetaBrowserLeftClickDragToolUseBlock
+  | BetaBrowserLeftMouseDownToolUseBlock
+  | BetaBrowserLeftMouseUpToolUseBlock
+  | BetaBrowserMouseMoveToolUseBlock
+  | BetaBrowserScrollToolUseBlock
+  | BetaBrowserTypeToolUseBlock
+  | BetaBrowserKeyToolUseBlock
+  | BetaBrowserHoldKeyToolUseBlock
+  | BetaBrowserWaitToolUseBlock
+  | BetaBrowserJavascriptExecToolUseBlock;
+
+/**
  * The browser toolset: a single `tools[]` entry (carrying no `name`) that declares
  * the browser tool family. The model is served the family's tool with any members
  * disabled via `configs` removed from its schema.
@@ -1222,21 +2445,14 @@ export interface BetaBrowserSwitchTabConfig {
 export interface BetaBrowserToolset20260801 {
   type: 'browser_toolset_20260801';
 
-  allowed_callers?: Array<
-    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
-  >;
-
   /**
    * Create a cache control breakpoint at this content block.
    */
   cache_control?: BetaCacheControlEphemeral | null;
 
   /**
-   * Per-member configuration for `browser_toolset_20260801`: one optional field per
-   * member tool, keyed by the member name — the same name the member's `tool_use`
-   * blocks carry. Every member is an accepted key, and a member's defaults apply
-   * wherever its key is absent. Unknown keys are rejected: the field set is this
-   * toolset version's complete member set.
+   * Sparse per-member overrides, keyed by member name. Absent, null, and {} are
+   * equivalent; a member's defaults apply wherever its key is absent.
    */
   configs?: BetaBrowserToolsetConfigs | null;
 }
@@ -1424,6 +2640,50 @@ export interface BetaBrowserTripleClickConfig {
 }
 
 /**
+ * Triple left-click at a viewport coordinate or on an element by reference
+ * (typically selects a line or paragraph).
+ */
+export interface BetaBrowserTripleClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BetaBrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserTripleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Triple left-click at a viewport coordinate or on an element by reference
+   * (typically selects a line or paragraph).
+   */
+  input: BetaBrowserTripleClickInput;
+
+  name: 'triple_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `type`'s config overrides.
  */
 export interface BetaBrowserTypeConfig {
@@ -1439,6 +2699,42 @@ export interface BetaBrowserTypeConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Type a literal string at the current focus.
+ */
+export interface BetaBrowserTypeInput {
+  /**
+   * The text to type.
+   */
+  text: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserTypeToolUseBlock {
+  id: string;
+
+  /**
+   * Type a literal string at the current focus.
+   */
+  input: BetaBrowserTypeInput;
+
+  name: 'type';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -1460,6 +2756,42 @@ export interface BetaBrowserWaitConfig {
 }
 
 /**
+ * Pause for the given duration.
+ */
+export interface BetaBrowserWaitInput {
+  /**
+   * Seconds to wait (maximum 30).
+   */
+  duration: number;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserWaitToolUseBlock {
+  id: string;
+
+  /**
+   * Pause for the given duration.
+   */
+  input: BetaBrowserWaitInput;
+
+  name: 'wait';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `zoom`'s config overrides.
  */
 export interface BetaBrowserZoomConfig {
@@ -1475,6 +2807,46 @@ export interface BetaBrowserZoomConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Return a cropped screenshot of the given viewport region, scaled up for closer
+ * inspection — useful for small icons, buttons, or text. Coordinates are in the
+ * same viewport-pixel space as a full screenshot.
+ */
+export interface BetaBrowserZoomInput {
+  /**
+   * [x0, y0, x1, y1] in viewport pixels.
+   */
+  region: Array<number>;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BetaBrowserZoomToolUseBlock {
+  id: string;
+
+  /**
+   * Return a cropped screenshot of the given viewport region, scaled up for closer
+   * inspection — useful for small icons, buttons, or text. Coordinates are in the
+   * same viewport-pixel space as a full screenshot.
+   */
+  input: BetaBrowserZoomInput;
+
+  name: 'zoom';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 export interface BetaCacheControlEphemeral {
@@ -1530,6 +2902,14 @@ export interface BetaCacheMissModelChanged {
 export interface BetaCacheMissPreviousMessageNotFound {
   type: 'previous_message_not_found';
 }
+
+export type BetaCacheMissReason =
+  | BetaCacheMissModelChanged
+  | BetaCacheMissSystemChanged
+  | BetaCacheMissToolsChanged
+  | BetaCacheMissMessagesChanged
+  | BetaCacheMissPreviousMessageNotFound
+  | BetaCacheMissUnavailable;
 
 export interface BetaCacheMissSystemChanged {
   /**
@@ -1882,6 +3262,44 @@ export interface BetaClearToolUses20250919EditResponse {
   type: 'clear_tool_uses_20250919';
 }
 
+/**
+ * A tool that the client executes: the caller runs each `tool_use` request for it
+ * and returns the output in a `tool_result` block.
+ */
+export type BetaClientToolUnion =
+  | BetaTool
+  | BetaToolBash20241022
+  | BetaToolBash20250124
+  | BetaBrowserToolset20260801
+  | BetaToolComputerUse20241022
+  | BetaMemoryTool20250818
+  | BetaToolComputerUse20250124
+  | BetaToolTextEditor20241022
+  | BetaToolComputerUse20251124
+  | BetaComputerToolset20260801
+  | BetaToolTextEditor20250124
+  | BetaToolTextEditor20250429
+  | BetaToolTextEditor20250728;
+
+export const BETA_CLIENT_TOOL_UNION_KEYS = [
+  'input_schema',
+  'name',
+  'allowed_callers',
+  'cache_control',
+  'defer_loading',
+  'description',
+  'eager_input_streaming',
+  'input_examples',
+  'strict',
+  'type',
+  'configs',
+  'display_height_px',
+  'display_width_px',
+  'display_number',
+  'enable_zoom',
+  'max_characters',
+] as const;
+
 export interface BetaCodeExecutionOutputBlock {
   file_id: string;
 
@@ -2050,9 +3468,6 @@ export interface BetaCodeExecutionTool20260521 {
 }
 
 export interface BetaCodeExecutionToolResultBlock {
-  /**
-   * Code execution result with encrypted stdout for PFC + web_search results.
-   */
   content: BetaCodeExecutionToolResultBlockContent;
 
   tool_use_id: string;
@@ -2060,18 +3475,12 @@ export interface BetaCodeExecutionToolResultBlock {
   type: 'code_execution_tool_result';
 }
 
-/**
- * Code execution result with encrypted stdout for PFC + web_search results.
- */
 export type BetaCodeExecutionToolResultBlockContent =
   | BetaCodeExecutionToolResultError
   | BetaCodeExecutionResultBlock
   | BetaEncryptedCodeExecutionResultBlock;
 
 export interface BetaCodeExecutionToolResultBlockParam {
-  /**
-   * Code execution result with encrypted stdout for PFC + web_search results.
-   */
   content: BetaCodeExecutionToolResultBlockParamContent;
 
   tool_use_id: string;
@@ -2084,9 +3493,6 @@ export interface BetaCodeExecutionToolResultBlockParam {
   cache_control?: BetaCacheControlEphemeral | null;
 }
 
-/**
- * Code execution result with encrypted stdout for PFC + web_search results.
- */
 export type BetaCodeExecutionToolResultBlockParamContent =
   | BetaCodeExecutionToolResultErrorParam
   | BetaCodeExecutionResultBlockParam
@@ -2152,6 +3558,19 @@ export interface BetaCompactionBlock {
   encrypted_content: string | null;
 
   type: 'compaction';
+
+  /**
+   * Signature over the summary, to be sent back with the block verbatim
+   */
+  signature?: string | null;
+
+  /**
+   * The tool changes of the compacted range: the `tool_addition` and `tool_removal`
+   * blocks that take the request's `tools` to the tool set in effect at the end of
+   * the range, or `[]` when the range changed no tool. Absent when the server did
+   * not compute them. Send the block back unchanged.
+   */
+  tool_changes?: Array<BetaResponseToolAdditionBlock | BetaResponseToolRemovalBlock> | null;
 }
 
 /**
@@ -2180,6 +3599,39 @@ export interface BetaCompactionBlockParam {
    * Opaque metadata from prior compaction, to be round-tripped verbatim
    */
   encrypted_content?: string | null;
+
+  /**
+   * The block's signature as returned, to be sent back verbatim
+   */
+  signature?: string | null;
+
+  /**
+   * The tool changes of the compacted range, as the server returned them on this
+   * block: the `tool_addition` and `tool_removal` entries that take the request's
+   * `tools` to the tool set in effect at the end of the range. Send them back
+   * unchanged with the block.
+   */
+  tool_changes?: Array<BetaRequestToolAdditionBlock | BetaRequestToolRemovalBlock> | null;
+}
+
+/**
+ * Compact the whole conversation and return a signed `compaction` block, alone,
+ * that a later request sends back first in `messages`, in place of the messages it
+ * summarizes. There is no trigger and no pause flag: sending the parameter
+ * compacts, and nothing is sampled after the block.
+ *
+ * The summarization prompt is the server's own unless `instructions` are given,
+ * which then replace it for this request; a value that is empty or only whitespace
+ * counts as absent.
+ */
+export interface BetaCompactionConfig {
+  type: 'summarize';
+
+  /**
+   * Replaces the server's default summarization prompt for this request. An empty or
+   * whitespace-only value counts as absent.
+   */
+  instructions?: string | null;
 }
 
 export interface BetaCompactionContentBlockDelta {
@@ -2247,6 +3699,32 @@ export interface BetaComputerCursorPositionConfig {
 }
 
 /**
+ * Get the current (x, y) pixel coordinate of the cursor.
+ */
+export interface BetaComputerCursorPositionInput {}
+
+export interface BetaComputerCursorPositionToolUseBlock {
+  id: string;
+
+  /**
+   * Get the current (x, y) pixel coordinate of the cursor.
+   */
+  input: BetaComputerCursorPositionInput;
+
+  name: 'cursor_position';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `double_click`'s config overrides.
  */
 export interface BetaComputerDoubleClickConfig {
@@ -2262,6 +3740,45 @@ export interface BetaComputerDoubleClickConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Double-click the left mouse button at the specified (x, y) pixel coordinate, or
+ * the current cursor position if `coordinate` is omitted.
+ */
+export interface BetaComputerDoubleClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerDoubleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Double-click the left mouse button at the specified (x, y) pixel coordinate, or
+   * the current cursor position if `coordinate` is omitted.
+   */
+  input: BetaComputerDoubleClickInput;
+
+  name: 'double_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2283,6 +3800,44 @@ export interface BetaComputerHoldKeyConfig {
 }
 
 /**
+ * Hold down a key or key-combination for a specified duration. Uses the same key
+ * syntax as `key`.
+ */
+export interface BetaComputerHoldKeyInput {
+  /**
+   * Duration to hold the key, in seconds.
+   */
+  duration: number;
+
+  /**
+   * The key or key-combination to hold.
+   */
+  text: string;
+}
+
+export interface BetaComputerHoldKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Hold down a key or key-combination for a specified duration. Uses the same key
+   * syntax as `key`.
+   */
+  input: BetaComputerHoldKeyInput;
+
+  name: 'hold_key';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `key`'s config overrides.
  */
 export interface BetaComputerKeyConfig {
@@ -2298,6 +3853,50 @@ export interface BetaComputerKeyConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Press a key or key-combination on the keyboard. Use "+" to combine modifiers
+ * with a key (e.g. "ctrl+s", "alt+Tab", "ctrl+shift+Escape"). Key names are
+ * case-insensitive; common names like "Return", "Tab", "Escape", "Up", "Down",
+ * "Left", "Right", "Home", "End", "Page_Up", "Page_Down", "Delete", "BackSpace"
+ * are supported.
+ */
+export interface BetaComputerKeyInput {
+  /**
+   * The key or key-combination to press.
+   */
+  text: string;
+
+  /**
+   * Number of times to repeat the key press. Default is 1.
+   */
+  repeat?: number | null;
+}
+
+export interface BetaComputerKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Press a key or key-combination on the keyboard. Use "+" to combine modifiers
+   * with a key (e.g. "ctrl+s", "alt+Tab", "ctrl+shift+Escape"). Key names are
+   * case-insensitive; common names like "Return", "Tab", "Escape", "Up", "Down",
+   * "Left", "Right", "Home", "End", "Page_Up", "Page_Down", "Delete", "BackSpace"
+   * are supported.
+   */
+  input: BetaComputerKeyInput;
+
+  name: 'key';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2337,6 +3936,87 @@ export interface BetaComputerLeftClickDragConfig {
 }
 
 /**
+ * Click and drag the cursor from `start_coordinate` to `coordinate`.
+ */
+export interface BetaComputerLeftClickDragInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate: Array<number>;
+
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  start_coordinate: Array<number>;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerLeftClickDragToolUseBlock {
+  id: string;
+
+  /**
+   * Click and drag the cursor from `start_coordinate` to `coordinate`.
+   */
+  input: BetaComputerLeftClickDragInput;
+
+  name: 'left_click_drag';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
+ * Click the left mouse button at the specified (x, y) pixel coordinate, or the
+ * current cursor position if `coordinate` is omitted.
+ */
+export interface BetaComputerLeftClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerLeftClickToolUseBlock {
+  id: string;
+
+  /**
+   * Click the left mouse button at the specified (x, y) pixel coordinate, or the
+   * current cursor position if `coordinate` is omitted.
+   */
+  input: BetaComputerLeftClickInput;
+
+  name: 'left_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `left_mouse_down`'s config overrides.
  */
 export interface BetaComputerLeftMouseDownConfig {
@@ -2352,6 +4032,32 @@ export interface BetaComputerLeftMouseDownConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Press and hold the left mouse button at the current cursor position.
+ */
+export interface BetaComputerLeftMouseDownInput {}
+
+export interface BetaComputerLeftMouseDownToolUseBlock {
+  id: string;
+
+  /**
+   * Press and hold the left mouse button at the current cursor position.
+   */
+  input: BetaComputerLeftMouseDownInput;
+
+  name: 'left_mouse_down';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2373,6 +4079,94 @@ export interface BetaComputerLeftMouseUpConfig {
 }
 
 /**
+ * Release the left mouse button.
+ */
+export interface BetaComputerLeftMouseUpInput {}
+
+export interface BetaComputerLeftMouseUpToolUseBlock {
+  id: string;
+
+  /**
+   * Release the left mouse button.
+   */
+  input: BetaComputerLeftMouseUpInput;
+
+  name: 'left_mouse_up';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
+ * The `input` of a computer toolset member `tool_use` block: the member's own
+ * parameters.
+ */
+export type BetaComputerMemberInput =
+  | BetaComputerKeyInput
+  | BetaComputerHoldKeyInput
+  | BetaComputerTypeInput
+  | BetaComputerCursorPositionInput
+  | BetaComputerMouseMoveInput
+  | BetaComputerLeftMouseDownInput
+  | BetaComputerLeftMouseUpInput
+  | BetaComputerLeftClickInput
+  | BetaComputerLeftClickDragInput
+  | BetaComputerRightClickInput
+  | BetaComputerMiddleClickInput
+  | BetaComputerDoubleClickInput
+  | BetaComputerTripleClickInput
+  | BetaComputerScrollInput
+  | BetaComputerWaitInput
+  | BetaComputerScreenshotInput
+  | BetaComputerZoomInput;
+
+export type BetaComputerMemberName =
+  | 'key'
+  | 'hold_key'
+  | 'type'
+  | 'cursor_position'
+  | 'mouse_move'
+  | 'left_mouse_down'
+  | 'left_mouse_up'
+  | 'left_click'
+  | 'left_click_drag'
+  | 'right_click'
+  | 'middle_click'
+  | 'double_click'
+  | 'triple_click'
+  | 'scroll'
+  | 'wait'
+  | 'screenshot'
+  | 'zoom';
+
+export const BETA_COMPUTER_MEMBER_NAME_VALUES = [
+  'key',
+  'hold_key',
+  'type',
+  'cursor_position',
+  'mouse_move',
+  'left_mouse_down',
+  'left_mouse_up',
+  'left_click',
+  'left_click_drag',
+  'right_click',
+  'middle_click',
+  'double_click',
+  'triple_click',
+  'scroll',
+  'wait',
+  'screenshot',
+  'zoom',
+] as const;
+
+/**
  * `middle_click`'s config overrides.
  */
 export interface BetaComputerMiddleClickConfig {
@@ -2388,6 +4182,45 @@ export interface BetaComputerMiddleClickConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Click the middle mouse button at the specified (x, y) pixel coordinate, or the
+ * current cursor position if `coordinate` is omitted.
+ */
+export interface BetaComputerMiddleClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerMiddleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Click the middle mouse button at the specified (x, y) pixel coordinate, or the
+   * current cursor position if `coordinate` is omitted.
+   */
+  input: BetaComputerMiddleClickInput;
+
+  name: 'middle_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2409,6 +4242,39 @@ export interface BetaComputerMouseMoveConfig {
 }
 
 /**
+ * Move the cursor to a specified (x, y) pixel coordinate. Use this ONLY to hover
+ * without clicking; otherwise use a click action directly.
+ */
+export interface BetaComputerMouseMoveInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate: Array<number>;
+}
+
+export interface BetaComputerMouseMoveToolUseBlock {
+  id: string;
+
+  /**
+   * Move the cursor to a specified (x, y) pixel coordinate. Use this ONLY to hover
+   * without clicking; otherwise use a click action directly.
+   */
+  input: BetaComputerMouseMoveInput;
+
+  name: 'mouse_move';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `right_click`'s config overrides.
  */
 export interface BetaComputerRightClickConfig {
@@ -2424,6 +4290,45 @@ export interface BetaComputerRightClickConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Click the right mouse button at the specified (x, y) pixel coordinate, or the
+ * current cursor position if `coordinate` is omitted.
+ */
+export interface BetaComputerRightClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerRightClickToolUseBlock {
+  id: string;
+
+  /**
+   * Click the right mouse button at the specified (x, y) pixel coordinate, or the
+   * current cursor position if `coordinate` is omitted.
+   */
+  input: BetaComputerRightClickInput;
+
+  name: 'right_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2445,6 +4350,32 @@ export interface BetaComputerScreenshotConfig {
 }
 
 /**
+ * Take a screenshot of the screen.
+ */
+export interface BetaComputerScreenshotInput {}
+
+export interface BetaComputerScreenshotToolUseBlock {
+  id: string;
+
+  /**
+   * Take a screenshot of the screen.
+   */
+  input: BetaComputerScreenshotInput;
+
+  name: 'screenshot';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `scroll`'s config overrides.
  */
 export interface BetaComputerScrollConfig {
@@ -2462,6 +4393,75 @@ export interface BetaComputerScrollConfig {
   enabled?: boolean | null;
 }
 
+export type BetaComputerScrollDirection = 'up' | 'down' | 'left' | 'right';
+
+/**
+ * Scroll the screen at the specified (x, y) pixel coordinate, or the current
+ * cursor position if `coordinate` is omitted. Do NOT use PageUp/PageDown to
+ * scroll.
+ */
+export interface BetaComputerScrollInput {
+  /**
+   * Number of 'clicks' of the scroll wheel.
+   */
+  scroll_amount: number;
+
+  scroll_direction: BetaComputerScrollDirection;
+
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerScrollToolUseBlock {
+  id: string;
+
+  /**
+   * Scroll the screen at the specified (x, y) pixel coordinate, or the current
+   * cursor position if `coordinate` is omitted. Do NOT use PageUp/PageDown to
+   * scroll.
+   */
+  input: BetaComputerScrollInput;
+
+  name: 'scroll';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+export type BetaComputerToolUseBlock =
+  | BetaComputerKeyToolUseBlock
+  | BetaComputerHoldKeyToolUseBlock
+  | BetaComputerTypeToolUseBlock
+  | BetaComputerCursorPositionToolUseBlock
+  | BetaComputerMouseMoveToolUseBlock
+  | BetaComputerLeftMouseDownToolUseBlock
+  | BetaComputerLeftMouseUpToolUseBlock
+  | BetaComputerLeftClickToolUseBlock
+  | BetaComputerLeftClickDragToolUseBlock
+  | BetaComputerRightClickToolUseBlock
+  | BetaComputerMiddleClickToolUseBlock
+  | BetaComputerDoubleClickToolUseBlock
+  | BetaComputerTripleClickToolUseBlock
+  | BetaComputerScrollToolUseBlock
+  | BetaComputerWaitToolUseBlock
+  | BetaComputerScreenshotToolUseBlock
+  | BetaComputerZoomToolUseBlock;
+
 /**
  * The computer toolset: a single `tools[]` entry (carrying no `name`) that
  * declares the computer tool family. The model is served the family's tool with
@@ -2473,21 +4473,14 @@ export interface BetaComputerScrollConfig {
 export interface BetaComputerToolset20260801 {
   type: 'computer_toolset_20260801';
 
-  allowed_callers?: Array<
-    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
-  >;
-
   /**
    * Create a cache control breakpoint at this content block.
    */
   cache_control?: BetaCacheControlEphemeral | null;
 
   /**
-   * Per-member configuration for `computer_toolset_20260801`: one optional field per
-   * member tool, keyed by the member name — the same name the member's `tool_use`
-   * blocks carry. Every member is an accepted key, and a member's defaults apply
-   * wherever its key is absent. Unknown keys are rejected: the field set is this
-   * toolset version's complete member set.
+   * Sparse per-member overrides, keyed by member name. Absent, null, and {} are
+   * equivalent; a member's defaults apply wherever its key is absent.
    */
   configs?: BetaComputerToolsetConfigs | null;
 }
@@ -2605,6 +4598,45 @@ export interface BetaComputerTripleClickConfig {
 }
 
 /**
+ * Triple-click the left mouse button at the specified (x, y) pixel coordinate, or
+ * the current cursor position if `coordinate` is omitted.
+ */
+export interface BetaComputerTripleClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface BetaComputerTripleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Triple-click the left mouse button at the specified (x, y) pixel coordinate, or
+   * the current cursor position if `coordinate` is omitted.
+   */
+  input: BetaComputerTripleClickInput;
+
+  name: 'triple_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `type`'s config overrides.
  */
 export interface BetaComputerTypeConfig {
@@ -2620,6 +4652,37 @@ export interface BetaComputerTypeConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Type a string of text on the keyboard.
+ */
+export interface BetaComputerTypeInput {
+  /**
+   * The text to type.
+   */
+  text: string;
+}
+
+export interface BetaComputerTypeToolUseBlock {
+  id: string;
+
+  /**
+   * Type a string of text on the keyboard.
+   */
+  input: BetaComputerTypeInput;
+
+  name: 'type';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2641,6 +4704,37 @@ export interface BetaComputerWaitConfig {
 }
 
 /**
+ * Wait for a specified duration.
+ */
+export interface BetaComputerWaitInput {
+  /**
+   * Duration to wait, in seconds.
+   */
+  duration: number;
+}
+
+export interface BetaComputerWaitToolUseBlock {
+  id: string;
+
+  /**
+   * Wait for a specified duration.
+   */
+  input: BetaComputerWaitInput;
+
+  name: 'wait';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
+}
+
+/**
  * `zoom`'s config overrides.
  */
 export interface BetaComputerZoomConfig {
@@ -2656,6 +4750,41 @@ export interface BetaComputerZoomConfig {
    * the served schema.
    */
   enabled?: boolean | null;
+}
+
+/**
+ * Take a screenshot of a rectangular region. Region coordinates are in the
+ * full-screenshot space (not physical display pixels). The crop is scaled up to
+ * fill the image budget so fine details become legible.
+ */
+export interface BetaComputerZoomInput {
+  /**
+   * (x0, y0, x1, y1): The region to capture.
+   */
+  region: Array<number>;
+}
+
+export interface BetaComputerZoomToolUseBlock {
+  id: string;
+
+  /**
+   * Take a screenshot of a rectangular region. Region coordinates are in the
+   * full-screenshot space (not physical display pixels). The crop is scaled up to
+   * fill the image budget so fine details become legible.
+   */
+  input: BetaComputerZoomInput;
+
+  name: 'zoom';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller?: BetaToolUseCaller;
 }
 
 /**
@@ -2738,9 +4867,6 @@ export interface BetaContainerUploadBlockParam {
   cache_control?: BetaCacheControlEphemeral | null;
 }
 
-/**
- * Response model for a file uploaded to the container.
- */
 export type BetaContentBlock =
   | BetaTextBlock
   | BetaThinkingBlock
@@ -2758,11 +4884,9 @@ export type BetaContentBlock =
   | BetaMCPToolResultBlock
   | BetaContainerUploadBlock
   | BetaCompactionBlock
-  | BetaFallbackBlock;
+  | BetaFallbackBlock
+  | BetaMCPToolListingBlock;
 
-/**
- * Regular text content.
- */
 export type BetaContentBlockParam =
   | BetaTextBlockParam
   | BetaImageBlockParam
@@ -2786,6 +4910,7 @@ export type BetaContentBlockParam =
   | BetaCompactionBlockParam
   | BetaRequestToolAdditionBlock
   | BetaRequestToolRemovalBlock
+  | BetaMCPToolListingBlockParam
   | BetaFallbackBlockParam;
 
 export interface BetaContentBlockSource {
@@ -2818,8 +4943,8 @@ export interface BetaCountTokensContextManagementResponse {
 }
 
 /**
- * Response envelope for request-level diagnostics. Present (possibly null)
- * whenever the caller supplied `diagnostics` on the request.
+ * Request-level diagnostics: why the prompt cache could not fully reuse the prefix
+ * of the request named by `diagnostics.previous_message_id`.
  */
 export interface BetaDiagnostics {
   /**
@@ -2828,14 +4953,7 @@ export interface BetaDiagnostics {
    * pending — the response was serialized before the background comparison
    * completed.
    */
-  cache_miss_reason:
-    | BetaCacheMissModelChanged
-    | BetaCacheMissSystemChanged
-    | BetaCacheMissToolsChanged
-    | BetaCacheMissMessagesChanged
-    | BetaCacheMissPreviousMessageNotFound
-    | BetaCacheMissUnavailable
-    | null;
+  cache_miss_reason: BetaCacheMissReason | null;
 }
 
 /**
@@ -3093,10 +5211,11 @@ export interface BetaFallbackInfoParam {
 /**
  * Token usage for the fallback-model attempt of a server-side fallback request.
  *
- * Produced in place of a `message` entry for whichever hop served the response. A
- * declined hop produces the existing `message` entry. Whether a fallback model
- * served the response is signalled by the presence of this entry in
- * `usage.iterations`.
+ * The terminal entry of a fallback-served turn: when a fallback hop's output is
+ * the returned message, the entry for the iteration that completed it carries this
+ * type in place of `message`. A declined hop and the serving hop's earlier
+ * tool-loop iterations produce `message` entries. Whether a fallback model served
+ * the response is signalled by the presence of this entry in `usage.iterations`.
  */
 export interface BetaFallbackMessageIterationUsage {
   /**
@@ -3166,7 +5285,12 @@ export interface BetaFallbackParam {
    */
   speed?: 'standard' | 'fast' | null;
 
-  thinking?: BetaThinkingConfigEnabled | BetaThinkingConfigDisabled | BetaThinkingConfigAdaptive | null;
+  thinking?:
+    | BetaThinkingConfigEnabled
+    | BetaThinkingConfigDisabled
+    | BetaThinkingConfigBetweenTools
+    | BetaThinkingConfigAdaptive
+    | null;
 
   [k: string]: unknown;
 }
@@ -3176,7 +5300,9 @@ export interface BetaFallbackParam {
  */
 export interface BetaFallbackRefusalTrigger {
   /**
-   * The policy category that triggered a refusal.
+   * The policy category that triggered the `from` model's refusal at this hop.
+   * `null` when the refusal doesn't map to a named category. Same vocabulary as
+   * `stop_details.category`.
    *
    * - `cyber` - The request could enable cyber harm, such as malware or exploit
    *   development. Benign cybersecurity work can also trigger this category.
@@ -3274,6 +5400,15 @@ export interface BetaInputTokensTrigger {
 }
 
 /**
+ * One entry of `input_transformations`: either a change the API made to the
+ * request's input before showing it to the model, or a block that failed a binding
+ * check and was still shown to the model unchanged. The `type` field says which.
+ */
+export type BetaInputTransformation =
+  | BetaThinkingDroppedInputTransformation
+  | BetaThinkingMismatchAllowedInputTransformation;
+
+/**
  * Per-iteration token usage breakdown.
  *
  * Each entry represents one sampling iteration, with its own input/output token
@@ -3314,6 +5449,18 @@ export interface BetaJSONOutputFormat {
 }
 
 /**
+ * A tool as an MCP server lists it: its name on that server, its description, and
+ * its input schema.
+ */
+export interface BetaMCPTool {
+  input_schema: { [key: string]: unknown };
+
+  name: string;
+
+  description?: string;
+}
+
+/**
  * Configuration for a specific tool in an MCP toolset.
  */
 export interface BetaMCPToolConfig {
@@ -3329,6 +5476,60 @@ export interface BetaMCPToolDefaultConfig {
   defer_loading?: boolean;
 
   enabled?: boolean;
+}
+
+/**
+ * The tool listing the server fetched from an MCP server while producing this
+ * response. Send the assistant message back unchanged, this block included, so
+ * later requests use this listing instead of asking the MCP server again.
+ */
+export interface BetaMCPToolListingBlock {
+  mcp_server_name: string;
+
+  tools: Array<BetaMCPTool>;
+
+  type: 'mcp_tool_listing';
+}
+
+/**
+ * The tool listing an MCP server returned while an earlier response was produced,
+ * as that response carried it. Send the assistant message back unchanged, this
+ * block included, and the server uses this listing for the matching `mcp_toolset`
+ * instead of asking the MCP server again.
+ */
+export interface BetaMCPToolListingBlockParam {
+  /**
+   * The name of the MCP server this listing came from, as `mcp_servers` declares it.
+   */
+  mcp_server_name: string;
+
+  /**
+   * The server's tools, exactly as the response listed them.
+   */
+  tools: Array<BetaMCPToolParam>;
+
+  type: 'mcp_tool_listing';
+}
+
+/**
+ * A tool as an MCP server lists it: its name on that server, its description, and
+ * its input schema.
+ */
+export interface BetaMCPToolParam {
+  /**
+   * The tool's input schema as the MCP server lists it, verbatim.
+   */
+  input_schema: { [key: string]: unknown };
+
+  /**
+   * The tool's name as the MCP server lists it (not prefixed with the server name).
+   */
+  name: string;
+
+  /**
+   * The tool's description as the MCP server lists it.
+   */
+  description?: string | null;
 }
 
 export interface BetaMCPToolResultBlock {
@@ -3407,6 +5608,14 @@ export interface BetaMCPToolset {
    * Default configuration applied to all tools from this server
    */
   default_config?: BetaMCPToolDefaultConfig;
+
+  /**
+   * The server's tool listing, pinned: when present, the server is not asked for its
+   * tools before sampling and exactly these entries, with `default_config` and
+   * `configs` applied, are the toolset's tools. Copy it from the `mcp_tool_listing`
+   * block of an earlier response.
+   */
+  tools?: Array<BetaMCPToolParam> | null;
 }
 
 export interface BetaMemoryTool20250818 {
@@ -3566,8 +5775,9 @@ export interface BetaMessage {
   id: string;
 
   /**
-   * Information about the container used in the request (for the code execution
-   * tool)
+   * Information about the container used in this request.
+   *
+   * This will be non-null if a container tool (e.g. code execution) was used.
    */
   container: BetaContainer | null;
 
@@ -3615,8 +5825,8 @@ export interface BetaMessage {
   context_management: BetaContextManagementResponse | null;
 
   /**
-   * Response envelope for request-level diagnostics. Present (possibly null)
-   * whenever the caller supplied `diagnostics` on the request.
+   * Request-level diagnostics. `null` when the request did not supply `diagnostics`,
+   * or when it did and no prompt-cache divergence was detected.
    */
   diagnostics: BetaDiagnostics | null;
 
@@ -3636,7 +5846,9 @@ export interface BetaMessage {
   role: 'assistant';
 
   /**
-   * Structured information about a refusal.
+   * Structured information about why model output stopped.
+   *
+   * This is `null` when the `stop_reason` has no additional detail to report.
    */
   stop_details: BetaRefusalStopDetails | null;
 
@@ -3693,6 +5905,30 @@ export interface BetaMessage {
    * `cache_creation_input_tokens`, and `cache_read_input_tokens`.
    */
   usage: BetaUsage;
+
+  /**
+   * Changes the API made to the request's input before showing it to the model, and
+   * blocks that failed a binding check but were left unchanged: one entry per block,
+   * in request order. Two entry types today. `thinking_dropped` — a `thinking`,
+   * `redacted_thinking` or `connector_text` block from the request's `messages` that
+   * was removed from the prompt instead of being shown to the model because it
+   * failed a binding check. `thinking_mismatch_allowed` — a `thinking` or
+   * `redacted_thinking` block that failed the conversation check (the conversation
+   * before it differs from the one it was created in, or it carries no record of one
+   * on a model that requires it) and was shown to the model all the same, because
+   * that check is not enforced for this request. More entry types may be added over
+   * time; ignore types you do not recognize.
+   *
+   * Requires `anthropic-beta: thinking-binding-controls-2026-08-01`. Present on
+   * every such response from a model that supports extended thinking, as `[]` when
+   * there is no entry to report; without the beta, blocks are removed or left in
+   * place all the same but nothing is reported. Removed blocks contribute nothing to
+   * `usage.input_tokens`; blocks left in place count as sent. When streaming, the
+   * array is final in `message_start`; the final `message_delta` event carries it
+   * only when a server-side model fallback happened mid-stream, in which case it
+   * holds the serving model's entries and replaces the one in `message_start`.
+   */
+  input_transformations?: Array<BetaInputTransformation> | null;
 }
 
 export interface BetaMessageDeltaUsage {
@@ -3708,6 +5944,10 @@ export interface BetaMessageDeltaUsage {
 
   /**
    * Outcome of the `fallback_credit_token` presented on this request.
+   *
+   * Present on every response to a non-batch request that carried a
+   * `fallback_credit_token`, in either redemption mode; absent otherwise (batch
+   * items accept and ignore the token and carry no outcome object).
    */
   fallback_credit: BetaFallbackCreditUsage | null;
 
@@ -3793,7 +6033,7 @@ export interface BetaMessageIterationUsage {
    * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
    * details and options.
    */
-  model: MessagesAPI.Model;
+  model: MessagesAPI.Model | null;
 
   /**
    * The number of output tokens which were used.
@@ -3810,6 +6050,25 @@ export interface BetaMessageParam {
   content: string | Array<BetaContentBlockParam>;
 
   role: 'user' | 'assistant' | 'system';
+
+  /**
+   * How long this system message's text stays in front of the model. `"never"` (the
+   * default) renders it on every request that includes it. `"next_user_message"`
+   * renders it only for the user turn it follows: once a later `role: "user"`
+   * message exists in `messages` the message stays in the array (send it unchanged)
+   * but is no longer shown to the model. Only permitted on `role: "system"`
+   * messages.
+   */
+  clear_at?: 'next_user_message' | 'never' | null;
+
+  /**
+   * Per-message output configuration on a role:"system" input message.
+   *
+   * Fields here apply per-turn; `format` remains top-level only. An empty `{}` is
+   * accepted on a message that carries content; a message with neither content nor
+   * output_config fields is rejected.
+   */
+  output_config?: BetaSystemMessageOutputConfig | null;
 }
 
 export interface BetaMessageTokensCount {
@@ -3838,7 +6097,10 @@ export interface BetaMetadata {
 
 export interface BetaOutputConfig {
   /**
-   * All possible effort levels.
+   * How much effort the model should put into its response. Higher effort levels may
+   * result in more thorough analysis but take longer.
+   *
+   * Valid values are `low`, `medium`, `high`, `xhigh`, or `max`.
    */
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
 
@@ -3849,7 +6111,7 @@ export interface BetaOutputConfig {
   format?: BetaJSONOutputFormat | null;
 
   /**
-   * User-configurable total token budget across contexts.
+   * Configuration for token budget tracking across contexts.
    */
   task_budget?: BetaTokenTaskBudget | null;
 }
@@ -3893,9 +6155,6 @@ export interface BetaRawContentBlockDeltaEvent {
 }
 
 export interface BetaRawContentBlockStartEvent {
-  /**
-   * Response model for a file uploaded to the container.
-   */
   content_block:
     | BetaTextBlock
     | BetaThinkingBlock
@@ -3913,7 +6172,8 @@ export interface BetaRawContentBlockStartEvent {
     | BetaMCPToolResultBlock
     | BetaContainerUploadBlock
     | BetaCompactionBlock
-    | BetaFallbackBlock;
+    | BetaFallbackBlock
+    | BetaMCPToolListingBlock;
 
   index: number;
 
@@ -3954,18 +6214,45 @@ export interface BetaRawMessageDeltaEvent {
    * `cache_creation_input_tokens`, and `cache_read_input_tokens`.
    */
   usage: BetaMessageDeltaUsage;
+
+  /**
+   * Changes the API made to the request's input before showing it to the model, and
+   * blocks that failed a binding check but were left unchanged: one entry per block,
+   * in request order. Two entry types today. `thinking_dropped` — a `thinking`,
+   * `redacted_thinking` or `connector_text` block from the request's `messages` that
+   * was removed from the prompt instead of being shown to the model because it
+   * failed a binding check. `thinking_mismatch_allowed` — a `thinking` or
+   * `redacted_thinking` block that failed the conversation check (the conversation
+   * before it differs from the one it was created in, or it carries no record of one
+   * on a model that requires it) and was shown to the model all the same, because
+   * that check is not enforced for this request. More entry types may be added over
+   * time; ignore types you do not recognize.
+   *
+   * Requires `anthropic-beta: thinking-binding-controls-2026-08-01`. Present on
+   * every such response from a model that supports extended thinking, as `[]` when
+   * there is no entry to report; without the beta, blocks are removed or left in
+   * place all the same but nothing is reported. Removed blocks contribute nothing to
+   * `usage.input_tokens`; blocks left in place count as sent. When streaming, the
+   * array is final in `message_start`; the final `message_delta` event carries it
+   * only when a server-side model fallback happened mid-stream, in which case it
+   * holds the serving model's entries and replaces the one in `message_start`.
+   */
+  input_transformations?: Array<BetaInputTransformation> | null;
 }
 
 export namespace BetaRawMessageDeltaEvent {
   export interface Delta {
     /**
-     * Information about the container used in the request (for the code execution
-     * tool)
+     * Information about the container used in this request.
+     *
+     * This will be non-null if a container tool (e.g. code execution) was used.
      */
     container: BetaMessagesAPI.BetaContainer | null;
 
     /**
-     * Structured information about a refusal.
+     * Structured information about why model output stopped.
+     *
+     * This is `null` when the `stop_reason` has no additional detail to report.
      */
     stop_details: BetaMessagesAPI.BetaRefusalStopDetails | null;
 
@@ -4026,7 +6313,9 @@ export interface BetaRedactedThinkingBlockParam {
  */
 export interface BetaRefusalStopDetails {
   /**
-   * The policy category that triggered a refusal.
+   * The policy category that triggered the refusal.
+   *
+   * `null` when the refusal doesn't map to a named category.
    *
    * - `cyber` - The request could enable cyber harm, such as malware or exploit
    *   development. Benign cybersecurity work can also trigger this category.
@@ -4165,18 +6454,22 @@ export interface BetaRequestMCPToolResultBlockParam {
 }
 
 /**
- * Mid-conversation directive to surface a declared tool.
+ * Mid-conversation directive to make a tool available.
  *
- * `tool` references a tool (or MCP toolset) by name from the request's `tools`; it
- * is offered to the model from this point in the conversation onward.
+ * `tool` is a reference to a tool (or MCP toolset) declared in the request's
+ * `tools`. Under the `inline-tools-2026-09-15` beta it may instead be a reference
+ * to a tool defined earlier in `messages`, or a `tool_definition` object that
+ * carries an inline tool definition in `definition` (the same object a `tools`
+ * entry holds). An `mcp_toolset` definition also requires the
+ * `mcp-client-2026-09-15` beta. The tool is offered to the model from this point
+ * in the conversation onward.
  */
 export interface BetaRequestToolAdditionBlock {
-  /**
-   * Reference to a single tool the caller declared directly in `tools[]`. Does not
-   * accept the composed `{server}_{name}` form the server assigns to MCP-resolved
-   * tools — use `mcp_tool_reference` or `mcp_toolset_reference` for those.
-   */
-  tool: BetaToolChangeToolReference | BetaToolChangeMCPToolReference | BetaToolChangeMCPToolsetReference;
+  tool:
+    | BetaToolChangeToolReference
+    | BetaToolChangeMCPToolReference
+    | BetaToolChangeMCPToolsetReference
+    | BetaToolChangeToolDefinitionParam;
 
   type: 'tool_addition';
 
@@ -4189,15 +6482,11 @@ export interface BetaRequestToolAdditionBlock {
 /**
  * Mid-conversation directive to withdraw a tool.
  *
- * `tool` references a tool (or MCP toolset) by name from the request's `tools`; it
- * is no longer offered to the model from this point in the conversation onward.
+ * `tool` references a tool (or MCP toolset) by name: one declared in the request's
+ * `tools` or defined earlier in `messages`. It is no longer offered to the model
+ * from this point in the conversation onward.
  */
 export interface BetaRequestToolRemovalBlock {
-  /**
-   * Reference to a single tool the caller declared directly in `tools[]`. Does not
-   * accept the composed `{server}_{name}` form the server assigns to MCP-resolved
-   * tools — use `mcp_tool_reference` or `mcp_toolset_reference` for those.
-   */
   tool: BetaToolChangeToolReference | BetaToolChangeMCPToolReference | BetaToolChangeMCPToolsetReference;
 
   type: 'tool_removal';
@@ -4207,6 +6496,181 @@ export interface BetaRequestToolRemovalBlock {
    */
   cache_control?: BetaCacheControlEphemeral | null;
 }
+
+/**
+ * A custom tool definition, as sent.
+ */
+export interface BetaResponseTool {
+  /**
+   * [JSON schema](https://json-schema.org/draft/2020-12) for this tool's input.
+   *
+   * This defines the shape of the `input` that your tool accepts and that the model
+   * will produce.
+   */
+  input_schema: BetaResponseToolInputSchema;
+
+  /**
+   * Name of the tool.
+   *
+   * This is how the tool will be called by the model and in `tool_use` blocks.
+   */
+  name: string;
+
+  allowed_callers?: Array<
+    'direct' | 'code_execution_20250825' | 'code_execution_20260120' | 'code_execution_20260521'
+  >;
+
+  /**
+   * If true, tool will not be included in initial system prompt. Only loaded when
+   * returned via tool_reference from tool search.
+   */
+  defer_loading?: boolean;
+
+  /**
+   * Description of what this tool does.
+   *
+   * Tool descriptions should be as detailed as possible. The more information that
+   * the model has about what the tool is and how to use it, the better it will
+   * perform. You can use natural language descriptions to reinforce important
+   * aspects of the tool input JSON schema.
+   */
+  description?: string;
+
+  /**
+   * Enable eager input streaming for this tool. When true, tool input parameters
+   * will be streamed incrementally as they are generated, and types will be inferred
+   * on-the-fly rather than buffering the full JSON output. When false, streaming is
+   * disabled for this tool even if the fine-grained-tool-streaming beta is active.
+   * When null (default), uses the default behavior based on beta headers.
+   */
+  eager_input_streaming?: boolean | null;
+
+  input_examples?: Array<{ [key: string]: unknown }>;
+
+  /**
+   * When true, guarantees schema validation on tool names and inputs
+   */
+  strict?: boolean;
+
+  type?: 'custom' | null;
+}
+
+/**
+ * An entry of a `compaction` block's `tool_changes`: a tool the compacted range
+ * made available, as a reference to a `tools` entry or MCP toolset, or as the tool
+ * definition in effect at the end of the range, by value. Send it back unchanged.
+ */
+export interface BetaResponseToolAdditionBlock {
+  /**
+   * The tool made available: a reference to a `tools` entry or MCP toolset, or a
+   * `tool_definition` carrying the definition by value.
+   */
+  tool:
+    | BetaResponseToolChangeToolReference
+    | BetaResponseToolChangeMCPToolReference
+    | BetaResponseToolChangeMCPToolsetReference
+    | BetaToolChangeToolDefinition;
+
+  type: 'tool_addition';
+}
+
+/**
+ * Reference to a single MCP tool, by its server and its name on that server, as a
+ * `compaction` block's `tool_changes` entry reports it. Send it back unchanged
+ * with the block.
+ */
+export interface BetaResponseToolChangeMCPToolReference {
+  name: string;
+
+  server_name: string;
+
+  type: 'mcp_tool_reference';
+}
+
+/**
+ * Reference to every tool in the named MCP server's toolset, as a `compaction`
+ * block's `tool_changes` entry reports it. Send it back unchanged with the block.
+ */
+export interface BetaResponseToolChangeMCPToolsetReference {
+  server_name: string;
+
+  type: 'mcp_toolset_reference';
+}
+
+/**
+ * Reference to a single tool, by the name the model uses to call it, as a
+ * `compaction` block's `tool_changes` entry reports it: a tool declared in `tools`
+ * or defined by an earlier `tool_addition` block. Send it back unchanged with the
+ * block.
+ */
+export interface BetaResponseToolChangeToolReference {
+  name: string;
+
+  type: 'tool_reference';
+}
+
+/**
+ * [JSON schema](https://json-schema.org/draft/2020-12) for this tool's input.
+ *
+ * This defines the shape of the `input` that your tool accepts and that the model
+ * will produce.
+ */
+export interface BetaResponseToolInputSchema {
+  type: 'object';
+
+  properties?: { [key: string]: unknown } | null;
+
+  required?: Array<string> | null;
+
+  [k: string]: unknown;
+}
+
+/**
+ * An entry of a `compaction` block's `tool_changes`: a tool of the request's
+ * `tools` (or an MCP tool or toolset) that the compacted range withdrew. Send it
+ * back unchanged.
+ */
+export interface BetaResponseToolRemovalBlock {
+  /**
+   * A reference to the withdrawn `tools` entry, MCP tool or MCP toolset.
+   */
+  tool:
+    | BetaResponseToolChangeToolReference
+    | BetaResponseToolChangeMCPToolReference
+    | BetaResponseToolChangeMCPToolsetReference;
+
+  type: 'tool_removal';
+}
+
+export type BetaResponseToolUnion =
+  | BetaResponseTool
+  | BetaToolBash20241022
+  | BetaToolBash20250124
+  | BetaCodeExecutionTool20250522
+  | BetaCodeExecutionTool20250825
+  | BetaCodeExecutionTool20260120
+  | BetaCodeExecutionTool20260521
+  | BetaBrowserToolset20260801
+  | BetaToolComputerUse20241022
+  | BetaMemoryTool20250818
+  | BetaToolComputerUse20250124
+  | BetaToolTextEditor20241022
+  | BetaToolComputerUse20251124
+  | BetaComputerToolset20260801
+  | BetaToolTextEditor20250124
+  | BetaToolTextEditor20250429
+  | BetaToolTextEditor20250728
+  | BetaWebSearchTool20250305
+  | BetaWebFetchTool20250910
+  | BetaWebSearchTool20260209
+  | BetaWebFetchTool20260209
+  | BetaWebFetchTool20260309
+  | BetaWebSearchTool20260318
+  | BetaWebFetchTool20260318
+  | BetaAdvisorTool20260301
+  | BetaToolSearchToolBm25_20251119
+  | BetaToolSearchToolRegex20251119
+  | BetaMCPToolset;
 
 export interface BetaSearchResultBlockParam {
   content: Array<BetaTextBlockParam>;
@@ -4269,9 +6733,6 @@ export interface BetaServerToolUseBlock {
 
   type: 'server_tool_use';
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 }
 
@@ -4297,9 +6758,6 @@ export interface BetaServerToolUseBlockParam {
    */
   cache_control?: BetaCacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 }
 
@@ -4343,6 +6801,43 @@ export type BetaStopReason =
   | 'compaction'
   | 'refusal'
   | 'model_context_window_exceeded';
+
+/**
+ * Compact the whole conversation and return a signed `compaction` block, alone,
+ * that a later request sends back first in `messages`, in place of the messages it
+ * summarizes. There is no trigger and no pause flag: sending the parameter
+ * compacts, and nothing is sampled after the block.
+ *
+ * The summarization prompt is the server's own unless `instructions` are given,
+ * which then replace it for this request; a value that is empty or only whitespace
+ * counts as absent.
+ */
+export interface BetaSummarizeCompaction {
+  type: 'summarize';
+
+  /**
+   * Replaces the server's default summarization prompt for this request. An empty or
+   * whitespace-only value counts as absent.
+   */
+  instructions?: string | null;
+}
+
+/**
+ * Per-message output configuration on a role:"system" input message.
+ *
+ * Fields here apply per-turn; `format` remains top-level only. An empty `{}` is
+ * accepted on a message that carries content; a message with neither content nor
+ * output_config fields is rejected.
+ */
+export interface BetaSystemMessageOutputConfig {
+  /**
+   * How much effort the model should put into its response. Higher effort levels may
+   * result in more thorough analysis but take longer.
+   *
+   * Valid values are `low`, `medium`, `high`, `xhigh`, or `max`.
+   */
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
+}
 
 export interface BetaTextBlock {
   /**
@@ -4538,6 +7033,22 @@ export interface BetaThinkingBlock {
   type: 'thinking';
 }
 
+/**
+ * Controls for block binding: what happens when a thinking block this request
+ * sends back fails the conversation check. Every field is optional; an empty
+ * object means every default.
+ */
+export interface BetaThinkingBlockBinding {
+  /**
+   * "error" (default) | "drop_block". What happens when a thinking block in
+   * `messages` fails the conversation check (it was created in a different
+   * conversation, or the messages before it have changed since). "error" fails the
+   * request with a 400 error. "drop_block" removes the failing blocks and the
+   * request proceeds; each removal is reported in `input_transformations`.
+   */
+  prefix_mismatch_behavior?: BetaThinkingPrefixMismatchBehavior | null;
+}
+
 export interface BetaThinkingBlockParam {
   /**
    * The `signature` value of this thinking block, exactly as returned by the API in
@@ -4560,12 +7071,23 @@ export interface BetaThinkingConfigAdaptive {
   type: 'adaptive';
 
   /**
+   * Controls for block binding: what happens when a thinking block this request
+   * sends back fails the conversation check. `null`, absent or an empty object means
+   * every default.
+   */
+  block_binding?: BetaThinkingBlockBinding | null;
+
+  /**
    * Controls how thinking content appears in the response. When set to `summarized`,
    * thinking is returned normally. When set to `omitted`, thinking content is
    * redacted but a signature is returned for multi-turn continuity. Defaults to
    * `summarized`.
    */
   display?: 'summarized' | 'omitted' | 'updates' | null;
+}
+
+export interface BetaThinkingConfigBetweenTools {
+  type: 'between_tools';
 }
 
 export interface BetaThinkingConfigDisabled {
@@ -4587,6 +7109,13 @@ export interface BetaThinkingConfigEnabled {
   budget_tokens: number;
 
   type: 'enabled';
+
+  /**
+   * Controls for block binding: what happens when a thinking block this request
+   * sends back fails the conversation check. `null`, absent or an empty object means
+   * every default.
+   */
+  block_binding?: BetaThinkingBlockBinding | null;
 
   /**
    * Controls how thinking content appears in the response. When set to `summarized`,
@@ -4611,6 +7140,7 @@ export interface BetaThinkingConfigEnabled {
 export type BetaThinkingConfigParam =
   | BetaThinkingConfigEnabled
   | BetaThinkingConfigDisabled
+  | BetaThinkingConfigBetweenTools
   | BetaThinkingConfigAdaptive;
 
 export interface BetaThinkingDelta {
@@ -4635,6 +7165,81 @@ export interface BetaThinkingDelta {
 
   type: 'thinking_delta';
 }
+
+export interface BetaThinkingDroppedInputTransformation {
+  /**
+   * Where the removed block was in your request, as `messages.{i}.content.{j}`: `i`
+   * indexes the `messages` array you sent and `j` that message's `content` array —
+   * the same form error messages use.
+   */
+  path: string;
+
+  /**
+   * Which binding check removed the block: `model_binding_mismatch` — it was created
+   * by a model whose reasoning the requested model may not read;
+   * `prefix_binding_mismatch` — the conversation before it differs from the
+   * conversation it was created in (the rest of that turn's consecutive thinking
+   * blocks are removed with it, each with this reason);
+   * `organization_binding_mismatch` — it was created under a different organization
+   * (an Anthropic organization, AWS account or Google Cloud project) and this
+   * organization is not one of its additional organizations;
+   * `end_user_binding_mismatch` — it was created for a different end user, or was
+   * removed by the consumer-organization binding. A block that would fail several
+   * checks reports one reason, in this order of precedence:
+   * `organization_binding_mismatch`, `end_user_binding_mismatch`,
+   * `model_binding_mismatch`, `prefix_binding_mismatch`.
+   */
+  reason:
+    | 'model_binding_mismatch'
+    | 'prefix_binding_mismatch'
+    | 'organization_binding_mismatch'
+    | 'end_user_binding_mismatch';
+
+  /**
+   * Always `thinking_dropped` for this entry type.
+   */
+  type: 'thinking_dropped';
+}
+
+export interface BetaThinkingMismatchAllowedInputTransformation {
+  /**
+   * Where the block is in your request, as `messages.{i}.content.{j}`: `i` indexes
+   * the `messages` array you sent and `j` that message's `content` array — the same
+   * form error messages use.
+   */
+  path: string;
+
+  /**
+   * Which binding check the block failed; the block was shown to the model all the
+   * same. Always `prefix_binding_mismatch` today — the conversation before the block
+   * differs from the conversation it was created in, or the block carries no record
+   * of one on a model that requires it. Were the check enforced for this request,
+   * the block would have been removed or the request rejected
+   * (`thinking.block_binding.prefix_mismatch_behavior`). A removal also takes the
+   * rest of that turn's consecutive thinking blocks, whereas here each block is
+   * checked on its own, so `thinking_mismatch_allowed` entries are a lower bound on
+   * what enforcement would remove.
+   */
+  reason:
+    | 'model_binding_mismatch'
+    | 'prefix_binding_mismatch'
+    | 'organization_binding_mismatch'
+    | 'end_user_binding_mismatch';
+
+  /**
+   * Always `thinking_mismatch_allowed` for this entry type.
+   */
+  type: 'thinking_mismatch_allowed';
+}
+
+/**
+ * What happens when a thinking block in `messages` fails the conversation check:
+ * it was created in a different conversation, or the messages before it have
+ * changed since. `"error"` (the default) fails the request with a 400 error.
+ * `"drop_block"` removes the failing blocks and the request proceeds; the model no
+ * longer sees the dropped reasoning.
+ */
+export type BetaThinkingPrefixMismatchBehavior = 'error' | 'drop_block';
 
 export interface BetaThinkingTurns {
   type: 'thinking_turns';
@@ -4808,7 +7413,7 @@ export interface BetaToolBash20250124 {
 }
 
 /**
- * Reference to a single MCP tool by its server and remote name — the same
+ * Reference to a single MCP tool by its server and remote name; the same
  * `server_name`/`name` pair `mcp_tool_use` carries.
  */
 export interface BetaToolChangeMCPToolReference {
@@ -4829,9 +7434,32 @@ export interface BetaToolChangeMCPToolsetReference {
 }
 
 /**
- * Reference to a single tool the caller declared directly in `tools[]`. Does not
+ * A tool defined by value, as a `compaction` block's `tool_changes` entry reports
+ * it: `definition` is the tool's definition as it was sent, in the form of a
+ * `tools` entry, without `cache_control`. Send it back unchanged with the block.
+ */
+export interface BetaToolChangeToolDefinition {
+  definition: BetaResponseToolUnion;
+
+  type: 'tool_definition';
+}
+
+/**
+ * A tool defined by value: `definition` is a `tools` entry (any kind `tools`
+ * accepts, an MCP toolset included). An `mcp_toolset` given here also requires the
+ * `mcp-client-2026-09-15` beta.
+ */
+export interface BetaToolChangeToolDefinitionParam {
+  definition: BetaToolUnion;
+
+  type: 'tool_definition';
+}
+
+/**
+ * Reference to a single tool, by the name the model uses to call it: a tool
+ * declared in `tools` or defined by an earlier `tool_addition` block. Does not
  * accept the composed `{server}_{name}` form the server assigns to MCP-resolved
- * tools — use `mcp_tool_reference` or `mcp_toolset_reference` for those.
+ * tools; use `mcp_tool_reference` or `mcp_toolset_reference` for those.
  */
 export interface BetaToolChangeToolReference {
   name: string;
@@ -5351,10 +7979,6 @@ export interface BetaToolTextEditor20250728 {
   strict?: boolean;
 }
 
-/**
- * Code execution tool with REPL state persistence (daemon mode + gVisor
- * checkpoint).
- */
 export type BetaToolUnion =
   | BetaTool
   | BetaToolBash20241022
@@ -5394,9 +8018,6 @@ export interface BetaToolUseBlock {
 
   type: 'tool_use';
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 
   /**
@@ -5419,9 +8040,6 @@ export interface BetaToolUseBlockParam {
    */
   cache_control?: BetaCacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 
   /**
@@ -5429,6 +8047,12 @@ export interface BetaToolUseBlockParam {
    */
   toolset_name?: string | null;
 }
+
+/**
+ * Which party invoked the tool call: the model directly, or a server tool on its
+ * behalf.
+ */
+export type BetaToolUseCaller = BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 
 export interface BetaToolUsesKeep {
   type: 'tool_uses';
@@ -5441,6 +8065,8 @@ export interface BetaToolUsesTrigger {
 
   value: number;
 }
+
+export type BetaToolsetToolUseBlock = BetaBrowserToolUseBlock | BetaComputerToolUseBlock | BetaToolUseBlock;
 
 export interface BetaURLImageSource {
   type: 'url';
@@ -5472,6 +8098,10 @@ export interface BetaUsage {
 
   /**
    * Outcome of the `fallback_credit_token` presented on this request.
+   *
+   * Present on every response to a non-batch request that carried a
+   * `fallback_credit_token`, in either redemption mode; absent otherwise (batch
+   * items accept and ignore the token and carry no outcome object).
    */
   fallback_credit: BetaFallbackCreditUsage | null;
 
@@ -5537,9 +8167,7 @@ export interface BetaUsage {
   service_tier: 'standard' | 'priority' | 'batch' | null;
 
   /**
-   * Inference speed mode. `fast` provides significantly faster output token
-   * generation at premium pricing. Not all models support `fast`; invalid
-   * combinations are rejected at create time.
+   * The inference speed mode used for this request.
    */
   speed: 'standard' | 'fast' | null;
 }
@@ -5658,6 +8286,12 @@ export interface BetaWebFetchTool20250910 {
    * When true, guarantees schema validation on tool names and inputs
    */
   strict?: boolean;
+
+  /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: BetaWebFetchURLSources | null;
 }
 
 export interface BetaWebFetchTool20260209 {
@@ -5716,6 +8350,12 @@ export interface BetaWebFetchTool20260209 {
    * When true, guarantees schema validation on tool names and inputs
    */
   strict?: boolean;
+
+  /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: BetaWebFetchURLSources | null;
 }
 
 /**
@@ -5777,6 +8417,12 @@ export interface BetaWebFetchTool20260309 {
    * When true, guarantees schema validation on tool names and inputs
    */
   strict?: boolean;
+
+  /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: BetaWebFetchURLSources | null;
 
   /**
    * Whether to use cached content. Set to false to bypass the cache and fetch fresh
@@ -5854,6 +8500,12 @@ export interface BetaWebFetchTool20260318 {
   strict?: boolean;
 
   /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: BetaWebFetchURLSources | null;
+
+  /**
    * Whether to use cached content. Set to false to bypass the cache and fetch fresh
    * content. Only set to false when the user explicitly requests fresh content or
    * when fetching rapidly-changing sources.
@@ -5868,9 +8520,6 @@ export interface BetaWebFetchToolResultBlock {
 
   type: 'web_fetch_tool_result';
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 }
 
@@ -5886,9 +8535,6 @@ export interface BetaWebFetchToolResultBlockParam {
    */
   cache_control?: BetaCacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 }
 
@@ -5913,7 +8559,89 @@ export type BetaWebFetchToolResultErrorCode =
   | 'unsupported_content_type'
   | 'too_many_requests'
   | 'max_uses_exceeded'
-  | 'unavailable';
+  | 'unavailable'
+  | 'content_too_large';
+
+/**
+ * The `url_sources` variant under which a source contributes in full: every result
+ * of the tool filter's source, or all user input.
+ */
+export interface BetaWebFetchURLSourceAll {
+  type: 'all';
+}
+
+/**
+ * The tool filter variant under which every result but the named tools'
+ * contributes.
+ */
+export interface BetaWebFetchURLSourceExcept {
+  tools: Array<BetaWebFetchURLSourceToolReference>;
+
+  type: 'except';
+}
+
+/**
+ * The `url_sources` variant under which a source contributes nothing: no result of
+ * the tool filter's source, or no user input.
+ */
+export interface BetaWebFetchURLSourceNone {
+  type: 'none';
+}
+
+/**
+ * The tool filter variant under which only the named tools' results contribute.
+ */
+export interface BetaWebFetchURLSourceOnly {
+  tools: Array<BetaWebFetchURLSourceToolReference>;
+
+  type: 'only';
+}
+
+/**
+ * One entry of a tool filter's `tools`: it must name a tool declared in this
+ * request's `tools[]`.
+ */
+export interface BetaWebFetchURLSourceToolReference {
+  name: string;
+
+  type: 'tool_reference';
+}
+
+/**
+ * Which sources contribute to the set of URLs web fetch may fetch.
+ *
+ * Each key is a tagged variant: `user_input` is `all` or `none`; the two tool
+ * filters are `all`, `none`, `only` (only the named tools' results) or `except`
+ * (every result but the named tools'). A named tool must be declared in this
+ * request's `tools[]`.
+ */
+export interface BetaWebFetchURLSources {
+  /**
+   * Which client tools' results contribute fetchable URLs: "all", "none", or an only
+   * or except list of client tool names from tools[].
+   */
+  client_tool_results?:
+    | BetaWebFetchURLSourceAll
+    | BetaWebFetchURLSourceNone
+    | BetaWebFetchURLSourceOnly
+    | BetaWebFetchURLSourceExcept;
+
+  /**
+   * Which server tools' results contribute fetchable URLs: "all", "none", or an only
+   * or except list of server tool names from tools[]; only web_search and web_fetch
+   * results ever contribute.
+   */
+  server_tool_results?:
+    | BetaWebFetchURLSourceAll
+    | BetaWebFetchURLSourceNone
+    | BetaWebFetchURLSourceOnly
+    | BetaWebFetchURLSourceExcept;
+
+  /**
+   * Whether URLs in user messages are fetchable: "all" or "none".
+   */
+  user_input?: BetaWebFetchURLSourceAll | BetaWebFetchURLSourceNone;
+}
 
 export interface BetaWebSearchResultBlock {
   encrypted_content: string;
@@ -6124,9 +8852,6 @@ export interface BetaWebSearchToolResultBlock {
 
   type: 'web_search_tool_result';
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 }
 
@@ -6146,9 +8871,6 @@ export interface BetaWebSearchToolResultBlockParam {
    */
   cache_control?: BetaCacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: BetaDirectCaller | BetaServerToolCaller | BetaServerToolCaller20260120;
 }
 
@@ -6174,6 +8896,261 @@ export type BetaWebSearchToolResultErrorCode =
  * @deprecated BetaRequestDocumentBlock should be used insated
  */
 export type BetaBase64PDFBlock = BetaRequestDocumentBlock;
+
+/**
+ * @deprecated BetaResponseToolUseBlockUnion has been renamed to BetaToolsetToolUseBlock
+ */
+export type BetaResponseToolUseBlockUnion = BetaToolsetToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserToolUseBlock has been renamed to BetaBrowserToolUseBlock
+ */
+export type BetaResponseBrowserToolUseBlock = BetaBrowserToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserCloseTabToolUseBlock has been renamed to BetaBrowserCloseTabToolUseBlock
+ */
+export type BetaResponseBrowserCloseTabToolUseBlock = BetaBrowserCloseTabToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserDoubleClickToolUseBlock has been renamed to BetaBrowserDoubleClickToolUseBlock
+ */
+export type BetaResponseBrowserDoubleClickToolUseBlock = BetaBrowserDoubleClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserFileUploadToolUseBlock has been renamed to BetaBrowserFileUploadToolUseBlock
+ */
+export type BetaResponseBrowserFileUploadToolUseBlock = BetaBrowserFileUploadToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserFindToolUseBlock has been renamed to BetaBrowserFindToolUseBlock
+ */
+export type BetaResponseBrowserFindToolUseBlock = BetaBrowserFindToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserFormInputToolUseBlock has been renamed to BetaBrowserFormInputToolUseBlock
+ */
+export type BetaResponseBrowserFormInputToolUseBlock = BetaBrowserFormInputToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserGetPageTextToolUseBlock has been renamed to BetaBrowserGetPageTextToolUseBlock
+ */
+export type BetaResponseBrowserGetPageTextToolUseBlock = BetaBrowserGetPageTextToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserHoldKeyToolUseBlock has been renamed to BetaBrowserHoldKeyToolUseBlock
+ */
+export type BetaResponseBrowserHoldKeyToolUseBlock = BetaBrowserHoldKeyToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserHoverToolUseBlock has been renamed to BetaBrowserHoverToolUseBlock
+ */
+export type BetaResponseBrowserHoverToolUseBlock = BetaBrowserHoverToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserJavascriptExecToolUseBlock has been renamed to BetaBrowserJavascriptExecToolUseBlock
+ */
+export type BetaResponseBrowserJavascriptExecToolUseBlock = BetaBrowserJavascriptExecToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserKeyToolUseBlock has been renamed to BetaBrowserKeyToolUseBlock
+ */
+export type BetaResponseBrowserKeyToolUseBlock = BetaBrowserKeyToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserLeftClickDragToolUseBlock has been renamed to BetaBrowserLeftClickDragToolUseBlock
+ */
+export type BetaResponseBrowserLeftClickDragToolUseBlock = BetaBrowserLeftClickDragToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserLeftClickToolUseBlock has been renamed to BetaBrowserLeftClickToolUseBlock
+ */
+export type BetaResponseBrowserLeftClickToolUseBlock = BetaBrowserLeftClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserLeftMouseDownToolUseBlock has been renamed to BetaBrowserLeftMouseDownToolUseBlock
+ */
+export type BetaResponseBrowserLeftMouseDownToolUseBlock = BetaBrowserLeftMouseDownToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserLeftMouseUpToolUseBlock has been renamed to BetaBrowserLeftMouseUpToolUseBlock
+ */
+export type BetaResponseBrowserLeftMouseUpToolUseBlock = BetaBrowserLeftMouseUpToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserListTabsToolUseBlock has been renamed to BetaBrowserListTabsToolUseBlock
+ */
+export type BetaResponseBrowserListTabsToolUseBlock = BetaBrowserListTabsToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserMiddleClickToolUseBlock has been renamed to BetaBrowserMiddleClickToolUseBlock
+ */
+export type BetaResponseBrowserMiddleClickToolUseBlock = BetaBrowserMiddleClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserMouseMoveToolUseBlock has been renamed to BetaBrowserMouseMoveToolUseBlock
+ */
+export type BetaResponseBrowserMouseMoveToolUseBlock = BetaBrowserMouseMoveToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserNavigateToolUseBlock has been renamed to BetaBrowserNavigateToolUseBlock
+ */
+export type BetaResponseBrowserNavigateToolUseBlock = BetaBrowserNavigateToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserNewTabToolUseBlock has been renamed to BetaBrowserNewTabToolUseBlock
+ */
+export type BetaResponseBrowserNewTabToolUseBlock = BetaBrowserNewTabToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserReadConsoleToolUseBlock has been renamed to BetaBrowserReadConsoleToolUseBlock
+ */
+export type BetaResponseBrowserReadConsoleToolUseBlock = BetaBrowserReadConsoleToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserReadNetworkToolUseBlock has been renamed to BetaBrowserReadNetworkToolUseBlock
+ */
+export type BetaResponseBrowserReadNetworkToolUseBlock = BetaBrowserReadNetworkToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserReadPageToolUseBlock has been renamed to BetaBrowserReadPageToolUseBlock
+ */
+export type BetaResponseBrowserReadPageToolUseBlock = BetaBrowserReadPageToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserRightClickToolUseBlock has been renamed to BetaBrowserRightClickToolUseBlock
+ */
+export type BetaResponseBrowserRightClickToolUseBlock = BetaBrowserRightClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserScreenshotToolUseBlock has been renamed to BetaBrowserScreenshotToolUseBlock
+ */
+export type BetaResponseBrowserScreenshotToolUseBlock = BetaBrowserScreenshotToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserScrollToToolUseBlock has been renamed to BetaBrowserScrollToToolUseBlock
+ */
+export type BetaResponseBrowserScrollToToolUseBlock = BetaBrowserScrollToToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserScrollToolUseBlock has been renamed to BetaBrowserScrollToolUseBlock
+ */
+export type BetaResponseBrowserScrollToolUseBlock = BetaBrowserScrollToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserSwitchTabToolUseBlock has been renamed to BetaBrowserSwitchTabToolUseBlock
+ */
+export type BetaResponseBrowserSwitchTabToolUseBlock = BetaBrowserSwitchTabToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserTripleClickToolUseBlock has been renamed to BetaBrowserTripleClickToolUseBlock
+ */
+export type BetaResponseBrowserTripleClickToolUseBlock = BetaBrowserTripleClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserTypeToolUseBlock has been renamed to BetaBrowserTypeToolUseBlock
+ */
+export type BetaResponseBrowserTypeToolUseBlock = BetaBrowserTypeToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserWaitToolUseBlock has been renamed to BetaBrowserWaitToolUseBlock
+ */
+export type BetaResponseBrowserWaitToolUseBlock = BetaBrowserWaitToolUseBlock;
+
+/**
+ * @deprecated BetaResponseBrowserZoomToolUseBlock has been renamed to BetaBrowserZoomToolUseBlock
+ */
+export type BetaResponseBrowserZoomToolUseBlock = BetaBrowserZoomToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerToolUseBlock has been renamed to BetaComputerToolUseBlock
+ */
+export type BetaResponseComputerToolUseBlock = BetaComputerToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerCursorPositionToolUseBlock has been renamed to BetaComputerCursorPositionToolUseBlock
+ */
+export type BetaResponseComputerCursorPositionToolUseBlock = BetaComputerCursorPositionToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerDoubleClickToolUseBlock has been renamed to BetaComputerDoubleClickToolUseBlock
+ */
+export type BetaResponseComputerDoubleClickToolUseBlock = BetaComputerDoubleClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerHoldKeyToolUseBlock has been renamed to BetaComputerHoldKeyToolUseBlock
+ */
+export type BetaResponseComputerHoldKeyToolUseBlock = BetaComputerHoldKeyToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerKeyToolUseBlock has been renamed to BetaComputerKeyToolUseBlock
+ */
+export type BetaResponseComputerKeyToolUseBlock = BetaComputerKeyToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerLeftClickDragToolUseBlock has been renamed to BetaComputerLeftClickDragToolUseBlock
+ */
+export type BetaResponseComputerLeftClickDragToolUseBlock = BetaComputerLeftClickDragToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerLeftClickToolUseBlock has been renamed to BetaComputerLeftClickToolUseBlock
+ */
+export type BetaResponseComputerLeftClickToolUseBlock = BetaComputerLeftClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerLeftMouseDownToolUseBlock has been renamed to BetaComputerLeftMouseDownToolUseBlock
+ */
+export type BetaResponseComputerLeftMouseDownToolUseBlock = BetaComputerLeftMouseDownToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerLeftMouseUpToolUseBlock has been renamed to BetaComputerLeftMouseUpToolUseBlock
+ */
+export type BetaResponseComputerLeftMouseUpToolUseBlock = BetaComputerLeftMouseUpToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerMiddleClickToolUseBlock has been renamed to BetaComputerMiddleClickToolUseBlock
+ */
+export type BetaResponseComputerMiddleClickToolUseBlock = BetaComputerMiddleClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerMouseMoveToolUseBlock has been renamed to BetaComputerMouseMoveToolUseBlock
+ */
+export type BetaResponseComputerMouseMoveToolUseBlock = BetaComputerMouseMoveToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerRightClickToolUseBlock has been renamed to BetaComputerRightClickToolUseBlock
+ */
+export type BetaResponseComputerRightClickToolUseBlock = BetaComputerRightClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerScreenshotToolUseBlock has been renamed to BetaComputerScreenshotToolUseBlock
+ */
+export type BetaResponseComputerScreenshotToolUseBlock = BetaComputerScreenshotToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerScrollToolUseBlock has been renamed to BetaComputerScrollToolUseBlock
+ */
+export type BetaResponseComputerScrollToolUseBlock = BetaComputerScrollToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerTripleClickToolUseBlock has been renamed to BetaComputerTripleClickToolUseBlock
+ */
+export type BetaResponseComputerTripleClickToolUseBlock = BetaComputerTripleClickToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerTypeToolUseBlock has been renamed to BetaComputerTypeToolUseBlock
+ */
+export type BetaResponseComputerTypeToolUseBlock = BetaComputerTypeToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerWaitToolUseBlock has been renamed to BetaComputerWaitToolUseBlock
+ */
+export type BetaResponseComputerWaitToolUseBlock = BetaComputerWaitToolUseBlock;
+
+/**
+ * @deprecated BetaResponseComputerZoomToolUseBlock has been renamed to BetaComputerZoomToolUseBlock
+ */
+export type BetaResponseComputerZoomToolUseBlock = BetaComputerZoomToolUseBlock;
 
 export type MessageCreateParams = MessageCreateParamsNonStreaming | MessageCreateParamsStreaming;
 
@@ -6279,6 +9256,19 @@ export interface MessageCreateParamsBase {
   cache_control?: BetaCacheControlEphemeral | null;
 
   /**
+   * Body param: Compaction configuration.
+   *
+   * When set on `POST /v1/messages`, the request is a compaction request: the
+   * conversation in `messages` is summarized and the response holds only the
+   * resulting `compaction` block (`stop_reason` `"compaction"`), which later
+   * requests send first in `messages` in place of the messages it summarizes.
+   * `POST /v1/messages/count_tokens` accepts this parameter and ignores it: the
+   * count it returns is for the conversation in `messages` as sent. Cannot be
+   * combined with `context_management`.
+   */
+  compaction?: BetaCompactionConfig | null;
+
+  /**
    * Body param: Container identifier for reuse across requests.
    */
   container?: BetaContainerParams | string | null;
@@ -6292,8 +9282,9 @@ export interface MessageCreateParamsBase {
   context_management?: BetaContextManagementConfig | null;
 
   /**
-   * Body param: Request-level diagnostics. Currently carries the previous response
-   * id for prompt-cache divergence reporting.
+   * Body param: Request-level diagnostics. Supply `previous_message_id` to have the
+   * response include `diagnostics.cache_miss_reason` explaining any prompt-cache
+   * divergence from that prior request.
    */
   diagnostics?: BetaDiagnosticsParam | null;
 
@@ -6370,9 +9361,8 @@ export interface MessageCreateParamsBase {
   service_tier?: 'auto' | 'standard_only';
 
   /**
-   * Body param: Inference speed mode. `fast` provides significantly faster output
-   * token generation at premium pricing. Not all models support `fast`; invalid
-   * combinations are rejected at create time.
+   * Body param: The inference speed mode for this request. `"fast"` enables high
+   * output-tokens-per-second inference.
    */
   speed?: 'standard' | 'fast' | null;
 
@@ -6391,10 +9381,13 @@ export interface MessageCreateParamsBase {
 
   /**
    * Body param: Whether to incrementally stream the response using server-sent
-   * events.
+   * events. When `true`, SDKs return a raw event stream.
    *
-   * See [streaming](https://platform.claude.com/docs/en/build-with-claude/streaming)
-   * for details.
+   * In the TypeScript, Python and Ruby SDKs, the recommended way to stream is
+   * `messages.stream()`. It sets `stream` for you and accumulates the events into
+   * the final message. See
+   * [Streaming with SDKs](https://platform.claude.com/docs/en/build-with-claude/streaming#streaming-with-sdks)
+   * for an example in each language.
    */
   stream?: boolean;
 
@@ -6409,7 +9402,7 @@ export interface MessageCreateParamsBase {
 
   /**
    * @deprecated Deprecated. Models released after Claude Opus 4.6 do not support
-   * setting temperature. A value of 1.0 of will be accepted for backwards
+   * setting temperature. A value of 1.0 will be accepted for backwards
    * compatibility, all other values will be rejected with a 400 error.
    */
   temperature?: number;
@@ -6538,6 +9531,16 @@ export interface MessageCreateParamsBase {
    * beta header.
    */
   user_profile_id?: string;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export namespace MessageCreateParams {
@@ -6548,10 +9551,13 @@ export namespace MessageCreateParams {
 export interface MessageCreateParamsNonStreaming extends MessageCreateParamsBase {
   /**
    * Body param: Whether to incrementally stream the response using server-sent
-   * events.
+   * events. When `true`, SDKs return a raw event stream.
    *
-   * See [streaming](https://platform.claude.com/docs/en/build-with-claude/streaming)
-   * for details.
+   * In the TypeScript, Python and Ruby SDKs, the recommended way to stream is
+   * `messages.stream()`. It sets `stream` for you and accumulates the events into
+   * the final message. See
+   * [Streaming with SDKs](https://platform.claude.com/docs/en/build-with-claude/streaming#streaming-with-sdks)
+   * for an example in each language.
    */
   stream?: false;
 }
@@ -6559,10 +9565,13 @@ export interface MessageCreateParamsNonStreaming extends MessageCreateParamsBase
 export interface MessageCreateParamsStreaming extends MessageCreateParamsBase {
   /**
    * Body param: Whether to incrementally stream the response using server-sent
-   * events.
+   * events. When `true`, SDKs return a raw event stream.
    *
-   * See [streaming](https://platform.claude.com/docs/en/build-with-claude/streaming)
-   * for details.
+   * In the TypeScript, Python and Ruby SDKs, the recommended way to stream is
+   * `messages.stream()`. It sets `stream` for you and accumulates the events into
+   * the final message. See
+   * [Streaming with SDKs](https://platform.claude.com/docs/en/build-with-claude/streaming#streaming-with-sdks)
+   * for an example in each language.
    */
   stream: true;
 }
@@ -6653,6 +9662,19 @@ export interface MessageCountTokensParams {
   cache_control?: BetaCacheControlEphemeral | null;
 
   /**
+   * Body param: Compaction configuration.
+   *
+   * When set on `POST /v1/messages`, the request is a compaction request: the
+   * conversation in `messages` is summarized and the response holds only the
+   * resulting `compaction` block (`stop_reason` `"compaction"`), which later
+   * requests send first in `messages` in place of the messages it summarizes.
+   * `POST /v1/messages/count_tokens` accepts this parameter and ignores it: the
+   * count it returns is for the conversation in `messages` as sent. Cannot be
+   * combined with `context_management`.
+   */
+  compaction?: BetaCompactionConfig | null;
+
+  /**
    * Body param: Context management configuration.
    *
    * This allows you to control how Claude manages context across multiple requests,
@@ -6681,9 +9703,8 @@ export interface MessageCountTokensParams {
   output_format?: BetaJSONOutputFormat | null;
 
   /**
-   * Body param: Inference speed mode. `fast` provides significantly faster output
-   * token generation at premium pricing. Not all models support `fast`; invalid
-   * combinations are rejected at create time.
+   * Body param: The inference speed mode for this request. `"fast"` enables high
+   * output-tokens-per-second inference.
    */
   speed?: 'standard' | 'fast' | null;
 
@@ -6836,6 +9857,16 @@ export interface MessageCountTokensParams {
    * beta header.
    */
   user_profile_id?: string;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export { BetaToolRunner, type BetaToolRunnerParams } from '../../../lib/tools/BetaToolRunner';
@@ -6869,32 +9900,92 @@ export declare namespace Messages {
     type BetaBashCodeExecutionToolResultBlockParam as BetaBashCodeExecutionToolResultBlockParam,
     type BetaBashCodeExecutionToolResultError as BetaBashCodeExecutionToolResultError,
     type BetaBashCodeExecutionToolResultErrorParam as BetaBashCodeExecutionToolResultErrorParam,
+    type BetaBrowserClickTarget as BetaBrowserClickTarget,
     type BetaBrowserCloseTabConfig as BetaBrowserCloseTabConfig,
+    type BetaBrowserCloseTabInput as BetaBrowserCloseTabInput,
+    type BetaBrowserCloseTabToolUseBlock as BetaBrowserCloseTabToolUseBlock,
+    type BetaBrowserCoordinateTarget as BetaBrowserCoordinateTarget,
     type BetaBrowserDoubleClickConfig as BetaBrowserDoubleClickConfig,
+    type BetaBrowserDoubleClickInput as BetaBrowserDoubleClickInput,
+    type BetaBrowserDoubleClickToolUseBlock as BetaBrowserDoubleClickToolUseBlock,
     type BetaBrowserFileUploadConfig as BetaBrowserFileUploadConfig,
+    type BetaBrowserFileUploadInput as BetaBrowserFileUploadInput,
+    type BetaBrowserFileUploadToolUseBlock as BetaBrowserFileUploadToolUseBlock,
     type BetaBrowserFindConfig as BetaBrowserFindConfig,
+    type BetaBrowserFindInput as BetaBrowserFindInput,
+    type BetaBrowserFindToolUseBlock as BetaBrowserFindToolUseBlock,
     type BetaBrowserFormInputConfig as BetaBrowserFormInputConfig,
+    type BetaBrowserFormInputInput as BetaBrowserFormInputInput,
+    type BetaBrowserFormInputToolUseBlock as BetaBrowserFormInputToolUseBlock,
+    type BetaBrowserFormInputValue as BetaBrowserFormInputValue,
     type BetaBrowserGetPageTextConfig as BetaBrowserGetPageTextConfig,
+    type BetaBrowserGetPageTextInput as BetaBrowserGetPageTextInput,
+    type BetaBrowserGetPageTextToolUseBlock as BetaBrowserGetPageTextToolUseBlock,
     type BetaBrowserHoldKeyConfig as BetaBrowserHoldKeyConfig,
+    type BetaBrowserHoldKeyInput as BetaBrowserHoldKeyInput,
+    type BetaBrowserHoldKeyToolUseBlock as BetaBrowserHoldKeyToolUseBlock,
     type BetaBrowserHoverConfig as BetaBrowserHoverConfig,
+    type BetaBrowserHoverInput as BetaBrowserHoverInput,
+    type BetaBrowserHoverToolUseBlock as BetaBrowserHoverToolUseBlock,
     type BetaBrowserJavascriptExecConfig as BetaBrowserJavascriptExecConfig,
+    type BetaBrowserJavascriptExecInput as BetaBrowserJavascriptExecInput,
+    type BetaBrowserJavascriptExecToolUseBlock as BetaBrowserJavascriptExecToolUseBlock,
     type BetaBrowserKeyConfig as BetaBrowserKeyConfig,
+    type BetaBrowserKeyInput as BetaBrowserKeyInput,
+    type BetaBrowserKeyToolUseBlock as BetaBrowserKeyToolUseBlock,
     type BetaBrowserLeftClickConfig as BetaBrowserLeftClickConfig,
     type BetaBrowserLeftClickDragConfig as BetaBrowserLeftClickDragConfig,
+    type BetaBrowserLeftClickDragInput as BetaBrowserLeftClickDragInput,
+    type BetaBrowserLeftClickDragToolUseBlock as BetaBrowserLeftClickDragToolUseBlock,
+    type BetaBrowserLeftClickInput as BetaBrowserLeftClickInput,
+    type BetaBrowserLeftClickToolUseBlock as BetaBrowserLeftClickToolUseBlock,
     type BetaBrowserLeftMouseDownConfig as BetaBrowserLeftMouseDownConfig,
+    type BetaBrowserLeftMouseDownInput as BetaBrowserLeftMouseDownInput,
+    type BetaBrowserLeftMouseDownToolUseBlock as BetaBrowserLeftMouseDownToolUseBlock,
     type BetaBrowserLeftMouseUpConfig as BetaBrowserLeftMouseUpConfig,
+    type BetaBrowserLeftMouseUpInput as BetaBrowserLeftMouseUpInput,
+    type BetaBrowserLeftMouseUpToolUseBlock as BetaBrowserLeftMouseUpToolUseBlock,
     type BetaBrowserListTabsConfig as BetaBrowserListTabsConfig,
+    type BetaBrowserListTabsInput as BetaBrowserListTabsInput,
+    type BetaBrowserListTabsToolUseBlock as BetaBrowserListTabsToolUseBlock,
+    type BetaBrowserMemberInput as BetaBrowserMemberInput,
+    type BetaBrowserMemberName as BetaBrowserMemberName,
     type BetaBrowserMiddleClickConfig as BetaBrowserMiddleClickConfig,
+    type BetaBrowserMiddleClickInput as BetaBrowserMiddleClickInput,
+    type BetaBrowserMiddleClickToolUseBlock as BetaBrowserMiddleClickToolUseBlock,
     type BetaBrowserMouseMoveConfig as BetaBrowserMouseMoveConfig,
+    type BetaBrowserMouseMoveInput as BetaBrowserMouseMoveInput,
+    type BetaBrowserMouseMoveToolUseBlock as BetaBrowserMouseMoveToolUseBlock,
     type BetaBrowserNavigateConfig as BetaBrowserNavigateConfig,
+    type BetaBrowserNavigateInput as BetaBrowserNavigateInput,
+    type BetaBrowserNavigateToolUseBlock as BetaBrowserNavigateToolUseBlock,
     type BetaBrowserNewTabConfig as BetaBrowserNewTabConfig,
+    type BetaBrowserNewTabInput as BetaBrowserNewTabInput,
+    type BetaBrowserNewTabToolUseBlock as BetaBrowserNewTabToolUseBlock,
     type BetaBrowserReadConsoleConfig as BetaBrowserReadConsoleConfig,
+    type BetaBrowserReadConsoleInput as BetaBrowserReadConsoleInput,
+    type BetaBrowserReadConsoleToolUseBlock as BetaBrowserReadConsoleToolUseBlock,
     type BetaBrowserReadNetworkConfig as BetaBrowserReadNetworkConfig,
+    type BetaBrowserReadNetworkInput as BetaBrowserReadNetworkInput,
+    type BetaBrowserReadNetworkToolUseBlock as BetaBrowserReadNetworkToolUseBlock,
     type BetaBrowserReadPageConfig as BetaBrowserReadPageConfig,
+    type BetaBrowserReadPageFilter as BetaBrowserReadPageFilter,
+    type BetaBrowserReadPageInput as BetaBrowserReadPageInput,
+    type BetaBrowserReadPageToolUseBlock as BetaBrowserReadPageToolUseBlock,
+    type BetaBrowserRefTarget as BetaBrowserRefTarget,
     type BetaBrowserRightClickConfig as BetaBrowserRightClickConfig,
+    type BetaBrowserRightClickInput as BetaBrowserRightClickInput,
+    type BetaBrowserRightClickToolUseBlock as BetaBrowserRightClickToolUseBlock,
     type BetaBrowserScreenshotConfig as BetaBrowserScreenshotConfig,
+    type BetaBrowserScreenshotInput as BetaBrowserScreenshotInput,
+    type BetaBrowserScreenshotToolUseBlock as BetaBrowserScreenshotToolUseBlock,
     type BetaBrowserScrollConfig as BetaBrowserScrollConfig,
+    type BetaBrowserScrollDirection as BetaBrowserScrollDirection,
+    type BetaBrowserScrollInput as BetaBrowserScrollInput,
     type BetaBrowserScrollToConfig as BetaBrowserScrollToConfig,
+    type BetaBrowserScrollToInput as BetaBrowserScrollToInput,
+    type BetaBrowserScrollToToolUseBlock as BetaBrowserScrollToToolUseBlock,
+    type BetaBrowserScrollToolUseBlock as BetaBrowserScrollToolUseBlock,
     type BetaBrowserStateBlockParam as BetaBrowserStateBlockParam,
     type BetaBrowserStateChange as BetaBrowserStateChange,
     type BetaBrowserStateChangeDownloadCompleted as BetaBrowserStateChangeDownloadCompleted,
@@ -6903,17 +9994,29 @@ export declare namespace Messages {
     type BetaBrowserStateChangeTabOpened as BetaBrowserStateChangeTabOpened,
     type BetaBrowserStateTabEntry as BetaBrowserStateTabEntry,
     type BetaBrowserSwitchTabConfig as BetaBrowserSwitchTabConfig,
+    type BetaBrowserSwitchTabInput as BetaBrowserSwitchTabInput,
+    type BetaBrowserSwitchTabToolUseBlock as BetaBrowserSwitchTabToolUseBlock,
+    type BetaBrowserToolUseBlock as BetaBrowserToolUseBlock,
     type BetaBrowserToolset20260801 as BetaBrowserToolset20260801,
     type BetaBrowserToolsetConfigs as BetaBrowserToolsetConfigs,
     type BetaBrowserTripleClickConfig as BetaBrowserTripleClickConfig,
+    type BetaBrowserTripleClickInput as BetaBrowserTripleClickInput,
+    type BetaBrowserTripleClickToolUseBlock as BetaBrowserTripleClickToolUseBlock,
     type BetaBrowserTypeConfig as BetaBrowserTypeConfig,
+    type BetaBrowserTypeInput as BetaBrowserTypeInput,
+    type BetaBrowserTypeToolUseBlock as BetaBrowserTypeToolUseBlock,
     type BetaBrowserWaitConfig as BetaBrowserWaitConfig,
+    type BetaBrowserWaitInput as BetaBrowserWaitInput,
+    type BetaBrowserWaitToolUseBlock as BetaBrowserWaitToolUseBlock,
     type BetaBrowserZoomConfig as BetaBrowserZoomConfig,
+    type BetaBrowserZoomInput as BetaBrowserZoomInput,
+    type BetaBrowserZoomToolUseBlock as BetaBrowserZoomToolUseBlock,
     type BetaCacheControlEphemeral as BetaCacheControlEphemeral,
     type BetaCacheCreation as BetaCacheCreation,
     type BetaCacheMissMessagesChanged as BetaCacheMissMessagesChanged,
     type BetaCacheMissModelChanged as BetaCacheMissModelChanged,
     type BetaCacheMissPreviousMessageNotFound as BetaCacheMissPreviousMessageNotFound,
+    type BetaCacheMissReason as BetaCacheMissReason,
     type BetaCacheMissSystemChanged as BetaCacheMissSystemChanged,
     type BetaCacheMissToolsChanged as BetaCacheMissToolsChanged,
     type BetaCacheMissUnavailable as BetaCacheMissUnavailable,
@@ -6934,6 +10037,7 @@ export declare namespace Messages {
     type BetaClearThinking20251015EditResponse as BetaClearThinking20251015EditResponse,
     type BetaClearToolUses20250919Edit as BetaClearToolUses20250919Edit,
     type BetaClearToolUses20250919EditResponse as BetaClearToolUses20250919EditResponse,
+    type BetaClientToolUnion as BetaClientToolUnion,
     type BetaCodeExecutionOutputBlock as BetaCodeExecutionOutputBlock,
     type BetaCodeExecutionOutputBlockParam as BetaCodeExecutionOutputBlockParam,
     type BetaCodeExecutionResultBlock as BetaCodeExecutionResultBlock,
@@ -6952,27 +10056,66 @@ export declare namespace Messages {
     type BetaCompact20260112Edit as BetaCompact20260112Edit,
     type BetaCompactionBlock as BetaCompactionBlock,
     type BetaCompactionBlockParam as BetaCompactionBlockParam,
+    type BetaCompactionConfig as BetaCompactionConfig,
     type BetaCompactionContentBlockDelta as BetaCompactionContentBlockDelta,
     type BetaCompactionIterationUsage as BetaCompactionIterationUsage,
     type BetaComputerCursorPositionConfig as BetaComputerCursorPositionConfig,
+    type BetaComputerCursorPositionInput as BetaComputerCursorPositionInput,
+    type BetaComputerCursorPositionToolUseBlock as BetaComputerCursorPositionToolUseBlock,
     type BetaComputerDoubleClickConfig as BetaComputerDoubleClickConfig,
+    type BetaComputerDoubleClickInput as BetaComputerDoubleClickInput,
+    type BetaComputerDoubleClickToolUseBlock as BetaComputerDoubleClickToolUseBlock,
     type BetaComputerHoldKeyConfig as BetaComputerHoldKeyConfig,
+    type BetaComputerHoldKeyInput as BetaComputerHoldKeyInput,
+    type BetaComputerHoldKeyToolUseBlock as BetaComputerHoldKeyToolUseBlock,
     type BetaComputerKeyConfig as BetaComputerKeyConfig,
+    type BetaComputerKeyInput as BetaComputerKeyInput,
+    type BetaComputerKeyToolUseBlock as BetaComputerKeyToolUseBlock,
     type BetaComputerLeftClickConfig as BetaComputerLeftClickConfig,
     type BetaComputerLeftClickDragConfig as BetaComputerLeftClickDragConfig,
+    type BetaComputerLeftClickDragInput as BetaComputerLeftClickDragInput,
+    type BetaComputerLeftClickDragToolUseBlock as BetaComputerLeftClickDragToolUseBlock,
+    type BetaComputerLeftClickInput as BetaComputerLeftClickInput,
+    type BetaComputerLeftClickToolUseBlock as BetaComputerLeftClickToolUseBlock,
     type BetaComputerLeftMouseDownConfig as BetaComputerLeftMouseDownConfig,
+    type BetaComputerLeftMouseDownInput as BetaComputerLeftMouseDownInput,
+    type BetaComputerLeftMouseDownToolUseBlock as BetaComputerLeftMouseDownToolUseBlock,
     type BetaComputerLeftMouseUpConfig as BetaComputerLeftMouseUpConfig,
+    type BetaComputerLeftMouseUpInput as BetaComputerLeftMouseUpInput,
+    type BetaComputerLeftMouseUpToolUseBlock as BetaComputerLeftMouseUpToolUseBlock,
+    type BetaComputerMemberInput as BetaComputerMemberInput,
+    type BetaComputerMemberName as BetaComputerMemberName,
     type BetaComputerMiddleClickConfig as BetaComputerMiddleClickConfig,
+    type BetaComputerMiddleClickInput as BetaComputerMiddleClickInput,
+    type BetaComputerMiddleClickToolUseBlock as BetaComputerMiddleClickToolUseBlock,
     type BetaComputerMouseMoveConfig as BetaComputerMouseMoveConfig,
+    type BetaComputerMouseMoveInput as BetaComputerMouseMoveInput,
+    type BetaComputerMouseMoveToolUseBlock as BetaComputerMouseMoveToolUseBlock,
     type BetaComputerRightClickConfig as BetaComputerRightClickConfig,
+    type BetaComputerRightClickInput as BetaComputerRightClickInput,
+    type BetaComputerRightClickToolUseBlock as BetaComputerRightClickToolUseBlock,
     type BetaComputerScreenshotConfig as BetaComputerScreenshotConfig,
+    type BetaComputerScreenshotInput as BetaComputerScreenshotInput,
+    type BetaComputerScreenshotToolUseBlock as BetaComputerScreenshotToolUseBlock,
     type BetaComputerScrollConfig as BetaComputerScrollConfig,
+    type BetaComputerScrollDirection as BetaComputerScrollDirection,
+    type BetaComputerScrollInput as BetaComputerScrollInput,
+    type BetaComputerScrollToolUseBlock as BetaComputerScrollToolUseBlock,
+    type BetaComputerToolUseBlock as BetaComputerToolUseBlock,
     type BetaComputerToolset20260801 as BetaComputerToolset20260801,
     type BetaComputerToolsetConfigs as BetaComputerToolsetConfigs,
     type BetaComputerTripleClickConfig as BetaComputerTripleClickConfig,
+    type BetaComputerTripleClickInput as BetaComputerTripleClickInput,
+    type BetaComputerTripleClickToolUseBlock as BetaComputerTripleClickToolUseBlock,
     type BetaComputerTypeConfig as BetaComputerTypeConfig,
+    type BetaComputerTypeInput as BetaComputerTypeInput,
+    type BetaComputerTypeToolUseBlock as BetaComputerTypeToolUseBlock,
     type BetaComputerWaitConfig as BetaComputerWaitConfig,
+    type BetaComputerWaitInput as BetaComputerWaitInput,
+    type BetaComputerWaitToolUseBlock as BetaComputerWaitToolUseBlock,
     type BetaComputerZoomConfig as BetaComputerZoomConfig,
+    type BetaComputerZoomInput as BetaComputerZoomInput,
+    type BetaComputerZoomToolUseBlock as BetaComputerZoomToolUseBlock,
     type BetaContainer as BetaContainer,
     type BetaContainerParams as BetaContainerParams,
     type BetaContainerSkill as BetaContainerSkill,
@@ -7010,10 +10153,15 @@ export declare namespace Messages {
     type BetaInputJSONDelta as BetaInputJSONDelta,
     type BetaInputTokensClearAtLeast as BetaInputTokensClearAtLeast,
     type BetaInputTokensTrigger as BetaInputTokensTrigger,
+    type BetaInputTransformation as BetaInputTransformation,
     type BetaIterationsUsage as BetaIterationsUsage,
     type BetaJSONOutputFormat as BetaJSONOutputFormat,
+    type BetaMCPTool as BetaMCPTool,
     type BetaMCPToolConfig as BetaMCPToolConfig,
     type BetaMCPToolDefaultConfig as BetaMCPToolDefaultConfig,
+    type BetaMCPToolListingBlock as BetaMCPToolListingBlock,
+    type BetaMCPToolListingBlockParam as BetaMCPToolListingBlockParam,
+    type BetaMCPToolParam as BetaMCPToolParam,
     type BetaMCPToolResultBlock as BetaMCPToolResultBlock,
     type BetaMCPToolUseBlock as BetaMCPToolUseBlock,
     type BetaMCPToolUseBlockParam as BetaMCPToolUseBlockParam,
@@ -7052,6 +10200,14 @@ export declare namespace Messages {
     type BetaRequestMCPToolResultBlockParam as BetaRequestMCPToolResultBlockParam,
     type BetaRequestToolAdditionBlock as BetaRequestToolAdditionBlock,
     type BetaRequestToolRemovalBlock as BetaRequestToolRemovalBlock,
+    type BetaResponseTool as BetaResponseTool,
+    type BetaResponseToolAdditionBlock as BetaResponseToolAdditionBlock,
+    type BetaResponseToolChangeMCPToolReference as BetaResponseToolChangeMCPToolReference,
+    type BetaResponseToolChangeMCPToolsetReference as BetaResponseToolChangeMCPToolsetReference,
+    type BetaResponseToolChangeToolReference as BetaResponseToolChangeToolReference,
+    type BetaResponseToolInputSchema as BetaResponseToolInputSchema,
+    type BetaResponseToolRemovalBlock as BetaResponseToolRemovalBlock,
+    type BetaResponseToolUnion as BetaResponseToolUnion,
     type BetaSearchResultBlockParam as BetaSearchResultBlockParam,
     type BetaServerToolCaller as BetaServerToolCaller,
     type BetaServerToolCaller20260120 as BetaServerToolCaller20260120,
@@ -7061,6 +10217,8 @@ export declare namespace Messages {
     type BetaSignatureDelta as BetaSignatureDelta,
     type BetaSkillParams as BetaSkillParams,
     type BetaStopReason as BetaStopReason,
+    type BetaSummarizeCompaction as BetaSummarizeCompaction,
+    type BetaSystemMessageOutputConfig as BetaSystemMessageOutputConfig,
     type BetaTextBlock as BetaTextBlock,
     type BetaTextBlockParam as BetaTextBlockParam,
     type BetaTextCitation as BetaTextCitation,
@@ -7077,12 +10235,17 @@ export declare namespace Messages {
     type BetaTextEditorCodeExecutionViewResultBlock as BetaTextEditorCodeExecutionViewResultBlock,
     type BetaTextEditorCodeExecutionViewResultBlockParam as BetaTextEditorCodeExecutionViewResultBlockParam,
     type BetaThinkingBlock as BetaThinkingBlock,
+    type BetaThinkingBlockBinding as BetaThinkingBlockBinding,
     type BetaThinkingBlockParam as BetaThinkingBlockParam,
     type BetaThinkingConfigAdaptive as BetaThinkingConfigAdaptive,
+    type BetaThinkingConfigBetweenTools as BetaThinkingConfigBetweenTools,
     type BetaThinkingConfigDisabled as BetaThinkingConfigDisabled,
     type BetaThinkingConfigEnabled as BetaThinkingConfigEnabled,
     type BetaThinkingConfigParam as BetaThinkingConfigParam,
     type BetaThinkingDelta as BetaThinkingDelta,
+    type BetaThinkingDroppedInputTransformation as BetaThinkingDroppedInputTransformation,
+    type BetaThinkingMismatchAllowedInputTransformation as BetaThinkingMismatchAllowedInputTransformation,
+    type BetaThinkingPrefixMismatchBehavior as BetaThinkingPrefixMismatchBehavior,
     type BetaThinkingTurns as BetaThinkingTurns,
     type BetaTokenTaskBudget as BetaTokenTaskBudget,
     type BetaTool as BetaTool,
@@ -7090,6 +10253,8 @@ export declare namespace Messages {
     type BetaToolBash20250124 as BetaToolBash20250124,
     type BetaToolChangeMCPToolReference as BetaToolChangeMCPToolReference,
     type BetaToolChangeMCPToolsetReference as BetaToolChangeMCPToolsetReference,
+    type BetaToolChangeToolDefinition as BetaToolChangeToolDefinition,
+    type BetaToolChangeToolDefinitionParam as BetaToolChangeToolDefinitionParam,
     type BetaToolChangeToolReference as BetaToolChangeToolReference,
     type BetaToolChoice as BetaToolChoice,
     type BetaToolChoiceAny as BetaToolChoiceAny,
@@ -7118,8 +10283,10 @@ export declare namespace Messages {
     type BetaToolUnion as BetaToolUnion,
     type BetaToolUseBlock as BetaToolUseBlock,
     type BetaToolUseBlockParam as BetaToolUseBlockParam,
+    type BetaToolUseCaller as BetaToolUseCaller,
     type BetaToolUsesKeep as BetaToolUsesKeep,
     type BetaToolUsesTrigger as BetaToolUsesTrigger,
+    type BetaToolsetToolUseBlock as BetaToolsetToolUseBlock,
     type BetaURLImageSource as BetaURLImageSource,
     type BetaURLPDFSource as BetaURLPDFSource,
     type BetaUsage as BetaUsage,
@@ -7135,6 +10302,12 @@ export declare namespace Messages {
     type BetaWebFetchToolResultErrorBlock as BetaWebFetchToolResultErrorBlock,
     type BetaWebFetchToolResultErrorBlockParam as BetaWebFetchToolResultErrorBlockParam,
     type BetaWebFetchToolResultErrorCode as BetaWebFetchToolResultErrorCode,
+    type BetaWebFetchURLSourceAll as BetaWebFetchURLSourceAll,
+    type BetaWebFetchURLSourceExcept as BetaWebFetchURLSourceExcept,
+    type BetaWebFetchURLSourceNone as BetaWebFetchURLSourceNone,
+    type BetaWebFetchURLSourceOnly as BetaWebFetchURLSourceOnly,
+    type BetaWebFetchURLSourceToolReference as BetaWebFetchURLSourceToolReference,
+    type BetaWebFetchURLSources as BetaWebFetchURLSources,
     type BetaWebSearchResultBlock as BetaWebSearchResultBlock,
     type BetaWebSearchResultBlockParam as BetaWebSearchResultBlockParam,
     type BetaWebSearchTool20250305 as BetaWebSearchTool20250305,
@@ -7148,6 +10321,57 @@ export declare namespace Messages {
     type BetaWebSearchToolResultError as BetaWebSearchToolResultError,
     type BetaWebSearchToolResultErrorCode as BetaWebSearchToolResultErrorCode,
     type BetaBase64PDFBlock as BetaBase64PDFBlock,
+    type BetaResponseToolUseBlockUnion as BetaResponseToolUseBlockUnion,
+    type BetaResponseBrowserToolUseBlock as BetaResponseBrowserToolUseBlock,
+    type BetaResponseBrowserCloseTabToolUseBlock as BetaResponseBrowserCloseTabToolUseBlock,
+    type BetaResponseBrowserDoubleClickToolUseBlock as BetaResponseBrowserDoubleClickToolUseBlock,
+    type BetaResponseBrowserFileUploadToolUseBlock as BetaResponseBrowserFileUploadToolUseBlock,
+    type BetaResponseBrowserFindToolUseBlock as BetaResponseBrowserFindToolUseBlock,
+    type BetaResponseBrowserFormInputToolUseBlock as BetaResponseBrowserFormInputToolUseBlock,
+    type BetaResponseBrowserGetPageTextToolUseBlock as BetaResponseBrowserGetPageTextToolUseBlock,
+    type BetaResponseBrowserHoldKeyToolUseBlock as BetaResponseBrowserHoldKeyToolUseBlock,
+    type BetaResponseBrowserHoverToolUseBlock as BetaResponseBrowserHoverToolUseBlock,
+    type BetaResponseBrowserJavascriptExecToolUseBlock as BetaResponseBrowserJavascriptExecToolUseBlock,
+    type BetaResponseBrowserKeyToolUseBlock as BetaResponseBrowserKeyToolUseBlock,
+    type BetaResponseBrowserLeftClickDragToolUseBlock as BetaResponseBrowserLeftClickDragToolUseBlock,
+    type BetaResponseBrowserLeftClickToolUseBlock as BetaResponseBrowserLeftClickToolUseBlock,
+    type BetaResponseBrowserLeftMouseDownToolUseBlock as BetaResponseBrowserLeftMouseDownToolUseBlock,
+    type BetaResponseBrowserLeftMouseUpToolUseBlock as BetaResponseBrowserLeftMouseUpToolUseBlock,
+    type BetaResponseBrowserListTabsToolUseBlock as BetaResponseBrowserListTabsToolUseBlock,
+    type BetaResponseBrowserMiddleClickToolUseBlock as BetaResponseBrowserMiddleClickToolUseBlock,
+    type BetaResponseBrowserMouseMoveToolUseBlock as BetaResponseBrowserMouseMoveToolUseBlock,
+    type BetaResponseBrowserNavigateToolUseBlock as BetaResponseBrowserNavigateToolUseBlock,
+    type BetaResponseBrowserNewTabToolUseBlock as BetaResponseBrowserNewTabToolUseBlock,
+    type BetaResponseBrowserReadConsoleToolUseBlock as BetaResponseBrowserReadConsoleToolUseBlock,
+    type BetaResponseBrowserReadNetworkToolUseBlock as BetaResponseBrowserReadNetworkToolUseBlock,
+    type BetaResponseBrowserReadPageToolUseBlock as BetaResponseBrowserReadPageToolUseBlock,
+    type BetaResponseBrowserRightClickToolUseBlock as BetaResponseBrowserRightClickToolUseBlock,
+    type BetaResponseBrowserScreenshotToolUseBlock as BetaResponseBrowserScreenshotToolUseBlock,
+    type BetaResponseBrowserScrollToToolUseBlock as BetaResponseBrowserScrollToToolUseBlock,
+    type BetaResponseBrowserScrollToolUseBlock as BetaResponseBrowserScrollToolUseBlock,
+    type BetaResponseBrowserSwitchTabToolUseBlock as BetaResponseBrowserSwitchTabToolUseBlock,
+    type BetaResponseBrowserTripleClickToolUseBlock as BetaResponseBrowserTripleClickToolUseBlock,
+    type BetaResponseBrowserTypeToolUseBlock as BetaResponseBrowserTypeToolUseBlock,
+    type BetaResponseBrowserWaitToolUseBlock as BetaResponseBrowserWaitToolUseBlock,
+    type BetaResponseBrowserZoomToolUseBlock as BetaResponseBrowserZoomToolUseBlock,
+    type BetaResponseComputerToolUseBlock as BetaResponseComputerToolUseBlock,
+    type BetaResponseComputerCursorPositionToolUseBlock as BetaResponseComputerCursorPositionToolUseBlock,
+    type BetaResponseComputerDoubleClickToolUseBlock as BetaResponseComputerDoubleClickToolUseBlock,
+    type BetaResponseComputerHoldKeyToolUseBlock as BetaResponseComputerHoldKeyToolUseBlock,
+    type BetaResponseComputerKeyToolUseBlock as BetaResponseComputerKeyToolUseBlock,
+    type BetaResponseComputerLeftClickDragToolUseBlock as BetaResponseComputerLeftClickDragToolUseBlock,
+    type BetaResponseComputerLeftClickToolUseBlock as BetaResponseComputerLeftClickToolUseBlock,
+    type BetaResponseComputerLeftMouseDownToolUseBlock as BetaResponseComputerLeftMouseDownToolUseBlock,
+    type BetaResponseComputerLeftMouseUpToolUseBlock as BetaResponseComputerLeftMouseUpToolUseBlock,
+    type BetaResponseComputerMiddleClickToolUseBlock as BetaResponseComputerMiddleClickToolUseBlock,
+    type BetaResponseComputerMouseMoveToolUseBlock as BetaResponseComputerMouseMoveToolUseBlock,
+    type BetaResponseComputerRightClickToolUseBlock as BetaResponseComputerRightClickToolUseBlock,
+    type BetaResponseComputerScreenshotToolUseBlock as BetaResponseComputerScreenshotToolUseBlock,
+    type BetaResponseComputerScrollToolUseBlock as BetaResponseComputerScrollToolUseBlock,
+    type BetaResponseComputerTripleClickToolUseBlock as BetaResponseComputerTripleClickToolUseBlock,
+    type BetaResponseComputerTypeToolUseBlock as BetaResponseComputerTypeToolUseBlock,
+    type BetaResponseComputerWaitToolUseBlock as BetaResponseComputerWaitToolUseBlock,
+    type BetaResponseComputerZoomToolUseBlock as BetaResponseComputerZoomToolUseBlock,
     type MessageCreateParams as MessageCreateParams,
     type MessageCreateParamsNonStreaming as MessageCreateParamsNonStreaming,
     type MessageCreateParamsStreaming as MessageCreateParamsStreaming,

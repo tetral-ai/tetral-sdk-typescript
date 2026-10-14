@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../../../core/resource';
 import * as BetaAPI from '../../../beta';
 import * as WorkspacesAPI from './workspaces';
@@ -307,8 +305,9 @@ export interface BetaFederationRule {
   oauth_scope: string;
 
   /**
-   * Identity that tokens minted via this rule act as. Currently always a
-   * `service_account` target.
+   * What this rule targets. Check `type` before reading the other fields. Tokens
+   * minted via a rule whose target `type` is `service_account` act as that service
+   * account.
    */
   target: BetaServiceAccountTarget;
 
@@ -527,11 +526,8 @@ export interface RuleUpdateParams {
   description?: string | null;
 
   /**
-   * Body param: Does the incoming JWT qualify?
-   *
-   * All populated fields must pass; omitted fields are skipped. At least one of
-   * `subject_prefix` (other than a wildcard-only value like `*`), `claims`, or
-   * `condition` is required; `audience` alone is not sufficient.
+   * Body param: Replaces the entire match object. All populated matcher fields must
+   * pass.
    */
   match?: BetaFederationRuleMatch | null;
 
@@ -549,7 +545,8 @@ export interface RuleUpdateParams {
   oauth_scope?: string | null;
 
   /**
-   * Body param: Bind to a fixed service account by ID.
+   * Body param: Replaces the entire target object. Currently always a
+   * `service_account` target.
    */
   target?: BetaServiceAccountTarget | null;
 

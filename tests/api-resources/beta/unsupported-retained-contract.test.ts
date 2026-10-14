@@ -101,7 +101,7 @@ describe('Tetral retained unsupported SDK surface contract', () => {
       type: 'invalid_request_error',
     });
     await expect(
-      client.beta.userProfiles.create({ external_id: 'user_123', relationship: 'external' }),
+      client.beta.userProfiles.create({ external_id: 'user_123', access_type: 'application' }),
     ).rejects.toMatchObject({
       status: 400,
       type: 'invalid_request_error',

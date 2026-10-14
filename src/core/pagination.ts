@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { AnthropicError } from './error';
 import { FinalRequestOptions } from '../internal/request-options';
 import { defaultParseResponse, WithRequestID } from '../internal/parse';
@@ -301,6 +299,10 @@ export class PageCursor<Item> extends AbstractPage<Item> implements PageCursorRe
     return this.data ?? [];
   }
 
+  override hasNextPage(): boolean {
+    return this.nextPageRequestOptions() != null;
+  }
+
   nextPageRequestOptions(): PageRequestOptions | null {
     const cursor = this.next_page;
     if (!cursor) {
@@ -359,6 +361,10 @@ export class BidirectionalPageCursor<Item>
 
   getPaginatedItems(): Item[] {
     return this.data ?? [];
+  }
+
+  override hasNextPage(): boolean {
+    return this.nextPageRequestOptions() != null;
   }
 
   nextPageRequestOptions(): PageRequestOptions | null {

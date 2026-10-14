@@ -31,10 +31,10 @@ const STREAM_A_TOOL = fs.readFileSync(path.join(FIXTURES, 'stream-a-toolrefusal.
 
 // silence the missing-fallbackState warning in tests that fall back without one
 beforeEach(() => {
-  jest.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 // --- helpers --------------------------------------------------------------
@@ -211,7 +211,11 @@ describe('betaRefusalFallbackMiddleware (streaming) — shape-B continuation', (
     // B's message_start is suppressed.
     expect(events.filter((e) => e.data.type === 'message_start')).toHaveLength(1);
     expect(events.filter((e) => e.data.type === 'message_stop')).toHaveLength(1);
-    expect(events.filter((e) => e.data.type === 'message_delta')).toHaveLength(1);
+    const deltas = events.filter((e) => e.data.type === 'message_delta');
+    expect(deltas).toHaveLength(1);
+    // B's suppressed message_start has no `input_transformations`, so the
+    // terminal delta gains none.
+    expect('input_transformations' in deltas[0]!.data).toBe(false);
   });
 
   test('usage.iterations is the 2-entry server shape, with no spurious message:undefined', async () => {
@@ -261,6 +265,27 @@ describe('betaRefusalFallbackMiddleware (streaming) — shape-B continuation', (
     expect(appended.content[0]).toHaveProperty('signature');
   });
 
+  test('between_tools thinking degrades to disabled on the hop', async () => {
+    const { requests } = await runMiddleware(
+      { fallbacks: FALLBACKS },
+      { ...ORIGINAL_BODY, thinking: { type: 'between_tools' } },
+      [sseResponse(STREAM_A), sseResponse(STREAM_B)],
+    );
+
+    const bodies = requests.map((r) => JSON.parse(r.body as string));
+    expect(bodies.map((b) => b.thinking)).toEqual([{ type: 'between_tools' }, { type: 'disabled' }]);
+  });
+
+  test('between_tools thinking degrades even when the entry sets thinking', async () => {
+    const { requests } = await runMiddleware(
+      { fallbacks: [{ model: FALLBACK_MODEL, thinking: { type: 'between_tools' } }] },
+      { ...ORIGINAL_BODY, thinking: { type: 'between_tools' } },
+      [sseResponse(STREAM_A), sseResponse(STREAM_B)],
+    );
+
+    expect(JSON.parse(requests[1]!.body as string).thinking).toEqual({ type: 'disabled' });
+  });
+
   test('appends the fallback-credit beta to both the original and hop requests', async () => {
     // requestA already carries a beta header; the default is appended to it.
     const { requests } = await runMiddleware({ fallbacks: FALLBACKS }, ORIGINAL_BODY, [
@@ -269,8 +294,8 @@ describe('betaRefusalFallbackMiddleware (streaming) — shape-B continuation', (
     ]);
 
     expect(requests.map((r) => r.headers.get('anthropic-beta'))).toEqual([
-      'interleaved-thinking-2025-05-14, fallback-credit-2026-07-01',
-      'interleaved-thinking-2025-05-14, fallback-credit-2026-07-01',
+      'interleaved-thinking-2025-05-14,fallback-credit-2026-07-01',
+      'interleaved-thinking-2025-05-14,fallback-credit-2026-07-01',
     ]);
   });
 
@@ -282,8 +307,8 @@ describe('betaRefusalFallbackMiddleware (streaming) — shape-B continuation', (
     );
 
     expect(requests.map((r) => r.headers.get('anthropic-beta'))).toEqual([
-      'interleaved-thinking-2025-05-14, fallback-credit-2027-01-01',
-      'interleaved-thinking-2025-05-14, fallback-credit-2027-01-01',
+      'interleaved-thinking-2025-05-14,fallback-credit-2027-01-01',
+      'interleaved-thinking-2025-05-14,fallback-credit-2027-01-01',
     ]);
   });
 });
@@ -342,7 +367,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — edge cases', () => {
 
   test('refusal with no credit token passes A through and reports via onError', async () => {
     const noToken = STREAM_A.replace(/"fallback_credit_token":"[^"]*"/, '"fallback_credit_token":null');
-    const onError = jest.fn();
+    const onError = vi.fn();
 
     const { events, requests } = await runMiddleware({ fallbacks: FALLBACKS, onError }, ORIGINAL_BODY, [
       sseResponse(noToken),
@@ -366,7 +391,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — edge cases', () => {
   });
 
   test('a 400 on the prefill form retries the same hop without the partial', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { events, requests } = await runMiddleware({ fallbacks: FALLBACKS, onError }, ORIGINAL_BODY, [
       sseResponse(STREAM_A),
       jsonResponse({ type: 'error', error: { type: 'invalid_request_error', message: 'bad prefill' } }, 400),
@@ -394,7 +419,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — edge cases', () => {
   });
 
   test('a failed fallback request synthesizes a refusal close and reports via onError', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     // Give A's refusal a real category/explanation to prove they thread through.
     const refusedA = STREAM_A.replace(
       '"category":null,"explanation":null',
@@ -440,7 +465,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — edge cases', () => {
   });
 
   test('a fallback request that throws synthesizes a refusal close instead of erroring the stream', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { events } = await runMiddleware({ fallbacks: FALLBACKS, onError }, ORIGINAL_BODY, [
       sseResponse(STREAM_A),
       new Error('connection reset'),
@@ -463,7 +488,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — edge cases', () => {
   });
 
   test('a non-string request body passes the stream through untouched (splicing needs the JSON body)', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const resA = sseResponse(STREAM_A);
     const { out, requests } = await runMiddleware(
       {
@@ -601,7 +626,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — edge cases', () => {
       })}\n\n`,
       `event: message_stop\ndata: ${JSON.stringify({ type: 'message_stop' })}\n\n`,
     ].join('');
-    const onError = jest.fn();
+    const onError = vi.fn();
 
     const { events, requests } = await runMiddleware({ fallbacks: FALLBACKS, onError }, ORIGINAL_BODY, [
       sseResponse(normal),
@@ -747,10 +772,10 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallbackState', () => {
     const middleware = betaRefusalFallbackMiddleware(FALLBACKS);
     // an injected logger rather than a console.warn spy: the SDK caches bound
     // console methods across tests, so per-test console spies go stale
-    const warn = jest.fn();
+    const warn = vi.fn();
     const ctx: MiddlewareContext = {
       options: { method: 'post', path: '/v1/messages?beta=true', body: ORIGINAL_BODY, stream: true } as any,
-      logger: { error: jest.fn(), warn, info: jest.fn(), debug: jest.fn() },
+      logger: { error: vi.fn(), warn, info: vi.fn(), debug: vi.fn() },
       parse: async <T>(r: Response): Promise<T> => JSON.parse(await r.clone().text()) as T,
     };
     const requestA: APIRequest = {
@@ -870,7 +895,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallback chain', () => {
   });
 
   test('an HTTP-failed hop is skipped; the unredeemed token carries to the next entry', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { events, requests } = await runMiddleware(
       { fallbacks: [{ model: FALLBACK_MODEL }, { model: SECOND_MODEL }], onError },
       ORIGINAL_BODY,
@@ -927,7 +952,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallback chain', () => {
   });
 
   test('a terminal refusal with no entries left is emitted with the full iteration chain', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { events, requests } = await runMiddleware({ fallbacks: FALLBACKS, onError }, ORIGINAL_BODY, [
       sseResponse(STREAM_A),
       sseResponse(hopRefusal),
@@ -946,7 +971,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallback chain', () => {
   });
 
   test('a token-less refusal on the final hop is still reported via onError', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const hopNoToken = [
       messageStart(),
       ev({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } }),
@@ -966,7 +991,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallback chain', () => {
   });
 
   test('an empty chain passes the stream through untouched', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const resA = sseResponse(STREAM_A);
     const { out, events, requests } = await runMiddleware({ fallbacks: [], onError }, ORIGINAL_BODY, [resA]);
 
@@ -980,7 +1005,7 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallback chain', () => {
   });
 
   test('a hop whose request throws is skipped; the unredeemed token carries to the next entry', async () => {
-    const onError = jest.fn();
+    const onError = vi.fn();
     const { events, requests } = await runMiddleware(
       { fallbacks: [{ model: FALLBACK_MODEL }, { model: SECOND_MODEL }], onError },
       ORIGINAL_BODY,
@@ -1005,6 +1030,108 @@ describe('betaRefusalFallbackMiddleware (streaming) — fallback chain', () => {
       ['message', 'claude-fable-5'],
       ['fallback_message', SECOND_MODEL],
     ]);
+  });
+});
+
+// --- input_transformations ---------------------------------------------------
+
+describe('betaRefusalFallbackMiddleware (streaming) — input_transformations', () => {
+  const B_TRANSFORMATIONS = [
+    { type: 'thinking_dropped', path: 'messages.1.content.0', reason: 'model_binding_mismatch' },
+  ];
+
+  // A serving fallback hop whose (suppressed) message_start carries its own
+  // input_transformations; `delta` optionally overrides the terminal delta's.
+  const hopServing = (delta: Record<string, unknown> = {}) =>
+    [
+      ev({
+        type: 'message_start',
+        message: {
+          id: 'msg_b',
+          type: 'message',
+          role: 'assistant',
+          model: FALLBACK_MODEL,
+          content: [],
+          stop_reason: null,
+          stop_sequence: null,
+          usage: { input_tokens: 12, output_tokens: 1 },
+          input_transformations: B_TRANSFORMATIONS,
+        },
+      }),
+      ev({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } }),
+      ev({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'Served by B.' } }),
+      ev({ type: 'content_block_stop', index: 0 }),
+      ev({
+        type: 'message_delta',
+        delta: { stop_reason: 'end_turn', stop_sequence: null },
+        usage: { output_tokens: 5 },
+        ...delta,
+      }),
+      ev({ type: 'message_stop' }),
+    ].join('');
+
+  test("the spliced terminal message_delta carries the fallback hop's input_transformations", async () => {
+    const { events } = await runMiddleware({ fallbacks: FALLBACKS }, ORIGINAL_BODY, [
+      sseResponse(STREAM_A),
+      sseResponse(hopServing()),
+    ]);
+
+    // B's message_start is suppressed, so its list rides on the re-emitted
+    // terminal delta — the shape a server-side mid-stream fallback sends.
+    expect(events.filter((e) => e.data.type === 'message_start')).toHaveLength(1);
+    const deltas = events.filter((e) => e.data.type === 'message_delta');
+    expect(deltas).toHaveLength(1);
+    expect(deltas[0]!.data.delta.stop_reason).toBe('end_turn');
+    expect(deltas[0]!.data.input_transformations).toEqual(B_TRANSFORMATIONS);
+  });
+
+  test('a terminal message_delta that already carries input_transformations is left as-is', async () => {
+    const { events } = await runMiddleware({ fallbacks: FALLBACKS }, ORIGINAL_BODY, [
+      sseResponse(STREAM_A),
+      sseResponse(hopServing({ input_transformations: [] })),
+    ]);
+
+    const deltas = events.filter((e) => e.data.type === 'message_delta');
+    expect(deltas).toHaveLength(1);
+    expect(deltas[0]!.data.input_transformations).toEqual([]);
+  });
+
+  test("a degraded chain's surfaced refusal carries the spliced hop's input_transformations", async () => {
+    const onError = vi.fn();
+    // B refuses with a fresh token, then C's request fails with no entries
+    // left: B's held refusal is surfaced as the terminal, its list intact.
+    const hopRefusing = hopServing({
+      delta: {
+        stop_reason: 'refusal',
+        stop_sequence: null,
+        stop_details: {
+          type: 'refusal',
+          category: null,
+          explanation: null,
+          fallback_credit_token: 'tok_b',
+          fallback_has_prefill_claim: false,
+        },
+      },
+    });
+    const { events, requests } = await runMiddleware(
+      { fallbacks: [{ model: FALLBACK_MODEL }, { model: SECOND_MODEL }], onError },
+      ORIGINAL_BODY,
+      [
+        sseResponse(STREAM_A),
+        sseResponse(hopRefusing),
+        jsonResponse({ type: 'error', error: { type: 'api_error', message: 'down' } }, 503),
+      ],
+    );
+
+    expect(requests).toHaveLength(3);
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(events.filter((e) => e.data.type === 'message_start')).toHaveLength(1);
+    const deltas = events.filter((e) => e.data.type === 'message_delta');
+    expect(deltas).toHaveLength(1);
+    expect(deltas[0]!.data.delta.stop_reason).toBe('refusal');
+    expect(deltas[0]!.data.delta.stop_details.recommended_model).toBe(SECOND_MODEL);
+    expect(deltas[0]!.data.input_transformations).toEqual(B_TRANSFORMATIONS);
+    expect(events[events.length - 1]!.data.type).toBe('message_stop');
   });
 });
 
@@ -1199,6 +1326,73 @@ describe('betaRefusalFallbackMiddleware (streaming) — tool-use refusals', () =
     // The result block keeps its pairing id.
     expect(appended.content[1].tool_use_id).toBe('srvtoolu_fixture_a_0001');
     expect(appended.content[1].type).toBe('web_search_tool_result');
+  });
+
+  test('a compaction block streamed before the refusal is echoed with its summary, not the empty shell', async () => {
+    // Wire shape: the block opens with null content and one compaction_delta carries its final value.
+    const streamA = [
+      messageStart(),
+      ev({ type: 'content_block_start', index: 0, content_block: { type: 'compaction', content: null } }),
+      ev({
+        type: 'content_block_delta',
+        index: 0,
+        delta: { type: 'compaction_delta', content: 'Summary of the conversation so far' },
+      }),
+      ev({ type: 'content_block_stop', index: 0 }),
+      ev({ type: 'content_block_start', index: 1, content_block: { type: 'text', text: '' } }),
+      ev({
+        type: 'content_block_delta',
+        index: 1,
+        delta: { type: 'text_delta', text: 'A solar eclipse is' },
+      }),
+      refusalDelta(),
+      ev({ type: 'message_stop' }),
+    ].join('');
+
+    const { requests } = await runMiddleware({ fallbacks: FALLBACKS }, ORIGINAL_BODY, [
+      sseResponse(streamA),
+      sseResponse(STREAM_B),
+    ]);
+
+    const appended = JSON.parse(requests[1]!.body as string).messages[1];
+    expect(appended.role).toBe('assistant');
+    expect(appended.content).toEqual([
+      { type: 'compaction', content: 'Summary of the conversation so far' },
+      { type: 'text', text: 'A solar eclipse is' },
+    ]);
+  });
+
+  test('a failed compaction block is echoed with its null content', async () => {
+    const streamA = [
+      messageStart(),
+      ev({
+        type: 'content_block_start',
+        index: 0,
+        content_block: { type: 'compaction', content: null, encrypted_content: null },
+      }),
+      ev({
+        type: 'content_block_delta',
+        index: 0,
+        delta: { type: 'compaction_delta', content: null, encrypted_content: null },
+      }),
+      ev({ type: 'content_block_stop', index: 0 }),
+      ev({ type: 'content_block_start', index: 1, content_block: { type: 'text', text: '' } }),
+      ev({
+        type: 'content_block_delta',
+        index: 1,
+        delta: { type: 'text_delta', text: 'A solar eclipse is' },
+      }),
+      refusalDelta(),
+      ev({ type: 'message_stop' }),
+    ].join('');
+
+    const { requests } = await runMiddleware({ fallbacks: FALLBACKS }, ORIGINAL_BODY, [
+      sseResponse(streamA),
+      sseResponse(STREAM_B),
+    ]);
+
+    const appended = JSON.parse(requests[1]!.body as string).messages[1];
+    expect(appended.content[0]).toEqual({ type: 'compaction', content: null, encrypted_content: null });
   });
 
   test('mid-loop refusal ending in thinking is appended as-is when the claim allows it', async () => {

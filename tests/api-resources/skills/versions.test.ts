@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import Anthropic, { toFile } from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
@@ -24,6 +22,7 @@ describe('resource versions', () => {
   test('create: required and optional params', async () => {
     const response = await client.skills.versions.create('skill_id', {
       files: [await toFile(Buffer.from('Example data'), 'README.md')],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -39,7 +38,10 @@ describe('resource versions', () => {
   });
 
   test('retrieve: required and optional params', async () => {
-    const response = await client.skills.versions.retrieve('version', { skill_id: 'skill_id' });
+    const response = await client.skills.versions.retrieve('version', {
+      skill_id: 'skill_id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
+    });
   });
 
   test('list', async () => {
@@ -58,7 +60,11 @@ describe('resource versions', () => {
     await expect(
       client.skills.versions.list(
         'skill_id',
-        { limit: 1, page: 'page' },
+        {
+          limit: 1,
+          page: 'page',
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
+        },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -76,6 +82,9 @@ describe('resource versions', () => {
   });
 
   test('delete: required and optional params', async () => {
-    const response = await client.skills.versions.delete('version', { skill_id: 'skill_id' });
+    const response = await client.skills.versions.delete('version', {
+      skill_id: 'skill_id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
+    });
   });
 });
