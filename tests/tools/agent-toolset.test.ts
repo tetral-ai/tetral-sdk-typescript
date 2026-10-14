@@ -12,8 +12,8 @@ import {
   betaGrepTool,
   BashSession,
   type AgentToolContext,
-} from '@tetral-ai/sdk/tools/agent-toolset/node';
-import type { BetaRunnableTool } from '@tetral-ai/sdk/lib/tools/BetaRunnableTool';
+} from '@anthropic-ai/sdk/tools/agent-toolset/node';
+import type { BetaRunnableTool } from '@anthropic-ai/sdk/lib/tools/BetaRunnableTool';
 
 function tmpdir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'runner-test-'));
@@ -492,7 +492,7 @@ describeBash('BashSession (direct)', () => {
 
 describe('confineToRoot at a filesystem root workdir', () => {
   test('in-root absolute paths are allowed when the workdir is the filesystem root', async () => {
-    const { confineToRoot } = await import('@tetral-ai/sdk/tools/agent-toolset/fs-util');
+    const { confineToRoot } = await import('@anthropic-ai/sdk/tools/agent-toolset/fs-util');
     // A root workdir already ends with the separator; containment must not
     // double-append it and reject every in-root path.
     await expect(confineToRoot('/', '/etc/hosts')).resolves.toBe('/etc/hosts');

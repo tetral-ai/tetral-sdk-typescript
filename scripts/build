@@ -15,6 +15,14 @@ rm -rf dist; mkdir dist
 # Copy src to dist/src and build from dist/src into dist, so that
 # the source map for index.js.map will refer to ./src/index.ts etc
 cp -rp src README.md dist
+node <<'NODE'
+const fs = require('node:fs');
+for (const file of fs.readdirSync('dist/src', { recursive: true })) {
+  if (!file.endsWith('.ts')) continue;
+  const path = `dist/src/${file}`;
+  fs.writeFileSync(path, fs.readFileSync(path, 'utf8').replaceAll('@anthropic-ai/sdk', '@tetral-ai/sdk'));
+}
+NODE
 for file in COMPATIBILITY.md api.md; do
   if [ -e "${file}" ]; then cp "${file}" dist; fi
 done

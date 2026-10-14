@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import Anthropic from '@tetral-ai/sdk';
-import type { AccessToken } from '@tetral-ai/sdk/lib/credentials/types';
-import { OAUTH_API_BETA_HEADER } from '@tetral-ai/sdk/lib/credentials/types';
+import Anthropic from '@anthropic-ai/sdk';
+import type { AccessToken } from '@anthropic-ai/sdk/lib/credentials/types';
+import { OAUTH_API_BETA_HEADER } from '@anthropic-ai/sdk/lib/credentials/types';
 
 const VALID_MSG_RESPONSE = {
   id: 'msg_1',

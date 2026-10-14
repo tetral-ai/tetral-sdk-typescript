@@ -12,10 +12,6 @@ export class Memories extends APIResource {
   /**
    * Create a memory
    *
-   * Creates a memory inside the explicit `{memory_store_id}` path. This public
-   * HTTP API is separate from the Runtime Memory Tool, which writes through the
-   * session/runtime path.
-   *
    * @example
    * ```ts
    * const betaManagedAgentsMemory =
@@ -171,9 +167,11 @@ export interface BetaManagedAgentsConflictError {
 
 /**
  * Optimistic-concurrency precondition: the update applies only if the memory's
- * stored `content_sha256` equals the supplied value. On Tetral mismatch, the
- * backend returns the shared SDK-compatible `409 invalid_request_error`; re-read
- * the memory and retry against the fresh state.
+ * stored `content_sha256` equals the supplied value. On mismatch, the request
+ * returns `memory_precondition_failed_error` (HTTP 409); re-read the memory and
+ * retry against the fresh state. If the precondition fails but the stored state
+ * already exactly matches the requested `content` and `path`, the server returns
+ * 200 instead of 409.
  */
 export interface BetaManagedAgentsContentSha256Precondition {
   type: 'content_sha256';
@@ -203,11 +201,6 @@ export interface BetaManagedAgentsDeletedMemory {
   type: 'memory_deleted';
 }
 
-/**
- * Retained upstream compatibility error union. Tetral uses the shared SDK error
- * envelope in this stage; memory write conflicts and precondition failures are
- * surfaced as `409 invalid_request_error`.
- */
 export type BetaManagedAgentsError =
   | BetaAPI.BetaInvalidRequestError
   | BetaAPI.BetaAuthenticationError
@@ -299,10 +292,6 @@ export interface BetaManagedAgentsMemory {
 export type BetaManagedAgentsMemoryListItem = BetaManagedAgentsMemory | BetaManagedAgentsMemoryPrefix;
 
 export interface BetaManagedAgentsMemoryPathConflictError {
-  /**
-   * Retained upstream compatibility marker. Tetral path conflicts use the shared
-   * `409 invalid_request_error` envelope in this stage.
-   */
   type: 'memory_path_conflict_error';
 
   conflicting_memory_id?: string;
@@ -313,10 +302,6 @@ export interface BetaManagedAgentsMemoryPathConflictError {
 }
 
 export interface BetaManagedAgentsMemoryPreconditionFailedError {
-  /**
-   * Retained upstream compatibility marker. Tetral precondition failures use the
-   * shared `409 invalid_request_error` envelope in this stage.
-   */
   type: 'memory_precondition_failed_error';
 
   message?: string;
@@ -352,9 +337,11 @@ export type BetaManagedAgentsMemoryView = 'basic' | 'full';
 
 /**
  * Optimistic-concurrency precondition: the update applies only if the memory's
- * stored `content_sha256` equals the supplied value. On Tetral mismatch, the
- * backend returns the shared SDK-compatible `409 invalid_request_error`; re-read
- * the memory and retry against the fresh state.
+ * stored `content_sha256` equals the supplied value. On mismatch, the request
+ * returns `memory_precondition_failed_error` (HTTP 409); re-read the memory and
+ * retry against the fresh state. If the precondition fails but the stored state
+ * already exactly matches the requested `content` and `path`, the server returns
+ * 200 instead of 409.
  */
 export interface BetaManagedAgentsPrecondition {
   type: 'content_sha256';
@@ -396,8 +383,7 @@ export interface MemoryCreateParams {
 
 export interface MemoryRetrieveParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: Path parameter memory_store_id
    */
   memory_store_id: string;
 
@@ -414,8 +400,7 @@ export interface MemoryRetrieveParams {
 
 export interface MemoryUpdateParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: Path parameter memory_store_id
    */
   memory_store_id: string;
 
@@ -441,10 +426,11 @@ export interface MemoryUpdateParams {
 
   /**
    * Body param: Optimistic-concurrency precondition: the update applies only if the
-   * memory's stored `content_sha256` equals the supplied value. On Tetral
-   * mismatch, the backend returns the shared SDK-compatible
-   * `409 invalid_request_error`; re-read the memory and retry against the fresh
-   * state.
+   * memory's stored `content_sha256` equals the supplied value. On mismatch, the
+   * request returns `memory_precondition_failed_error` (HTTP 409); re-read the
+   * memory and retry against the fresh state. If the precondition fails but the
+   * stored state already exactly matches the requested `content` and `path`, the
+   * server returns 200 instead of 409.
    */
   precondition?: BetaManagedAgentsPrecondition;
 
@@ -470,15 +456,8 @@ export interface MemoryListParams extends PageCursorParams {
    */
   path_prefix?: string;
 
-  /**
-   * Query param: Sort field for the listing. Tetral supports ordering by `path`,
-   * `created_at`, or `updated_at`.
-   */
   order_by?: 'path' | 'created_at' | 'updated_at';
 
-  /**
-   * Query param: Sort direction.
-   */
   order?: 'asc' | 'desc';
 
   /**
@@ -496,8 +475,7 @@ export interface MemoryListParams extends PageCursorParams {
 
 export interface MemoryDeleteParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: Path parameter memory_store_id
    */
   memory_store_id: string;
 

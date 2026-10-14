@@ -1,18 +1,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import {
   AnthropicError,
   APIConnectionError,
   APIConnectionTimeoutError,
   RetryableError,
-} from '@tetral-ai/sdk';
-import type { Middleware } from '@tetral-ai/sdk';
-import { BetaFallbackState, betaRefusalFallbackMiddleware } from '@tetral-ai/sdk/lib/middleware';
-import { wrapFetchWithMiddleware } from '@tetral-ai/sdk/core/middleware';
-import { Stream as SSEStream } from '@tetral-ai/sdk/core/streaming';
-import { WorkloadIdentityError } from '@tetral-ai/sdk/lib/credentials/types';
+} from '@anthropic-ai/sdk';
+import type { Middleware } from '@anthropic-ai/sdk';
+import { BetaFallbackState, betaRefusalFallbackMiddleware } from '@anthropic-ai/sdk/lib/middleware';
+import { wrapFetchWithMiddleware } from '@anthropic-ai/sdk/core/middleware';
+import { Stream as SSEStream } from '@anthropic-ai/sdk/core/streaming';
+import { WorkloadIdentityError } from '@anthropic-ai/sdk/lib/credentials/types';
 
 const jsonResponse = (body: unknown = { a: 1 }, init: ResponseInit = {}) =>
   new Response(JSON.stringify(body), {

@@ -492,13 +492,6 @@ export class BaseAnthropic {
   protected _options: ClientOptions;
 
   /**
-   * Platform subclass clients (Bedrock/Vertex/AWS/Foundry) inject auth after
-   * construction, so the Tetral missing-key construction guard must not fire
-   * for them; they override this to `false`.
-   */
-  protected static tetralMissingKeyGuard: boolean = true;
-
-  /**
    * API Client for interfacing with the Anthropic API.
    *
    * @param {string | null | undefined} [opts.apiKey=process.env['TETRAL_API_KEY'] ?? null]
@@ -535,7 +528,6 @@ export class BaseAnthropic {
       authToken = null;
     }
     if (
-      (new.target as typeof BaseAnthropic).tetralMissingKeyGuard !== false &&
       !apiKeyExplicitlyNull &&
       apiKey == null &&
       authToken == null &&

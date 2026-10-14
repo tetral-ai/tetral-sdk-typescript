@@ -44,10 +44,6 @@ export class MemoryVersions extends APIResource {
   /**
    * List memory versions
    *
-   * Lists immutable version rows within the explicit `{memory_store_id}` path.
-   * The optional `session_id` query filter narrows history to versions written
-   * from that Session; it does not select or imply a default Memory Store.
-   *
    * @example
    * ```ts
    * // Automatically fetches more pages as needed.
@@ -125,8 +121,8 @@ export type BetaManagedAgentsActor =
   | BetaManagedAgentsUserActor;
 
 /**
- * Attribution for a write or redaction authenticated by an API key outside a
- * session. On Tetral Engine this includes independent and identity-derived keys.
+ * Attribution for a write made directly via the public API (outside of any
+ * session).
  */
 export interface BetaManagedAgentsAPIActor {
   /**
@@ -248,38 +244,27 @@ export interface BetaManagedAgentsSessionActor {
   type: 'session_actor';
 }
 
-/**
- * Attribution for a write or redaction authenticated by a service identity
- * token on Tetral Engine.
- */
 export interface BetaManagedAgentsServiceActor {
-  /**
-   * Stable Engine identity ID of the service that performed the operation.
-   * This is not the upstream subject or the exchange's service_account_id selector.
-   */
   service_id: string;
 
   type: 'service_actor';
 }
 
 /**
- * Attribution for a write or redaction by a human user through Anthropic Console,
- * or authenticated directly by a human identity token on Tetral Engine.
+ * Attribution for a write made by a human user through the Anthropic Console.
  */
 export interface BetaManagedAgentsUserActor {
   type: 'user_actor';
 
   /**
-   * ID of the user who performed the operation: a `user_...` value on Anthropic,
-   * or the stable Engine identity ID on Tetral Engine.
+   * ID of the user who performed the write (a `user_...` value).
    */
   user_id: string;
 }
 
 export interface MemoryVersionRetrieveParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: Path parameter memory_store_id
    */
   memory_store_id: string;
 
@@ -338,8 +323,7 @@ export interface MemoryVersionListParams extends PageCursorParams {
 
 export interface MemoryVersionRedactParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: Path parameter memory_store_id
    */
   memory_store_id: string;
 

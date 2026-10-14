@@ -189,19 +189,13 @@ export class Environments extends APIResource {
 
 export type BetaEnvironmentsPageCursor = PageCursor<BetaEnvironment>;
 
-/**
- * Tetral-supported Cloud Environment networking policy.
- */
 export type BetaEnvironmentNetworking =
   | BetaUnrestrictedNetwork
   | BetaBlockedNetwork
   | BetaCIDRAllowListNetwork;
 
 /**
- * `cloud` environment configuration. Tetral supports Cloud Environments with
- * `unrestricted`, `blocked`, or `cidr_allow_list` networking. The generated
- * `limited` networking shape is retained for upstream compatibility and Tetral
- * rejects it in this stage.
+ * `cloud` environment configuration.
  */
 export interface BetaCloudConfig {
   /**
@@ -233,8 +227,6 @@ export interface BetaCloudConfigParams {
 
   /**
    * Network configuration policy. Omit on update to preserve the existing value.
-   * Tetral supports `unrestricted`, `blocked`, and `cidr_allow_list`; `limited`
-   * is retained as an unsupported/deferred compatibility shape.
    */
   networking?: BetaEnvironmentNetworking | BetaLimitedNetworkParams | null;
 
@@ -249,9 +241,7 @@ export interface BetaCloudConfigParams {
 }
 
 /**
- * Tetral Environment resource. Tetral returns Cloud Environment config in this
- * stage; self-hosted config types remain exported as unsupported/deferred
- * compatibility shapes.
+ * Unified Environment resource for both cloud and self-hosted environments.
  */
 export interface BetaEnvironment {
   /**
@@ -265,7 +255,7 @@ export interface BetaEnvironment {
   archived_at: string | null;
 
   /**
-   * Environment configuration.
+   * Environment configuration (either Anthropic Cloud or self-hosted)
    */
   config: BetaCloudConfig;
 
@@ -300,9 +290,8 @@ export interface BetaEnvironment {
   updated_at: string;
 
   /**
-   * Retained unsupported/deferred compatibility field. Tetral resource boundaries
-   * are workspace-scoped and do not implement Anthropic account/organization
-   * Environment visibility in this stage.
+   * The visibility scope for this environment. 'organization' means visible to all
+   * accounts. 'account' means visible only to the owning account.
    */
   scope?: 'organization' | 'account';
 }
@@ -322,29 +311,18 @@ export interface BetaEnvironmentDeleteResponse {
   type: 'environment_deleted';
 }
 
-/**
- * Block all outbound network access.
- */
 export interface BetaBlockedNetwork {
   type: 'blocked';
 }
 
-/**
- * Allow outbound network access only to the supplied comma-separated CIDR list.
- * The SDK does not translate hostnames to CIDRs.
- */
 export interface BetaCIDRAllowListNetwork {
-  /**
-   * Comma-separated CIDR allow list, for example `10.0.0.0/24,192.168.1.10/32`.
-   */
   network_allow_list: string;
 
   type: 'cidr_allow_list';
 }
 
 /**
- * Retained unsupported/deferred host allowlist networking shape. Tetral rejects
- * this shape in this stage; use `cidr_allow_list` with CIDR values instead.
+ * Limited network access.
  */
 export interface BetaLimitedNetwork {
   /**
@@ -371,9 +349,7 @@ export interface BetaLimitedNetwork {
 }
 
 /**
- * Retained unsupported/deferred host allowlist networking request params. Tetral
- * rejects this shape in this stage; use `cidr_allow_list` with CIDR values
- * instead.
+ * Limited network request params.
  *
  * Fields default to null; on update, omitted fields preserve the existing value.
  */
@@ -486,8 +462,7 @@ export interface BetaPackagesParams {
 }
 
 /**
- * Retained unsupported/deferred self-hosted environment config. Tetral supports
- * Cloud Environments only in this stage.
+ * Configuration for self-hosted environments.
  */
 export interface BetaSelfHostedConfig {
   /**
@@ -497,9 +472,7 @@ export interface BetaSelfHostedConfig {
 }
 
 /**
- * Retained unsupported/deferred request params for `self_hosted` environment
- * configuration. The SDK sends this normal generated request shape; Tetral
- * backend admission rejects it fail-closed.
+ * Request params for `self_hosted` environment configuration.
  */
 export interface BetaSelfHostedConfigParams {
   /**
@@ -525,9 +498,7 @@ export interface EnvironmentCreateParams {
   name: string;
 
   /**
-   * Body param: Environment configuration. Tetral supports `cloud` config only;
-   * `self_hosted` is retained for upstream compatibility and rejected by Tetral
-   * backend admission in this stage.
+   * Body param: Environment configuration
    */
   config?: BetaCloudConfigParams | BetaSelfHostedConfigParams | null;
 
@@ -542,9 +513,10 @@ export interface EnvironmentCreateParams {
   metadata?: { [key: string]: string };
 
   /**
-   * Body param: Retained unsupported/deferred compatibility field. Tetral resource
-   * boundaries are workspace-scoped and Tetral backend admission rejects explicit
-   * account/organization Environment scope in this stage.
+   * Body param: The visibility scope for this environment. 'organization' makes the
+   * environment visible to all accounts. 'account' restricts visibility to the
+   * owning account only. Only applicable for self-hosted environments. If not
+   * specified, defaults based on organization type.
    */
   scope?: 'organization' | 'account' | null;
 
@@ -563,9 +535,7 @@ export interface EnvironmentRetrieveParams {
 
 export interface EnvironmentUpdateParams {
   /**
-   * Body param: Updated environment configuration. Tetral supports `cloud` config
-   * only; `self_hosted` is retained for upstream compatibility and rejected by
-   * Tetral backend admission in this stage.
+   * Body param: Updated environment configuration
    */
   config?: BetaCloudConfigParams | BetaSelfHostedConfigParams | null;
 
@@ -586,9 +556,9 @@ export interface EnvironmentUpdateParams {
   name?: string | null;
 
   /**
-   * Body param: Retained unsupported/deferred compatibility field. Tetral resource
-   * boundaries are workspace-scoped and Tetral backend admission rejects explicit
-   * account/organization Environment scope in this stage.
+   * Body param: The visibility scope for this environment. 'organization' makes the
+   * environment visible to all accounts. 'account' restricts visibility to the
+   * owning account only.
    */
   scope?: 'organization' | 'account' | null;
 

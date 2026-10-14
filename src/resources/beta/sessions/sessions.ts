@@ -98,6 +98,8 @@ import {
   ResourceListParams,
   ResourceRetrieveParams,
   ResourceRetrieveResponse,
+  ResourceUpdateParams,
+  ResourceUpdateResponse,
   Resources,
 } from './resources';
 import * as ThreadsAPI from './threads/threads';
@@ -137,7 +139,6 @@ export class Sessions extends APIResource {
    *   await client.beta.sessions.create({
    *     agent: 'agent_011CZkYpogX7uDKUyvBTophP',
    *     environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
-   *     vault_ids: [],
    *   });
    * ```
    */
@@ -351,9 +352,8 @@ export interface BetaManagedAgentsAgentWithOverridesParams {
   mcp_servers?: Array<AgentsAPI.BetaManagedAgentsURLMCPServerParams>;
 
   /**
-   * Replacement model. Accepts a canonical `provider/model` ID from the
-   * supported model set, or a `model_config` object. Omit to use the agent's
-   * model.
+   * Replacement model. Accepts the model string, e.g. `claude-opus-4-6`, or a
+   * `model_config` object. Omit to use the agent's model.
    */
   model?: AgentsAPI.BetaManagedAgentsModel | AgentsAPI.BetaManagedAgentsModelConfigParams;
 
@@ -446,11 +446,10 @@ export interface BetaManagedAgentsDeltaContent {
 /**
  * An incremental update to an event that is still being streamed. Deltas are
  * best-effort and may stop early; when the buffered event with id == event_id is
- * produced it carries the complete content. Tetral publishes complete committed
- * text before the matching span.model_request_end, including error or interrupt
- * Ends. Incomplete or uncommitted content has no fabricated final event; End
- * closes any remaining preview. Tetral sends previews only for the public primary
- * thread on opted-in Session streams; they never appear in event history.
+ * produced it carries the complete content. A model request that ends early (an
+ * error or interrupt) produces no buffered event — its terminal
+ * span.model_request_end closes the preview. Only sent on stream connections that
+ * opt in via event_deltas; never appears in event history.
  */
 export interface BetaManagedAgentsDeltaEvent {
   /**
@@ -491,12 +490,6 @@ export interface BetaManagedAgentsFileResourceParams {
   mount_path?: string | null;
 }
 
-/**
- * Tetral extension: default author and committer for ordinary Git commits in one
- * mounted repository. This is public authorship configuration, not a credential.
- * Engine validates nonempty values, Git-safe characters, and UTF-8 byte limits
- * (256 for name, 254 for email); the SDK sends values unchanged.
- */
 export interface TetralGitIdentity {
   name: string;
 
@@ -508,8 +501,7 @@ export interface TetralGitIdentity {
  */
 export interface BetaManagedAgentsGitHubRepositoryResourceParams {
   /**
-   * GitHub authorization token used to clone the repository. Write-only and never
-   * returned in Session or resource responses.
+   * GitHub authorization token used to clone the repository.
    */
   authorization_token: string;
 
@@ -530,12 +522,6 @@ export interface BetaManagedAgentsGitHubRepositoryResourceParams {
    */
   mount_path?: string | null;
 
-  /**
-   * Repository-local Git identity, fixed at Session creation. Both fields are
-   * required when present; null and empty values are rejected by Engine. Omit to
-   * use Tetral Agent <session+<session_id>@agents.tetral.ai>. Token rotation does
-   * not change this identity; it has no version or update API.
-   */
   git_identity?: TetralGitIdentity;
 }
 
@@ -726,9 +712,6 @@ export interface BetaManagedAgentsSessionAgent {
 
   mcp_servers: Array<AgentsAPI.BetaManagedAgentsMCPServerURLDefinition>;
 
-  /**
-   * Resolved approval mode for tool use from the agent snapshot.
-   */
   approval_mode: AgentsAPI.AgentApprovalMode;
 
   /**
@@ -761,15 +744,11 @@ export interface BetaManagedAgentsSessionAgent {
 }
 
 /**
- * Mid-session agent configuration update. `tools` and `mcp_servers` are full
- * replacements: the provided array becomes the new value. To preserve existing
- * entries, GET the session, modify the array, and POST it back. `approval_mode`
- * updates the session's agent snapshot from the next turn onward.
+ * Mid-session agent configuration update. Only `tools` and `mcp_servers` are
+ * updatable. Full replacement: the provided array becomes the new value. To
+ * preserve existing entries, GET the session, modify the array, and POST it back.
  */
 export interface BetaManagedAgentsSessionAgentUpdate {
-  /**
-   * Approval mode to apply to this session's agent snapshot from the next turn.
-   */
   approval_mode?: AgentsAPI.AgentApprovalMode;
 
   /**
@@ -780,10 +759,7 @@ export interface BetaManagedAgentsSessionAgentUpdate {
 
   /**
    * Replacement tool list. Full replacement: the provided array becomes the new
-   * value. Send an empty array to clear; omit to preserve. Tetral supports
-   * `tetral_agent_toolset` and supported `mcp_toolset` declarations; legacy
-   * `agent_toolset_20260401` and `custom` tool params are retained compatibility
-   * shapes and rejected by Tetral in this stage.
+   * value. Send an empty array to clear; omit to preserve.
    */
   tools?: Array<
     | AgentsAPI.BetaManagedAgentsTetralAgentToolsetParams
@@ -891,36 +867,22 @@ export interface BetaManagedAgentsSessionUsage {
    */
   output_tokens?: number;
 
-  /**
-   * Usage counters for server-executed tools.
-   */
   server_tool_use?: BetaManagedAgentsSessionServerToolUse;
 }
 
-/**
- * Server-executed tool usage counters for a session.
- */
 export interface BetaManagedAgentsSessionServerToolUse {
-  /**
-   * Number of web fetch tool requests.
-   */
   web_fetch_requests?: number;
 
-  /**
-   * Number of web search tool requests.
-   */
   web_search_requests?: number;
 }
 
 /**
  * Opens a preview of a buffered event. Carries the previewed event's type and id
  * only. Followed by zero or more event_delta events with the same event id,
- * normally concluded by the buffered event carrying that id. Tetral publishes
- * already committed complete text even at an error or interrupt End; it never
- * fabricates a final event for incomplete or uncommitted content. The matching
- * span.model_request_end closes remaining previews. Tetral sends previews only
- * for the public primary thread on opted-in Session streams; they never appear
- * in event history.
+ * normally concluded by the buffered event carrying that id. If the producing
+ * model request ends without that event (an error or interrupt mid-stream), its
+ * terminal span.model_request_end closes the preview. Only sent on stream
+ * connections that opt in via event_deltas; never appears in event history.
  */
 export interface BetaManagedAgentsStartEvent {
   /**
@@ -1043,8 +1005,7 @@ export interface SessionCreateParams {
 
   /**
    * Body param: Resources (e.g. repositories, files) to mount into the session's
-   * container. Memory stores are attached explicitly here by ID; the SDK does not
-   * infer a workspace default Memory Store.
+   * container.
    */
   resources?: Array<
     | BetaManagedAgentsGitHubRepositoryResourceParams
@@ -1057,19 +1018,11 @@ export interface SessionCreateParams {
    */
   title?: string | null;
 
-  /**
-   * Body param: Optional provider credential selector. Omit or pass `{}` to use
-   * platform-billed provider access; pass `{ [provider_id]: { credential_id } }`
-   * to select a Vault-backed provider credential. The provider key must match
-   * the provider parsed from the agent snapshot's canonical `provider/model`
-   * ID, and the credential must belong to a Session-bound Vault.
-   */
   providers?: TetralSessionProviderSelectors;
 
   /**
    * Body param: Vault IDs for stored credentials the agent can use during the
-   * session. Tetral requires this field on create; pass `[]` to explicitly bind no
-   * Vaults.
+   * session.
    */
   vault_ids: Array<string>;
 
@@ -1088,7 +1041,10 @@ export interface SessionRetrieveParams {
 
 export interface SessionUpdateParams {
   /**
-   * Body param: Mid-session agent configuration update.
+   * Body param: Mid-session agent configuration update. Only `tools` and
+   * `mcp_servers` are updatable. Full replacement: the provided array becomes the
+   * new value. To preserve existing entries, GET the session, modify the array, and
+   * POST it back.
    */
   agent?: BetaManagedAgentsSessionAgentUpdate;
 
@@ -1103,13 +1059,6 @@ export interface SessionUpdateParams {
    */
   title?: string | null;
 
-  /**
-   * Body param: Optional provider credential selector. Passing `{}` clears an
-   * explicit selector and returns to platform-billed provider access. The
-   * provider key must match the provider parsed from the agent snapshot's
-   * canonical `provider/model` ID, and the credential must belong to a
-   * Session-bound Vault.
-   */
   providers?: TetralSessionProviderSelectors;
 
   /**
@@ -1343,6 +1292,8 @@ export declare namespace Sessions {
     type BetaManagedAgentsMemoryStoreResource as BetaManagedAgentsMemoryStoreResource,
     type BetaManagedAgentsSessionResource as BetaManagedAgentsSessionResource,
     type ResourceRetrieveResponse as ResourceRetrieveResponse,
+    type ResourceUpdateParams as ResourceUpdateParams,
+    type ResourceUpdateResponse as ResourceUpdateResponse,
     type BetaManagedAgentsSessionResourcesPageCursor as BetaManagedAgentsSessionResourcesPageCursor,
     type ResourceRetrieveParams as ResourceRetrieveParams,
     type ResourceListParams as ResourceListParams,

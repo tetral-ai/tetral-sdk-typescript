@@ -1,8 +1,5 @@
 /**
- * Retained self-hosted environment runner helpers. Tetral Cloud-hosted
- * Environments do not implement the self-host work queue in this stage; the
- * generated work API paths remain importable/requestable and Tetral backend
- * admission rejects them fail-closed.
+ * Self-hosted environment runner helpers.
  *
  * - {@link WorkPoller} (`client.beta.environments.work.poller`) — control-plane
  *   only: claims work items and yields each one.
@@ -19,7 +16,7 @@
  *
  * The tool implementations themselves (`betaAgentToolset20260401` and the
  * per-tool factories) live in their own Node-only module — import them directly
- * from `@tetral-ai/sdk/tools/agent-toolset/node`.
+ * from `@anthropic-ai/sdk/tools/agent-toolset/node`.
  */
 export {
   WorkPoller,

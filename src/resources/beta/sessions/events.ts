@@ -123,13 +123,11 @@ export class Events extends APIResource {
    * result back (`user.tool_result` / `user.custom_tool_result`). The
    * sessions-side counterpart to `client.beta.messages.toolRunner`: yields one
    * entry per completed tool call so callers can observe each dispatch (and
-   * `break` to abort cleanly). This is a retained self-host/local-helper
-   * compatibility helper; Tetral Cloud-hosted runtime rejects client-supplied
-   * tool-result event variants in this stage.
+   * `break` to abort cleanly).
    *
    * @example
    * ```ts
-   * import { betaAgentToolset20260401 } from '@tetral-ai/sdk/tools/agent-toolset/node';
+   * import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
    *
    * for await (const call of client.beta.sessions.events.toolRunner(work.data.id, {
    *   tools: [...betaAgentToolset20260401({ workdir }), myTool],
@@ -580,11 +578,7 @@ export interface BetaManagedAgentsDocumentBlock {
 }
 
 /**
- * Union type for event parameters that can be sent to a session. Tetral admits
- * `user.message`, `user.interrupt`, and live-pending `user.tool_confirmation` in
- * this stage. `user.custom_tool_result`, `user.define_outcome`,
- * `user.tool_result`, and `system.message` remain assignable for SDK
- * compatibility but are rejected by Tetral backend admission.
+ * Union type for event parameters that can be sent to a session.
  */
 export type BetaManagedAgentsEventParams =
   | BetaManagedAgentsUserMessageEventParams
@@ -1930,12 +1924,9 @@ export interface EventStreamParams {
    * Query param: When set, this connection also receives streaming deltas
    * (`event_start`, `event_delta`) while an event is being produced, before the
    * event itself arrives. Deltas are best-effort; when the final event is produced
-   * it carries the complete content. Tetral publishes complete committed text
-   * before the matching `span.model_request_end`, including error or interrupt
-   * Ends. Incomplete or uncommitted content has no fabricated final event; End
-   * closes any remaining preview. Tetral previews only the public primary thread
-   * on this Session endpoint; Thread streams remain formal-only.
-   * Accepts one or more event types to preview and may be
+   * it carries the complete content. A model request that ends early (an error or
+   * interrupt) produces no final event — its terminal `span.model_request_end`
+   * closes the preview. Accepts one or more event types to preview and may be
    * repeated: `agent.message` streams `content_delta` fragments; `agent.thinking` is
    * start-only — a signal that the agent has begun extended thinking, concluded by
    * the `agent.thinking` event itself. Only previews of the requested event types

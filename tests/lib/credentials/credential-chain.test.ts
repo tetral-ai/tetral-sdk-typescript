@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import type { Fetch } from '@tetral-ai/sdk/internal/builtin-types';
-import { defaultCredentials } from '@tetral-ai/sdk/lib/credentials/credential-chain';
+import type { Fetch } from '@anthropic-ai/sdk/internal/builtin-types';
+import { defaultCredentials } from '@anthropic-ai/sdk/lib/credentials/credential-chain';
 
 const NOW_IN_SECONDS = 1700000000;
 

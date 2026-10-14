@@ -4,7 +4,7 @@ import {
   type RequestInfo,
   type RequestInit,
   type Response,
-} from '@tetral-ai/sdk/internal/builtin-types';
+} from '@anthropic-ai/sdk/internal/builtin-types';
 
 export function mockFetch(): {
   fetch: Fetch;

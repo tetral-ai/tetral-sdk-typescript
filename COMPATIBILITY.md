@@ -31,6 +31,11 @@ Memory `BetaManagedAgentsActor` adds the Tetral Engine response variant
 Both `created_by` and nullable `redacted_by` use the shared union; API, Session
 and User variants retain their fields and discriminators.
 
+Session create uses plain Agent references; the generated `agent_with_overrides`
+variant is intentionally excluded from `SessionCreateParams.agent`.
+`BetaEnvironment.config` is narrowed to Cloud configuration; self-hosted
+configuration remains unsupported.
+
 ## 3. Tetral Extensions And Behavioral Deltas
 
 Tetral-specific extensions and behavior differences are:
@@ -124,6 +129,19 @@ uncommitted content has no fabricated final event; End closes remaining
 previews. Request End does not mean every tool or the whole agent turn has
 finished.
 
+Files upload size failures return HTTP 413 `request_too_large`. If bytes are
+stored but metadata commit fails, backend cleanup removes the orphaned object
+on a best-effort basis. Downloads return durable file content.
+
+Skill creation validates the uploaded package before committing the initial
+immutable version. The latest pointer advances after the version commits.
+Public Skill projections describe stored metadata; they do not expose storage
+locations or grant direct access to the Sandbox filesystem.
+
+Memory APIs are synchronous CRUD and versioning operations. Attach stores by
+explicit `memory_store_id` in Session resources; there is no implicit default
+store. Memory HTTP 409 responses use `invalid_request_error`.
+
 ## 4. Retained Unsupported Or Deferred Surface
 
 These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; unsupported requests are rejected by Tetral backend admission with SDK-compatible errors.
@@ -133,7 +151,6 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 | Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                                                                                                               |
 | Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
 | Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
-| Session create `agent_with_overrides`                                    | Retained unsupported. Use the plain agent reference forms; override variants are rejected by admission.                                                                            |
 | Agent and deployment webhook event types                                 | Deferred with the Webhooks resource.                                                                                                                                               |
 | Session list reverse pagination                                          | Retained unsupported. `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged, and `prev_page` stays `null` until the engine implements reverse cursors. |
 | Generated Messages API resource and Message Batches                      | Retained unsupported/deferred. Use Session Events `user.message` instead.                                                                                                          |

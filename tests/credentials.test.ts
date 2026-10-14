@@ -4,7 +4,7 @@ import {
   AnthropicCredentials,
   loadConfig,
   loadCredentials,
-} from '@tetral-ai/sdk/core/credentials';
+} from '@anthropic-ai/sdk/core/credentials';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 

@@ -131,9 +131,6 @@ export class Resources extends APIResource {
   /**
    * Add Session Resource
    *
-   * Adds an existing durable Files API object to the session by `file_id`. This
-   * endpoint does not upload bytes; use `client.beta.files.upload(...)` first.
-   *
    * @example
    * ```ts
    * const betaManagedAgentsFileResource =
@@ -215,11 +212,6 @@ export interface BetaManagedAgentsGitHubRepositoryResource {
 
   checkout?: SessionsAPI.BetaManagedAgentsBranchCheckout | SessionsAPI.BetaManagedAgentsCommitCheckout | null;
 
-  /**
-   * Unredacted identity declared at Session creation. Omitted when no identity
-   * was declared, even though the Sandbox uses the platform default. Immutable
-   * through the API, including during authorization token rotation.
-   */
   git_identity?: SessionsAPI.TetralGitIdentity;
 }
 
@@ -309,7 +301,7 @@ export interface ResourceUpdateParams {
 
   /**
    * Body param: New authorization token for the resource. Currently only
-   * `github_repository` resources support token rotation. Git identity cannot be updated.
+   * `github_repository` resources support token rotation.
    */
   authorization_token: string;
 
@@ -340,7 +332,7 @@ export interface ResourceDeleteParams {
 
 export interface ResourceAddParams {
   /**
-   * Body param: ID of a previously uploaded durable Files API object.
+   * Body param: ID of a previously uploaded file.
    */
   file_id: string;
 
@@ -350,7 +342,7 @@ export interface ResourceAddParams {
   type: 'file';
 
   /**
-   * Body param: Mount path in the session container. Defaults to
+   * Body param: Mount path in the container. Defaults to
    * `/mnt/session/uploads/<file_id>`.
    */
   mount_path?: string | null;

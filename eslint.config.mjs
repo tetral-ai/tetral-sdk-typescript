@@ -22,7 +22,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              regex: '^@tetral-ai/sdk(/.*)?',
+              regex: '^@anthropic-ai/sdk(/.*)?',
               message: 'Use a relative import, not a package import.',
             },
           ],

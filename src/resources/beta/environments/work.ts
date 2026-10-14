@@ -17,11 +17,6 @@ import {
   type EnvironmentWorkerOptions as RunnerEnvironmentWorkerOptions,
 } from '../../../lib/environments/worker';
 
-/**
- * Retained self-hosted Environment work surface. Tetral Cloud Environments do
- * not implement these APIs in this stage; calls are kept as normal generated
- * request paths and Tetral backend admission rejects them fail-closed.
- */
 export class Work extends APIResource {
   /**
    * Note: these endpoints are called automatically by the pre-built environment
@@ -271,10 +266,9 @@ export class Work extends APIResource {
   }
 
   /**
-   * Retained self-hosted helper. Tetral Cloud-hosted Environments do not use the
-   * work queue in this stage. Continuously claim work from a self-hosted
-   * environment, ack each item, and yield it. Posts `stop` automatically when the
-   * consumer's loop body returns or when iteration ends.
+   * Continuously claim work from a self-hosted environment, ack each item,
+   * and yield it. Posts `stop` automatically when the consumer's loop body
+   * returns or when iteration ends.
    *
    * @example
    * ```ts
@@ -292,10 +286,9 @@ export class Work extends APIResource {
   }
 
   /**
-   * Retained self-hosted helper. Tetral Cloud-hosted Environments do not use the
-   * work queue in this stage. The self-hosted environment runner polls for work,
-   * and for each claimed session sets up the workdir, downloads the agent's
-   * skills, runs the tools while heartbeating the lease, and force-stops on exit.
+   * The self-hosted environment runner: poll for work, and for each claimed
+   * session set up the workdir, download the agent's skills, run the tools while
+   * heartbeating the lease, and force-stop on exit.
    *
    * @example
    * ```ts
@@ -531,7 +524,7 @@ export interface BetaSessionWorkData {
 export interface BetaWorkSecret {
   /**
    * Bearer credential the runner uses for all per-session downstream calls
-   * (heartbeat, ack, event stream, send, stop).
+   * (heartbeat, ack, event stream, send, stop). Format: `sk-ant-req-...`.
    */
   sessions_token: string;
 

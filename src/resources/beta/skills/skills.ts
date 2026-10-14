@@ -30,11 +30,6 @@ export class Skills extends APIResource {
   /**
    * Create Skill
    *
-   * Creates parent Skill metadata and uploads the initial immutable version
-   * package from the required files. The backend validates the package before
-   * durable version creation and advances `latest_version` only after the
-   * version is committed.
-   *
    * @example
    * ```ts
    * const skill = await client.beta.skills.create({
@@ -160,7 +155,7 @@ export interface SkillCreateResponse {
   /**
    * The latest version identifier for the skill.
    *
-   * This represents the most recent committed version for the parent Skill.
+   * This represents the most recent version of the skill that has been created.
    */
   latest_version: string | null;
 
@@ -211,7 +206,7 @@ export interface SkillRetrieveResponse {
   /**
    * The latest version identifier for the skill.
    *
-   * This represents the most recent committed version for the parent Skill.
+   * This represents the most recent version of the skill that has been created.
    */
   latest_version: string | null;
 
@@ -262,7 +257,7 @@ export interface SkillListResponse {
   /**
    * The latest version identifier for the skill.
    *
-   * This represents the most recent committed version for the parent Skill.
+   * This represents the most recent version of the skill that has been created.
    */
   latest_version: string | null;
 
@@ -310,9 +305,7 @@ export interface SkillCreateParams {
    * Body param: Files to upload for the skill.
    *
    * All files must be in the same top-level directory and must include a SKILL.md
-   * file at the root of that directory. Directory-qualified filenames are
-   * preserved in the multipart package so the backend can validate and prepare
-   * the read-only `/skills/<directory>/` projection.
+   * file at the root of that directory.
    */
   files: Array<Uploadable>;
 

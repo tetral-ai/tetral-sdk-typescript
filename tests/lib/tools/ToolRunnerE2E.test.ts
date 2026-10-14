@@ -3,7 +3,7 @@ import { betaZodTool } from '../../../src/helpers/beta/zod';
 import * as z from 'zod/v4';
 import nock from 'nock';
 import { gunzipSync } from 'zlib';
-import { RequestInfo } from '@tetral-ai/sdk/internal/builtin-types';
+import { RequestInfo } from '@anthropic-ai/sdk/internal/builtin-types';
 
 describe('toolRunner integration tests', () => {
   let client: Anthropic;

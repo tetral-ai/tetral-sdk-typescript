@@ -56,7 +56,7 @@ export interface SessionToolRunnerOptions {
    * Tools to expose to the session, in the same {@link BetaRunnableTool} shape
    * `client.beta.messages.toolRunner` accepts. Use
    * `betaAgentToolset20260401({ workdir })` from
-   * `@tetral-ai/sdk/tools/agent-toolset/node` for the standard
+   * `@anthropic-ai/sdk/tools/agent-toolset/node` for the standard
    * `agent_toolset_20260401` set; filter or extend the array to customise.
    */
   tools: Array<BetaRunnableTool>;
@@ -126,13 +126,9 @@ export interface DispatchedToolCall {
   /**
    * Whether a result event for this call reached the session. `false` when the
    * post itself failed (typically a permanent 4xx or send-retry exhaustion)
-   * including Tetral Cloud-hosted rejection of client-supplied
-   * `user.tool_result` / `user.custom_tool_result` variants. Treat this as an
-   * explicit local failure state, not as a successful tool-result delivery.
-   *
-   * Also `false` — with no `result` event ever built — for a tool name this
-   * runner does not own when it deliberately posts nothing and leaves the id
-   * pending for its owner (the split-client behavior).
+   * and also `false` — with no `result` event ever built — for a tool name
+   * this runner does not own when it deliberately posts nothing and leaves the
+   * id pending for its owner (the split-client behavior).
    */
   readonly posted: boolean;
 }
@@ -162,13 +158,9 @@ function isEndTurnIdle(ev: { type?: string; stop_reason?: { type?: string } }): 
  * the work-item lease — wrap it in an `EnvironmentWorker` if you need
  * heartbeating / force-stop.
  *
- * Tetral Cloud-hosted runtime rejects client-supplied tool-result event
- * variants in this stage. When such a post is rejected, yielded calls have
- * `posted: false`; consumers must not treat that as hosted-runtime success.
- *
  * @example
  * ```ts
- * import { betaAgentToolset20260401 } from '@tetral-ai/sdk/tools/agent-toolset/node';
+ * import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
  *
  * for await (const call of client.beta.sessions.events.toolRunner(work.data.id, {
  *   tools: [...betaAgentToolset20260401({ workdir }), myTool],

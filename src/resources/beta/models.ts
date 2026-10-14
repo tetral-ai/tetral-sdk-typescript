@@ -8,11 +8,6 @@ import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
 import { path } from '../../internal/utils/path';
 
-/**
- * Live Tetral model catalog. List and retrieve return the upstream Models
- * shapes with Tetral's canonical `provider/model` IDs. List supports
- * `limit`, `before_id`, and `after_id` pagination.
- */
 export class Models extends APIResource {
   /**
    * Get a specific model.

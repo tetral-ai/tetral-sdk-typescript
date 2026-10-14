@@ -669,25 +669,21 @@ export interface BetaManagedAgentsMCPProbe {
 }
 
 /**
- * HTTP response metadata captured during MCP credential validation.
+ * An HTTP response captured during a credential validation probe.
  */
 export interface BetaManagedAgentsRefreshHTTPResponse {
   /**
-   * Response body for probe diagnostics. It may be truncated and has sensitive
-   * values scrubbed. This field is always empty on the refresh leg of
-   * `mcp_oauth_validate`.
+   * Response body. May be truncated and has sensitive values scrubbed.
    */
   body: string;
 
   /**
-   * Whether the captured response body was truncated. On the refresh leg this
-   * may be true even though `body` is empty.
+   * Whether `body` was truncated.
    */
   body_truncated: boolean;
 
   /**
-   * Value of the `Content-Type` response header for probe diagnostics. This
-   * field is always empty on the refresh leg of `mcp_oauth_validate`.
+   * Value of the `Content-Type` response header.
    */
   content_type: string;
 
@@ -702,7 +698,7 @@ export interface BetaManagedAgentsRefreshHTTPResponse {
  */
 export interface BetaManagedAgentsRefreshObject {
   /**
-   * HTTP response metadata captured during the refresh-token exchange.
+   * An HTTP response captured during a credential validation probe.
    */
   http_response: BetaManagedAgentsRefreshHTTPResponse | null;
 
@@ -712,152 +708,67 @@ export interface BetaManagedAgentsRefreshObject {
   status: 'succeeded' | 'failed' | 'connect_error' | 'no_refresh_token';
 }
 
-/**
- * API-key credential details for a model provider. Secret token values are never
- * returned.
- */
 export interface BetaManagedAgentsProviderAPIKeyAuthResponse {
-  /**
-   * Provider credential routing mode, for example `model_inference`.
-   */
   access_mode: string;
 
-  /**
-   * Model provider this credential authenticates with, for example `anthropic` or
-   * `openai`.
-   */
   provider_id: string;
 
   type: 'provider_api_key';
 }
 
-/**
- * Parameters for creating a model-provider API-key credential. This key is not a
- * Tetral public SDK API key.
- */
 export interface BetaManagedAgentsProviderAPIKeyCreateParams {
-  /**
-   * Provider credential routing mode, for example `model_inference`.
-   */
   access_mode: string;
 
-  /**
-   * Model provider this credential authenticates with, for example `anthropic` or
-   * `openai`.
-   */
   provider_id: string;
 
-  /**
-   * Provider API key value. Write-only; never returned in responses.
-   */
   token: string;
 
   type: 'provider_api_key';
 }
 
-/**
- * Parameters for rotating a model-provider API-key credential. `provider_id` and
- * `access_mode` are immutable.
- */
 export interface BetaManagedAgentsProviderAPIKeyUpdateParams {
   type: 'provider_api_key';
 
-  /**
-   * Updated provider API key value.
-   */
   token?: string | null;
 }
 
-/**
- * OAuth credential details for a model provider. Secret token values are never
- * returned.
- */
 export interface BetaManagedAgentsProviderOAuthAuthResponse {
-  /**
-   * OpenAI OAuth credential routing mode.
-   */
   access_mode: 'oauth';
 
-  /**
-   * OpenAI account identifier associated with the OAuth tokens.
-   */
   account_id: string;
 
-  /**
-   * A timestamp in RFC 3339 format
-   */
   expires_at: string;
 
-  /**
-   * Whether a refresh token is stored for this credential.
-   */
   has_refresh_token: boolean;
 
-  /**
-   * Model provider this credential authenticates with.
-   */
   provider_id: 'openai';
 
   type: 'provider_oauth';
 }
 
-/**
- * Parameters for creating a model-provider OAuth credential.
- */
 export interface BetaManagedAgentsProviderOAuthCreateParams {
-  /**
-   * OAuth access token. Write-only; never returned in responses.
-   */
   access_token: string;
 
-  /**
-   * OpenAI OAuth credential routing mode.
-   */
   access_mode: 'oauth';
 
-  /**
-   * OpenAI account identifier associated with the OAuth tokens.
-   */
   account_id: string;
 
-  /**
-   * A timestamp in RFC 3339 format
-   */
   expires_at: string;
 
-  /**
-   * Model provider this credential authenticates with.
-   */
   provider_id: 'openai';
 
-  /**
-   * OAuth refresh token. Write-only; responses expose only `has_refresh_token`.
-   */
   refresh_token: string;
 
   type: 'provider_oauth';
 }
 
-/**
- * Parameters for rotating a model-provider OAuth credential. `provider_id`,
- * `access_mode`, and `account_id` are immutable.
- */
 export interface BetaManagedAgentsProviderOAuthUpdateParams {
   type: 'provider_oauth';
 
-  /**
-   * Updated OAuth access token.
-   */
   access_token?: string | null;
 
-  /**
-   * A timestamp in RFC 3339 format
-   */
   expires_at?: string | null;
 
-  /**
-   * Updated OAuth refresh token.
-   */
   refresh_token?: string | null;
 }
 
