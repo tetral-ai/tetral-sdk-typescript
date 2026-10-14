@@ -606,12 +606,10 @@ describeIntegration('Tetral live integration suite', () => {
     );
     await client.beta.skills.versions.delete(version.id, { skill_id: skill.id });
     expect((await client.beta.skills.retrieve(skill.id)).latest_version_id).toBe(skill.latest_version_id);
-    await expect(
+    await expectInvalidRequest(
       client.beta.skills.versions.delete(skill.latest_version_id, { skill_id: skill.id }),
-    ).rejects.toMatchObject({
-      status: 400,
-      error: { type: 'invalid_request_error', message: expect.stringContaining('last version') },
-    });
+      'last version',
+    );
     expect((await client.beta.skills.delete(skill.id)).type).toBe('skill_deleted');
     await expect(
       client.beta.skills.versions.retrieve(skill.latest_version_id, { skill_id: skill.id }),
