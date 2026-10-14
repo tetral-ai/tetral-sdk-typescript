@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.133.0-alpha.1
+## 0.133.0-alpha.1 (2026-10-14)
 
 Upgrade callers and Engine together. This release adopts upstream 0.133.0,
 Vitest, ESM development tooling, and TypeScript 6 while retaining CommonJS and
