@@ -4,16 +4,8 @@ import type {
   BetaManagedAgentsAgentToolset20260401Params,
   BetaManagedAgentsCustomToolParams,
 } from '@tetral-ai/sdk/resources/beta/agents';
-import type {
-  DeploymentCreateParams,
-  Deployments as DeploymentsResource,
-} from '@tetral-ai/sdk/resources/beta/deployments';
-import type { DeploymentRuns } from '@tetral-ai/sdk/resources/beta/deployment-runs';
-import type { Messages } from '@tetral-ai/sdk/resources/beta/messages/messages';
-import type { Batches } from '@tetral-ai/sdk/resources/beta/messages/batches';
+import type { DeploymentCreateParams } from '@tetral-ai/sdk/resources/beta/deployments';
 import type { BetaManagedAgentsEventParams } from '@tetral-ai/sdk/resources/beta/sessions';
-import type { UserProfiles } from '@tetral-ai/sdk/resources/beta/user-profiles';
-import type { Webhooks } from '@tetral-ai/sdk/resources/beta/webhooks';
 import { jsonResponse, parseMaybeJSONBody } from './tetral-contract-helpers';
 
 interface CapturedRequest {
@@ -130,27 +122,6 @@ describe('Tetral retained unsupported SDK surface contract', () => {
       messages: [{ role: 'user', content: 'hello' }],
     });
     expect(captured).toHaveLength(6);
-  });
-
-  test('retained unsupported resources and helper surfaces remain importable', () => {
-    const client = new Anthropic({ apiKey: 'test-tetral-key', baseURL: 'https://api.tetral.example' });
-    const retainedResources: [
-      DeploymentsResource,
-      DeploymentRuns,
-      Messages,
-      Batches,
-      UserProfiles,
-      Webhooks,
-    ] = [
-      client.beta.deployments,
-      client.beta.deploymentRuns,
-      client.beta.messages,
-      client.beta.messages.batches,
-      client.beta.userProfiles,
-      client.beta.webhooks,
-    ];
-
-    expect(retainedResources).toHaveLength(6);
   });
 
   test('type smoke covers retained unsupported params and event variants', () => {

@@ -100,3 +100,13 @@ const retainedAgentWithOverridesCreate: SessionCreateParams = {
   agent: { type: 'agent_with_overrides', id: 'agent_123' },
 };
 void retainedAgentWithOverridesCreate;
+
+const skillCannotBeModelFacingTool: AgentCreateParams = {
+  name: 'invalid skill tool',
+  model: 'anthropic/claude-opus-4-8',
+  tools: [
+    // @ts-expect-error Skills are Agent skill refs, not entries in the tools array.
+    { type: 'skill', skill_id: 'skill_123' },
+  ],
+};
+void skillCannotBeModelFacingTool;
