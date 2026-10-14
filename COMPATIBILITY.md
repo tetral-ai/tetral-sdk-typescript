@@ -85,13 +85,15 @@ Memory attribution identifies the actor that performed the operation:
 | Independent or identity-derived API key | `api_actor`             | `api_key_id`: actual key ID                     |
 | Runtime Session operation               | `session_actor`         | `session_id`: Session ID                        |
 
-The service*account_id is the stable Engine identity ID, not an Anthropic
-`svac*`ID, upstream JWT subject or service-account selector. SDK HTTP fixture tests check received typed variants and preserve the
-older union arms. Integration rows CONN-20 and MEM-24 require the native`TestOIDCKeycloakSDK`composition with real HTTPS Keycloak, Auth, PostgreSQL and
-actual SDK responses. They require both identity flows, cache/revocation/retry
-observations and typed`created_by`/`redacted_by` identity checks. A fabricated
-object, raw JSON cast, source scan or skipped composition does not prove those
-rows. Source support and actual integration evidence do not imply an npm release.
+The `service_account_id` is the stable Engine identity ID, not an Anthropic
+`svac_` ID, upstream JWT subject or service-account selector. SDK HTTP fixture
+tests check received typed variants and preserve the older union arms.
+Integration rows CONN-20 and MEM-24 require the native `TestOIDCKeycloakSDK`
+composition with real HTTPS Keycloak, Auth, PostgreSQL and actual SDK responses.
+They require both identity flows, cache/revocation/retry observations and typed
+`created_by`/`redacted_by` identity checks. A fabricated object, raw JSON cast,
+source scan or skipped composition does not prove those rows. Source support
+and actual integration evidence do not imply an npm release.
 
 ### Session streaming
 
