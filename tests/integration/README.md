@@ -12,10 +12,10 @@ The EVOUT-35/36 compatibility rows use a separate integration command:
 ```sh
 TETRAL_ENGINE_ROOT=/path/to/tetral \
 TETRAL_ENGINE_REVISION=<full-clean-Engine-commit> \
-yarn test:compatibility:integration
+pnpm test:compatibility:integration
 ```
 
-Run from a clean SDK checkout after frozen Yarn installation; no SDK build is
+Run from a clean SDK checkout after a frozen-lockfile pnpm install; no SDK build is
 required. The Engine checkout must be clean and match the full requested revision.
 The caller must supply an active dependency environment: an administrative
 PostgreSQL test URL with private database/role creation, a reachable isolated MinIO
@@ -80,7 +80,7 @@ Keycloak or Engine integration.
 | Session events                           | `tetral.integration.test.ts` | `BetaManagedAgentsSendSessionEvents`, `BetaManagedAgentsSessionEvent`                                                          | `assertSendSessionEvents`, `assertSessionEvent`                                                                                                                                                                                                         |
 | Session threads and thread events        | `tetral.integration.test.ts` | `BetaManagedAgentsSessionThread`, `BetaManagedAgentsSessionEvent`                                                              | `assertThread`, `assertSessionEvent`                                                                                                                                                                                                                    |
 | Session resources                        | `tetral.integration.test.ts` | `BetaManagedAgentsFileResource`, `BetaManagedAgentsSessionResource`, `BetaManagedAgentsDeleteSessionResource`                  | `assertFileResource`, `assertSessionResource`, `assertDeletedSessionResource`                                                                                                                                                                           |
-| Files                                    | `tetral.integration.test.ts` | `FileMetadata`                                                                                                                 | `assertFile` checks `id`, `created_at`, `filename`, `mime_type`, `size_bytes`, `type`                                                                                                                                                                   |
+| Files                                    | `tetral.integration.test.ts` | `BetaFileMetadata`                                                                                                             | `assertFile` checks `id`, `created_at`, `filename`, `mime_type`, `size_bytes`, `type`                                                                                                                                                                   |
 | Skills and versions                      | `tetral.integration.test.ts` | `BetaSkill`, `BetaSkillVersion`                                                                                                | `assertSkill`, `assertSkillVersion`                                                                                                                                                                                                                     |
 | Memory stores, memories, memory versions | `tetral.integration.test.ts` | `BetaManagedAgentsMemoryStore`, `BetaManagedAgentsMemory`, `BetaManagedAgentsMemoryListItem`, `BetaManagedAgentsMemoryVersion` | `assertMemoryStore`, `assertMemory`, `assertMemoryListItem`, `assertMemoryVersion`                                                                                                                                                                      |
 | Environments                             | `tetral.integration.test.ts` | `BetaEnvironment`, `BetaEnvironmentDeleteResponse`                                                                             | `assertEnvironment`, `assertDeletedEnvironment` checks `id`, `type`                                                                                                                                                                                     |

@@ -68,7 +68,10 @@ async function main() {
     display_name: 'comprehensive-example-skill',
     files: [
       await toFile(
-        Buffer.from('# Reporting Skill\n\nSummarize tool inventories as a markdown table.\n'),
+        Buffer.from(
+          '---\nname: reporting\ndescription: Summarizes tool inventories as a markdown table.\n---\n\n' +
+            '# Reporting Skill\n\nSummarize tool inventories as a markdown table.\n',
+        ),
         'reporting/SKILL.md',
       ),
     ],
