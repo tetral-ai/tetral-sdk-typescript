@@ -35,7 +35,7 @@ export class Batches extends APIResource {
    *           messages: [
    *             { content: 'Hello, world', role: 'user' },
    *           ],
-   *           model: 'claude-opus-4-6',
+   *           model: 'claude-opus-5',
    *         },
    *       },
    *     ],
@@ -607,14 +607,15 @@ export namespace BatchCreateParams {
        * When the appended-assistant form is used on a model that otherwise disallows
        * assistant-turn prefill, this token also authorizes that one prefill.
        */
-      fallback_credit_token?: string | null;
+      fallback_credit_token?: string | BetaMessagesAPI.BetaFallbackCreditTokenParam | null;
 
       /**
        * Opt-in server-side retry on one or more substitute models when the requested
        * model declines for policy reasons. Tried in order: if the first entry also
-       * declines, the second is tried, and so on.
+       * declines, the second is tried, and so on. The string "default" requests the
+       * requested model's server-defined default fallback configuration.
        */
-      fallbacks?: Array<BetaMessagesAPI.BetaFallbackParam> | null;
+      fallbacks?: BetaMessagesAPI.BetaFallbacksParam | null;
 
       /**
        * Specifies the geographic region for inference processing. If not specified, the
@@ -657,8 +658,9 @@ export namespace BatchCreateParams {
       service_tier?: 'auto' | 'standard_only';
 
       /**
-       * The inference speed mode for this request. `"fast"` enables high
-       * output-tokens-per-second inference.
+       * Inference speed mode. `fast` provides significantly faster output token
+       * generation at premium pricing. Not all models support `fast`; invalid
+       * combinations are rejected at create time.
        */
       speed?: 'standard' | 'fast' | null;
 

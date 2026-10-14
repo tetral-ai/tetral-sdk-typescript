@@ -242,7 +242,7 @@ The following runtimes are supported:
 
 Note that React Native is not supported at this time.
 
-If you are interested in other runtime environments, open or upvote an issue.
+If you are interested in other runtime environments, please open or upvote an issue.
 
 ## Contributing
 

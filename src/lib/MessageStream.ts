@@ -1,5 +1,6 @@
 import { STAINLESS_HELPER_METHOD_HEADER } from '../internal/stainless-helper-header';
 import { isAbortError } from '../internal/errors';
+import { checkNever } from '../internal/utils/values';
 import { AnthropicError, APIUserAbortError } from '../error';
 import {
   type ContentBlock,
@@ -73,6 +74,7 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
   #catchingPromiseCreated = false;
   #response: Response | null | undefined;
   #request_id: string | null | undefined;
+  #workspace_id: string | null | undefined;
   #logger: Logger;
 
   constructor(params: MessageCreateParamsBase | null, opts?: { logger?: Logger | undefined }) {
@@ -105,6 +107,10 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
     return this.#request_id;
   }
 
+  get workspace_id(): string | null | undefined {
+    return this.#workspace_id;
+  }
+
   /**
    * Returns the `MessageStream` data, the raw `Response` instance and the ID of the request,
    * returned vie the `request-id` header which is useful for debugging requests and resporting
@@ -119,6 +125,7 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
     data: MessageStream<ParsedT>;
     response: Response;
     request_id: string | null | undefined;
+    workspace_id: string | null | undefined;
   }> {
     this.#catchingPromiseCreated = true;
 
@@ -131,6 +138,7 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
       data: this,
       response,
       request_id: response.headers.get('request-id'),
+      workspace_id: response.headers.get('anthropic-workspace-id'),
     };
   }
 
@@ -222,6 +230,7 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
     if (this.ended) return;
     this.#response = response;
     this.#request_id = response?.headers.get('request-id');
+    this.#workspace_id = response?.headers.get('anthropic-workspace-id');
     this.#resolveConnectedPromise(response);
     this._emit('connect');
   }
@@ -575,12 +584,15 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
       case 'message_delta':
         snapshot.stop_reason = event.delta.stop_reason;
         snapshot.stop_sequence = event.delta.stop_sequence;
-        if (event.delta.stop_details != null) {
-          snapshot.stop_details = event.delta.stop_details;
-        }
+        snapshot.stop_details = event.delta.stop_details;
         snapshot.usage.output_tokens = event.usage.output_tokens;
 
-        // Update other usage fields if they exist in the event
+        if (event.delta.container != null) {
+          snapshot.container = event.delta.container;
+        }
+
+        // The remaining usage counters are cumulative whole-message totals that are
+        // omitted when they don't apply, so overwrite when present and never add.
         if (event.usage.input_tokens != null) {
           snapshot.usage.input_tokens = event.usage.input_tokens;
         }
@@ -595,6 +607,10 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
 
         if (event.usage.server_tool_use != null) {
           snapshot.usage.server_tool_use = event.usage.server_tool_use;
+        }
+
+        if (event.usage.output_tokens_details != null) {
+          snapshot.usage.output_tokens_details = event.usage.output_tokens_details;
         }
 
         return snapshot;
@@ -735,6 +751,3 @@ export class MessageStream<ParsedT = null> implements AsyncIterable<MessageStrea
     return stream.toReadableStream();
   }
 }
-
-// used to ensure exhaustive case matching without throwing a runtime error
-function checkNever(x: never) {}

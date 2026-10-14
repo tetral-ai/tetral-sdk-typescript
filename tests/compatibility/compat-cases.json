@@ -13,7 +13,7 @@
     "surface": "Sessions.retrieve (Session DTO)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "GET /v1/sessions/{id}; 13/16 Session fields + 11/12 SessionAgent fields + full SessionUsage (input/output/cache_read/cache_creation{1h,5m}/server_tool_use) served"
+    "expectation": "GET /v1/sessions projects the public Session, including budget:null and usage.server_tool_use with web search/fetch counters."
   },
   {
     "id": "T-COMPAT-SESS-3",
@@ -45,7 +45,7 @@
     "surface": "Sessions.archive",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /archive; returns Session DTO (active→archiving→archived, stamps archived_at); empty body"
+    "expectation": "POST /archive; returns Session DTO (active\u2192archiving\u2192archived, stamps archived_at); empty body"
   },
   {
     "id": "T-COMPAT-SESS-7",
@@ -53,7 +53,7 @@
     "surface": "SessionUpdateParams.vault_ids",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "400 invalid_request_error \"field is immutable\" — vault_ids is create-time state, rejected on update"
+    "expectation": "400 invalid_request_error \"field is immutable\" \u2014 vault_ids is create-time state, rejected on update"
   },
   {
     "id": "T-COMPAT-SESS-8",
@@ -85,7 +85,7 @@
     "surface": "SessionStats.active_seconds + duration_seconds",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.2: duration_seconds = now − created_at (frozen at terminal); active_seconds from new running-since accumulator"
+    "expectation": "\u00a71.2: duration_seconds = now \u2212 created_at (frozen at terminal); active_seconds from new running-since accumulator"
   },
   {
     "id": "T-COMPAT-SESS-12",
@@ -93,7 +93,7 @@
     "surface": "SessionUpdateParams.title (explicit null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3 class law: title:null = CLEAR → NULL"
+    "expectation": "\u00a71.4.3 class law: title:null = CLEAR \u2192 NULL"
   },
   {
     "id": "T-COMPAT-SESS-13",
@@ -101,7 +101,7 @@
     "surface": "SessionUpdateParams.metadata (outer null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3: metadata:null = CLEAR → {}/NULL per DTO (per-key null=delete already aligned)"
+    "expectation": "\u00a71.4.3: metadata:null = CLEAR \u2192 {}/NULL per DTO (per-key null=delete already aligned)"
   },
   {
     "id": "T-COMPAT-SESS-14",
@@ -109,7 +109,7 @@
     "surface": "MemoryStoreResourceParam.access / instructions (explicit null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3: null = drop override (access defaults read_only)"
+    "expectation": "\u00a71.4.3: null = drop override (access defaults read_only)"
   },
   {
     "id": "T-COMPAT-SESS-15",
@@ -117,7 +117,7 @@
     "surface": "SessionUpdateParams agent.tools family lock",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "tools full-replace missing the tetral_agent_toolset entry → 400 \"tools must contain exactly one tetral_agent_toolset entry\"; family differing from the session's pinned family → 400 invalid_request_error \"tools[i].family must match the session's pinned family\"; mcp_toolset entries replace freely"
+    "expectation": "tools full-replace missing the tetral_agent_toolset entry \u2192 400 \"tools must contain exactly one tetral_agent_toolset entry\"; family differing from the session's pinned family \u2192 400 invalid_request_error \"tools[i].family must match the session's pinned family\"; mcp_toolset entries replace freely"
   },
   {
     "id": "T-COMPAT-SESS-16",
@@ -125,15 +125,15 @@
     "surface": "Sessions.create against a pre-law agent version",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "pinned agent version config lacking exactly one tetral_agent_toolset → 400 invalid_request_error \"agent must declare exactly one tetral_agent_toolset entry; update the agent\"; pre-law durable state is unconstructible through public admission, so the engine-side proof is internal/httpapi/session_real_dependencies_integration_test.go's seeded pre-law row and internal/session/service.go's exact message"
+    "expectation": "pinned agent version config lacking exactly one tetral_agent_toolset \u2192 400 invalid_request_error \"agent must declare exactly one tetral_agent_toolset entry; update the agent\"; pre-law durable state is unconstructible through public admission, so the engine-side proof is internal/httpapi/session_real_dependencies_integration_test.go's seeded pre-law row and internal/session/service.go's exact message"
   },
   {
     "id": "T-COMPAT-SESS-17",
-    "name": "T-COMPAT-SESS-17 Session resources rotation: `resources.update` → `ResourceUpdateResponse`",
-    "surface": "Session resources rotation: `resources.update` → `ResourceUpdateResponse`",
+    "name": "T-COMPAT-SESS-17 Session resources rotation: `resources.update` \u2192 `ResourceUpdateResponse`",
+    "surface": "Session resources rotation: `resources.update` \u2192 `ResourceUpdateResponse`",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /v1/sessions/{id}/resources/{resource_id}, write-only body {authorization_token}, github_repository only (file/memory_store → 400), response = resource read shape, token never echoed"
+    "expectation": "POST /v1/sessions/{id}/resources/{resource_id}, write-only body {authorization_token}, github_repository only (file/memory_store \u2192 400), response = resource read shape, token never echoed"
   },
   {
     "id": "T-COMPAT-SESS-18",
@@ -141,7 +141,7 @@
     "surface": "Sessions.create with duplicate `github_repository` URLs",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "two resources with the same comparison key (owner/repo case-folded, optional `.git` trimmed first; stored/echoed URLs stay verbatim) in one create → 400 invalid_request_error; duplicate mounts with independent tokens are unresolvable at git time"
+    "expectation": "two resources with the same comparison key (owner/repo case-folded, optional `.git` trimmed first; stored/echoed URLs stay verbatim) in one create \u2192 400 invalid_request_error; duplicate mounts with independent tokens are unresolvable at git time"
   },
   {
     "id": "T-COMPAT-THREAD-1",
@@ -173,7 +173,7 @@
     "surface": "SessionThread DTO",
     "status": "supported",
     "proof": "documented",
-    "expectation": "all 11 top-level fields (stats emits null this stage; thread timing deferred, §1.2)"
+    "expectation": "all 11 top-level fields (stats emits null this stage; thread timing deferred, \u00a71.2)"
   },
   {
     "id": "T-COMPAT-THREAD-5",
@@ -181,7 +181,7 @@
     "surface": "SessionThreadStatus enum",
     "status": "supported",
     "proof": "documented",
-    "expectation": "4 public values (7 internal statuses projected: requires_action/closed_for_runtime→idle, failed→terminated)"
+    "expectation": "4 public values (7 internal statuses projected: requires_action/closed_for_runtime\u2192idle, failed\u2192terminated)"
   },
   {
     "id": "T-COMPAT-THREAD-6",
@@ -197,7 +197,7 @@
     "surface": "SessionThreadStats.active_seconds",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "thread stats emit null this stage; thread timing deferred (§1.2)"
+    "expectation": "thread stats emit null this stage; thread timing deferred (\u00a71.2)"
   },
   {
     "id": "T-COMPAT-THREAD-8",
@@ -205,7 +205,7 @@
     "surface": "SessionThreadStats.duration_seconds",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "thread stats emit null this stage; thread timing deferred (§1.2)"
+    "expectation": "thread stats emit null this stage; thread timing deferred (\u00a71.2)"
   },
   {
     "id": "T-COMPAT-THREAD-9",
@@ -213,7 +213,7 @@
     "surface": "SessionThreadStats.startup_seconds",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "thread stats emit null this stage; thread timing deferred (§1.2)"
+    "expectation": "thread stats emit null this stage; thread timing deferred (\u00a71.2)"
   },
   {
     "id": "T-COMPAT-EVIN-1",
@@ -293,23 +293,23 @@
     "surface": "events.toolRunner / SessionToolRunner",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "posts user.tool_result / user.custom_tool_result → 400 (same rejections as above)"
+    "expectation": "posts user.tool_result / user.custom_tool_result \u2192 400 (same rejections as above)"
   },
   {
     "id": "T-COMPAT-EVIN-11",
-    "name": "T-COMPAT-EVIN-11 user.message content → ImageBlock (Base64/URL/File)",
-    "surface": "user.message content → ImageBlock (Base64/URL/File)",
+    "name": "T-COMPAT-EVIN-11 user.message content \u2192 ImageBlock (Base64/URL/File)",
+    "surface": "user.message content \u2192 ImageBlock (Base64/URL/File)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "FILE source admitted for image/jpeg|png|gif|webp, ≤10 MB each and ≤32 file-backed refs per events request; base64/url → 400 upload-first; file_id stored and echoed verbatim; media re-rides until settled output"
+    "expectation": "FILE source admitted for image/jpeg|png|gif|webp, \u226410 MB each and \u226432 file-backed refs per events request; base64/url \u2192 400 upload-first; file_id stored and echoed verbatim; media re-rides until settled output"
   },
   {
     "id": "T-COMPAT-EVIN-12",
-    "name": "T-COMPAT-EVIN-12 user.message content → DocumentBlock (Base64/PlainText/URL/File, context, title)",
-    "surface": "user.message content → DocumentBlock (Base64/PlainText/URL/File, context, title)",
+    "name": "T-COMPAT-EVIN-12 user.message content \u2192 DocumentBlock (Base64/PlainText/URL/File, context, title)",
+    "surface": "user.message content \u2192 DocumentBlock (Base64/PlainText/URL/File, context, title)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "FILE source admitted for application/pdf|text/plain; PDFs aggregate ≤32 MB/600 pages, ≤32 file-backed refs per events request; base64/plain-text/url → 400 upload-first; context/title and file_id echoed verbatim"
+    "expectation": "FILE source admitted for application/pdf|text/plain; PDFs aggregate \u226432 MB/600 pages, \u226432 file-backed refs per events request; base64/plain-text/url \u2192 400 upload-first; context/title and file_id echoed verbatim"
   },
   {
     "id": "T-COMPAT-EVIN-13",
@@ -317,7 +317,7 @@
     "surface": "events.send method name (vs legacy events.create)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§3: public mutation method is `send`; matrix/contract naming aligned to the SDK"
+    "expectation": "\u00a73: public mutation method is `send`; matrix/contract naming aligned to the SDK"
   },
   {
     "id": "T-COMPAT-EVOUT-1",
@@ -365,7 +365,7 @@
     "surface": "agent.tool_result",
     "status": "supported",
     "proof": "documented",
-    "expectation": "text content served (media members not produced — see EVOUT-39)"
+    "expectation": "text content served (media members not produced \u2014 see EVOUT-39)"
   },
   {
     "id": "T-COMPAT-EVOUT-7",
@@ -413,7 +413,7 @@
     "surface": "session.status_idle",
     "status": "supported",
     "proof": "documented",
-    "expectation": "stop_reason end_turn / retries_exhausted served (requires_action field-name — see flag)"
+    "expectation": "stop_reason end_turn / retries_exhausted served (requires_action field-name \u2014 see flag)"
   },
   {
     "id": "T-COMPAT-EVOUT-13",
@@ -429,7 +429,7 @@
     "surface": "session.error",
     "status": "supported",
     "proof": "documented",
-    "expectation": "event served; unknown_error variant produced (model_* variants land this batch — see EVOUT-37)"
+    "expectation": "event served; unknown_error variant produced (model_* variants land this batch \u2014 see EVOUT-37)"
   },
   {
     "id": "T-COMPAT-EVOUT-15",
@@ -557,7 +557,7 @@
     "surface": "user.custom_tool_result (output echo)",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "input rejected → no echo row written"
+    "expectation": "input rejected \u2192 no echo row written"
   },
   {
     "id": "T-COMPAT-EVOUT-31",
@@ -565,7 +565,7 @@
     "surface": "user.define_outcome (output echo)",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "input rejected → no echo"
+    "expectation": "input rejected \u2192 no echo"
   },
   {
     "id": "T-COMPAT-EVOUT-32",
@@ -573,7 +573,7 @@
     "surface": "user.tool_result (output echo)",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "input rejected in Cloud runtime → no echo"
+    "expectation": "input rejected in Cloud runtime \u2192 no echo"
   },
   {
     "id": "T-COMPAT-EVOUT-33",
@@ -581,7 +581,7 @@
     "surface": "system.message (output echo)",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "input rejected → no echo"
+    "expectation": "input rejected \u2192 no echo"
   },
   {
     "id": "T-COMPAT-EVOUT-34",
@@ -589,7 +589,7 @@
     "surface": "agent.thinking",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.5: content-less {id,processed_at,type}; emitted once per reasoning part at reasoning-start; event-only (no session_messages projection)"
+    "expectation": "\u00a71.5: content-less {id,processed_at,type}; emitted once per reasoning part at reasoning-start; event-only (no session_messages projection)"
   },
   {
     "id": "T-COMPAT-EVOUT-35",
@@ -625,7 +625,7 @@
     "surface": "session.error variants: model_overloaded_error / model_rate_limited_error / model_request_failed_error",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.1: RuntimeFailure mapped to these SDK members at the durable emission boundary; SessionErrorPayloadSchema widened; this row also tests the retry_status class law (`exhausted` at every idle-settlement emission incl. pod-loss and spent budget, `terminal` only at a real terminal closeout, never `retrying` alongside an idle settlement)"
+    "expectation": "\u00a71.1: RuntimeFailure mapped to these SDK members at the durable emission boundary; SessionErrorPayloadSchema widened; this row also tests the retry_status class law (`exhausted` at every idle-settlement emission incl. pod-loss and spent budget, `terminal` only at a real terminal closeout, never `retrying` alongside an idle settlement)"
   },
   {
     "id": "T-COMPAT-EVOUT-38",
@@ -633,7 +633,7 @@
     "surface": "session.error variants: billing_error / credential_host_unreachable_error",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "§1.1: never mapped; unmatched failures fall through to unknown_error"
+    "expectation": "\u00a71.1: never mapped; unmatched failures fall through to unknown_error"
   },
   {
     "id": "T-COMPAT-EVOUT-39",
@@ -641,7 +641,7 @@
     "surface": "agent.tool_result content Image/Document/SearchResult (and agent.mcp_tool_result)",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "§2: engine emits text blocks only (legal union subset); media stays ref + placeholder"
+    "expectation": "\u00a72: engine emits text blocks only (legal union subset); media stays ref + placeholder"
   },
   {
     "id": "T-COMPAT-EVOUT-40",
@@ -649,7 +649,7 @@
     "surface": "webhook: session.created",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "webhook delivery + management deferred (§9 out of scope); no producer; /v1/webhooks* → 400 unsupported SDK surface"
+    "expectation": "webhook delivery + management deferred (\u00a79 out of scope); no producer; /v1/webhooks* \u2192 400 unsupported SDK surface"
   },
   {
     "id": "T-COMPAT-EVOUT-41",
@@ -977,7 +977,7 @@
     "surface": "agents.update",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /v1/agents/{id} patch; version required (conflict→409); null-clear description/system/mcp_servers/skills/tools"
+    "expectation": "POST /v1/agents/{id} patch; version required (conflict\u2192409); null-clear description/system/mcp_servers/skills/tools"
   },
   {
     "id": "T-COMPAT-AGENT-4",
@@ -1017,7 +1017,7 @@
     "surface": "multiagent (create/update param + response)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "400 invalid_request_error \"multiagent must be null when provided\"; response Agent.multiagent always null"
+    "expectation": "400 invalid_request_error \"multiagent must be null when provided\"; response Agent.multiagent always null This includes coordinator, self and advisor variants retained from upstream."
   },
   {
     "id": "T-COMPAT-AGENT-9",
@@ -1049,7 +1049,7 @@
     "surface": "tetral_agent_toolset request fields configs / default_config",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "§2: existing unknown-field 400 kept — 400 invalid_request_error \".configs is an unknown field\" (only {type,family} accepted; mcp_toolset configs stay supported)"
+    "expectation": "\u00a72: existing unknown-field 400 kept \u2014 400 invalid_request_error \".configs is an unknown field\" (only {type,family} accepted; mcp_toolset configs stay supported)"
   },
   {
     "id": "T-COMPAT-AGENT-13",
@@ -1065,7 +1065,7 @@
     "surface": "custom skill version (explicit null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3 class law: version:null = defaults to latest (clear the pin)"
+    "expectation": "\u00a71.4.3 class law: version:null = defaults to latest (clear the pin)"
   },
   {
     "id": "T-COMPAT-AGENT-15",
@@ -1073,7 +1073,7 @@
     "surface": "AgentUpdateParams.metadata (top-level null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3: metadata:null = CLEAR → {} (per-key null=delete already aligned)"
+    "expectation": "\u00a71.4.3: metadata:null = CLEAR \u2192 {} (per-key null=delete already aligned)"
   },
   {
     "id": "T-COMPAT-AGENT-16",
@@ -1169,7 +1169,7 @@
     "surface": "BetaSelfHostedConfigParams (config type=self_hosted request)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "400 invalid_request_error — config.type must be cloud"
+    "expectation": "400 invalid_request_error \u2014 config.type must be cloud"
   },
   {
     "id": "T-COMPAT-ENV-11",
@@ -1185,7 +1185,7 @@
     "surface": "BetaLimitedNetworkParams (networking type=limited request)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "400 invalid_request_error — networking.type must be unrestricted/blocked/cidr_allow_list"
+    "expectation": "400 invalid_request_error \u2014 networking.type must be unrestricted/blocked/cidr_allow_list"
   },
   {
     "id": "T-COMPAT-ENV-13",
@@ -1265,7 +1265,7 @@
     "surface": "Work.poller (local helper)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "drives deferred /work endpoints → 400 unsupported SDK surface"
+    "expectation": "drives deferred /work endpoints \u2192 400 unsupported SDK surface"
   },
   {
     "id": "T-COMPAT-ENV-23",
@@ -1273,7 +1273,7 @@
     "surface": "Work.worker (local helper)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "drives deferred /work endpoints → 400 unsupported SDK surface"
+    "expectation": "drives deferred /work endpoints \u2192 400 unsupported SDK surface"
   },
   {
     "id": "T-COMPAT-ENV-24",
@@ -1353,7 +1353,7 @@
     "surface": "Nullable request fields explicit null (config / name / description)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3 class law: null = CLEAR/default; config:null on create → 400 (clear meaningless) as named-style exception"
+    "expectation": "\u00a71.4.3 class law: null = CLEAR/default; config:null on create \u2192 400 (clear meaningless) as named-style exception"
   },
   {
     "id": "T-COMPAT-FILE-1",
@@ -1401,7 +1401,7 @@
     "surface": "files.download / FileMetadata.downloadable (policy)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§4 fact: uploaded originals downloadable=false → 403 permission_error on content fetch (intentional); session-produced files download"
+    "expectation": "\u00a74 fact: uploaded originals downloadable=false \u2192 403 permission_error on content fetch (intentional); session-produced files download"
   },
   {
     "id": "T-COMPAT-MEM-1",
@@ -1425,7 +1425,7 @@
     "surface": "memoryStores.update",
     "status": "supported",
     "proof": "documented",
-    "expectation": "patch (>=1 mutable); description null→\"\"; per-key metadata null=delete"
+    "expectation": "patch (>=1 mutable); description null\u2192\"\"; per-key metadata null=delete"
   },
   {
     "id": "T-COMPAT-MEM-4",
@@ -1553,7 +1553,7 @@
     "surface": "MemoryCreateParams.content (explicit null)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "400 invalid_request_error \"content must be a string\" — SDK doc: \"Required; pass `\"\"` explicitly to create an empty memory\"; null has no documented meaning (§3)"
+    "expectation": "400 invalid_request_error \"content must be a string\" \u2014 SDK doc: \"Required; pass `\"\"` explicitly to create an empty memory\"; null has no documented meaning (\u00a73)"
   },
   {
     "id": "T-COMPAT-MEM-20",
@@ -1561,7 +1561,7 @@
     "surface": "MemoryUpdateParams.content / path (explicit null)",
     "status": "rejected",
     "proof": "rejection",
-    "expectation": "`content:null` and `path:null` are each 400 invalid_request_error — SDK doc semantics are omit=unchanged / `\"\"`=empty / string=value; null has no documented meaning (§3); the class law does not apply"
+    "expectation": "`content:null` and `path:null` are each 400 invalid_request_error \u2014 SDK doc semantics are omit=unchanged / `\"\"`=empty / string=value; null has no documented meaning (\u00a73); the class law does not apply"
   },
   {
     "id": "T-COMPAT-MEM-21",
@@ -1569,15 +1569,15 @@
     "surface": "MemoryUpdateParams.precondition.content_sha256",
     "status": "supported",
     "proof": "documented",
-    "expectation": "content_sha256 precondition supported; content_sha256 required (400 if omitted) — SDK \"optional\" is a Stainless artifact"
+    "expectation": "content_sha256 precondition supported; content_sha256 required (400 if omitted) \u2014 SDK \"optional\" is a Stainless artifact"
   },
   {
     "id": "T-COMPAT-MEM-22",
     "name": "T-COMPAT-MEM-22 MemoryStoreUpdateParams.name (explicit null)",
     "surface": "MemoryStoreUpdateParams.name (explicit null)",
-    "status": "supported",
-    "proof": "documented",
-    "expectation": "§1.4.3 (named): name:null = CLEAR → NULL"
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "Updating name:null returns 400 invalid_request_error; omission preserves the name. Store responses always carry a string name."
   },
   {
     "id": "T-COMPAT-MEM-23",
@@ -1585,7 +1585,7 @@
     "surface": "MemoryStoreUpdateParams.metadata (top-level null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3 (named): metadata:null = CLEAR → {}/NULL (per-key null=delete already aligned)"
+    "expectation": "\u00a71.4.3 (named): metadata:null = CLEAR \u2192 {}/NULL (per-key null=delete already aligned)"
   },
   {
     "id": "T-COMPAT-VAULT-1",
@@ -1609,7 +1609,7 @@
     "surface": "vaults.update",
     "status": "supported",
     "proof": "documented",
-    "expectation": "display_name null→clear; per-key metadata null=delete"
+    "expectation": "display_name null\u2192clear; per-key metadata null=delete"
   },
   {
     "id": "T-COMPAT-VAULT-4",
@@ -1689,7 +1689,7 @@
     "surface": "credentials.mcpOAuthValidate",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /mcp_oauth_validate; 8 top-level field names + mcp_oauth-only restriction (status/probe/refresh sub-shapes reshaped this batch — see below)"
+    "expectation": "POST /mcp_oauth_validate; 8 top-level field names + mcp_oauth-only restriction (status/probe/refresh sub-shapes reshaped this batch \u2014 see below)"
   },
   {
     "id": "T-COMPAT-VAULT-14",
@@ -1737,7 +1737,7 @@
     "surface": "CredentialValidation.status enum (valid/invalid/unknown)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.3 reshape: ok→valid, failed→invalid, indeterminate (probe transport error)→unknown"
+    "expectation": "\u00a71.3 reshape: ok\u2192valid, failed\u2192invalid, indeterminate (probe transport error)\u2192unknown"
   },
   {
     "id": "T-COMPAT-VAULT-20",
@@ -1745,7 +1745,7 @@
     "surface": "CredentialValidation.mcp_probe (method + http_response)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.3 reshape: {method:\"initialize\", http_response{status_code,content_type,body,body_truncated}\\|null}"
+    "expectation": "\u00a71.3 reshape: {method:\"initialize\", http_response{status_code,content_type,body,body_truncated}\\|null}"
   },
   {
     "id": "T-COMPAT-VAULT-21",
@@ -1753,7 +1753,7 @@
     "surface": "CredentialValidation.refresh (status + http_response)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.3 reshape: {status succeeded/failed/connect_error/no_refresh_token, http_response\\|null}"
+    "expectation": "\u00a71.3 reshape: {status succeeded/failed/connect_error/no_refresh_token, http_response\\|null}"
   },
   {
     "id": "T-COMPAT-VAULT-22",
@@ -1761,7 +1761,7 @@
     "surface": "RefreshHTTPResponse (body/body_truncated/content_type/status_code)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.3: size-bounded, redacted http_response object added to probe/refresh"
+    "expectation": "\u00a71.3: size-bounded, redacted http_response object added to probe/refresh"
   },
   {
     "id": "T-COMPAT-VAULT-23",
@@ -1769,7 +1769,7 @@
     "surface": "Vault/Credential update metadata (top-level null)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.3: metadata:null = CLEAR → {}/NULL (per-key null=delete already aligned)"
+    "expectation": "\u00a71.4.3: metadata:null = CLEAR \u2192 {}/NULL (per-key null=delete already aligned)"
   },
   {
     "id": "T-COMPAT-SKILL-1",
@@ -1793,7 +1793,7 @@
     "surface": "skills.list",
     "status": "supported",
     "proof": "documented",
-    "expectation": "limit/page + source='custom'; PageCursor (source='anthropic' rejected — see SKILL-9)"
+    "expectation": "limit/page + source='custom'; PageCursor (source='anthropic' rejected \u2014 see SKILL-9)"
   },
   {
     "id": "T-COMPAT-SKILL-4",
@@ -1817,7 +1817,7 @@
     "surface": "versions.retrieve",
     "status": "supported",
     "proof": "documented",
-    "expectation": "8-field SkillVersion; empty version → 404"
+    "expectation": "8-field SkillVersion; empty version \u2192 404"
   },
   {
     "id": "T-COMPAT-SKILL-7",
@@ -2073,7 +2073,7 @@
     "surface": "beta.webhooks.unwrap",
     "status": "not-produced",
     "proof": "not-produced",
-    "expectation": "local signature-verify + parse helper retained; no engine route; /v1/webhooks* management → 400 unsupported SDK surface; delivery out of scope (§9)"
+    "expectation": "local signature-verify + parse helper retained; no engine route; /v1/webhooks* management \u2192 400 unsupported SDK surface; delivery out of scope (\u00a79)"
   },
   {
     "id": "T-COMPAT-CONN-1",
@@ -2119,8 +2119,8 @@
   },
   {
     "id": "T-COMPAT-CONN-6",
-    "name": "T-COMPAT-CONN-6 client.apiKey → X-Api-Key auth",
-    "surface": "client.apiKey → X-Api-Key auth",
+    "name": "T-COMPAT-CONN-6 client.apiKey \u2192 X-Api-Key auth",
+    "surface": "client.apiKey \u2192 X-Api-Key auth",
     "status": "supported",
     "proof": "documented",
     "expectation": "THE supported public auth mode"
@@ -2139,15 +2139,15 @@
     "surface": "beta.apiKeys management resource (absent in SDK)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "NOTE: engine serves /v1/api_keys (GET/POST/DELETE; DTO pinned §5.0.3/§5-item-6; DELETE→204); no fork-SDK resource by design — admin/raw-HTTP surface only"
+    "expectation": "NOTE: engine serves /v1/api_keys (GET/POST/DELETE; DTO pinned \u00a75.0.3/\u00a75-item-6; DELETE\u2192204); no fork-SDK resource by design \u2014 admin/raw-HTTP surface only"
   },
   {
     "id": "T-COMPAT-CONN-9",
-    "name": "T-COMPAT-CONN-9 sessions.list → BidirectionalPageCursor / prev_page",
-    "surface": "sessions.list → BidirectionalPageCursor / prev_page",
+    "name": "T-COMPAT-CONN-9 sessions.list \u2192 BidirectionalPageCursor / prev_page",
+    "surface": "sessions.list \u2192 BidirectionalPageCursor / prev_page",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.6: bidirectional cursor pinned verbatim; prev_page served on list endpoints that declare it (dedups sessions-core prev_page item)"
+    "expectation": "\u00a71.4.6: bidirectional cursor pinned verbatim; prev_page served on list endpoints that declare it (dedups sessions-core prev_page item)"
   },
   {
     "id": "T-COMPAT-CONN-10",
@@ -2195,7 +2195,7 @@
     "surface": "shared.ErrorType missing engine types (conflict_error, request_too_large, not_implemented)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.2 fork-additive: add the three to shared.ErrorType + ErrorObject body union with doc comments"
+    "expectation": "\u00a71.4.2 fork-additive: add the three to shared.ErrorType + ErrorObject body union with doc comments"
   },
   {
     "id": "T-COMPAT-CONN-16",
@@ -2203,15 +2203,15 @@
     "surface": "client request-id RESPONSE header (.requestID / withResponse().request_id)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.1: middleware sets `request-id: <id>` on every response (success + error)"
+    "expectation": "\u00a71.4.1: middleware sets `request-id: <id>` on every response (success + error)"
   },
   {
     "id": "T-COMPAT-CONN-17",
-    "name": "T-COMPAT-CONN-17 betas param → anthropic-beta header",
-    "surface": "betas param → anthropic-beta header",
+    "name": "T-COMPAT-CONN-17 betas param \u2192 anthropic-beta header",
+    "surface": "betas param \u2192 anthropic-beta header",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.4: accepted and ignored (beta=true query is the gate)"
+    "expectation": "\u00a71.4.4: accepted and ignored (beta=true query is the gate)"
   },
   {
     "id": "T-COMPAT-CONN-18",
@@ -2219,7 +2219,7 @@
     "surface": "anthropic-version request header (2023-06-01)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "§1.4.4: accepted and ignored (single-version platform)"
+    "expectation": "\u00a71.4.4: accepted and ignored (single-version platform)"
   },
   {
     "id": "T-COMPAT-CONN-19",
@@ -2267,7 +2267,7 @@
     "surface": "`tetral_agent_toolset` response configs/default_config",
     "status": "supported",
     "proof": "documented",
-    "expectation": "response-only §7.3-faithful projection: default_config={enabled:true,always_ask} + configs enumerating always_allow exceptions (Claude read/grep/glob, GPT view_image)"
+    "expectation": "response-only \u00a77.3-faithful projection: default_config={enabled:true,always_ask} + configs enumerating always_allow exceptions (Claude read/grep/glob, GPT view_image)"
   },
   {
     "id": "T-COMPAT-GAP-6",
@@ -2309,16 +2309,416 @@
   },
   {
     "id": "T-COMPAT-MEM-24",
-    "name": "T-COMPAT-MEM-24 service_actor Memory attribution",
-    "surface": "service_actor Memory attribution",
+    "name": "T-COMPAT-MEM-24 service_account_actor Memory attribution",
+    "surface": "service_account_actor Memory attribution",
     "status": "supported",
     "proof": "integration",
-    "expectation": "Actual SDK received created_by and redacted_by discriminate service_actor/service_id as the stable Engine identity; direct human attribution remains user_actor/user_id.",
+    "expectation": "Actual SDK received created_by and redacted_by discriminate service_account_actor/service_account_id as the stable Engine identity; direct human attribution remains user_actor/user_id.",
     "locator": {
       "suite": "integration",
       "scenario": "integration-oidc",
       "assertion": "T-COMPAT-MEM-24",
       "handler": "integration-oidc#T-COMPAT-MEM-24"
     }
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-1",
+    "name": "T-COMPAT-UPSTREAM-1 session.usage",
+    "surface": "session.usage",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-2",
+    "name": "T-COMPAT-UPSTREAM-2 BetaManagedAgentsRedactedBlock.type",
+    "surface": "BetaManagedAgentsRedactedBlock.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "No redacted content block production."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-3",
+    "name": "T-COMPAT-UPSTREAM-3 BetaManagedAgentsSessionBudgetReached.type",
+    "surface": "BetaManagedAgentsSessionBudgetReached.type",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; generic existing failure/stop projection remains."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-12",
+    "name": "T-COMPAT-UPSTREAM-12 AgentUpdateParams.version omitted",
+    "surface": "AgentUpdateParams.version omitted",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: version required."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-13",
+    "name": "T-COMPAT-UPSTREAM-13 BetaManagedAgentsBashToolConfigParams.type",
+    "surface": "BetaManagedAgentsBashToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-14",
+    "name": "T-COMPAT-UPSTREAM-14 BetaManagedAgentsEditToolConfigParams.type",
+    "surface": "BetaManagedAgentsEditToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-15",
+    "name": "T-COMPAT-UPSTREAM-15 BetaManagedAgentsGlobToolConfigParams.type",
+    "surface": "BetaManagedAgentsGlobToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-16",
+    "name": "T-COMPAT-UPSTREAM-16 BetaManagedAgentsGrepToolConfigParams.type",
+    "surface": "BetaManagedAgentsGrepToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-17",
+    "name": "T-COMPAT-UPSTREAM-17 BetaManagedAgentsModelConfigParams.effort",
+    "surface": "BetaManagedAgentsModelConfigParams.effort",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown nested model field."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-18",
+    "name": "T-COMPAT-UPSTREAM-18 BetaManagedAgentsModelConfigParams.inference_geo",
+    "surface": "BetaManagedAgentsModelConfigParams.inference_geo",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown nested model field."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-19",
+    "name": "T-COMPAT-UPSTREAM-19 BetaManagedAgentsReadToolConfigParams.type",
+    "surface": "BetaManagedAgentsReadToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-20",
+    "name": "T-COMPAT-UPSTREAM-20 BetaManagedAgentsWebFetchToolConfigParams.allowed_domains",
+    "surface": "BetaManagedAgentsWebFetchToolConfigParams.allowed_domains",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-21",
+    "name": "T-COMPAT-UPSTREAM-21 BetaManagedAgentsWebFetchToolConfigParams.blocked_domains",
+    "surface": "BetaManagedAgentsWebFetchToolConfigParams.blocked_domains",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-22",
+    "name": "T-COMPAT-UPSTREAM-22 BetaManagedAgentsWebFetchToolConfigParams.max_content_tokens",
+    "surface": "BetaManagedAgentsWebFetchToolConfigParams.max_content_tokens",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-23",
+    "name": "T-COMPAT-UPSTREAM-23 BetaManagedAgentsWebFetchToolConfigParams.type",
+    "surface": "BetaManagedAgentsWebFetchToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-24",
+    "name": "T-COMPAT-UPSTREAM-24 BetaManagedAgentsWebSearchToolConfigParams.allowed_domains",
+    "surface": "BetaManagedAgentsWebSearchToolConfigParams.allowed_domains",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-25",
+    "name": "T-COMPAT-UPSTREAM-25 BetaManagedAgentsWebSearchToolConfigParams.blocked_domains",
+    "surface": "BetaManagedAgentsWebSearchToolConfigParams.blocked_domains",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-26",
+    "name": "T-COMPAT-UPSTREAM-26 BetaManagedAgentsWebSearchToolConfigParams.type",
+    "surface": "BetaManagedAgentsWebSearchToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-27",
+    "name": "T-COMPAT-UPSTREAM-27 BetaManagedAgentsWebSearchToolConfigParams.user_location",
+    "surface": "BetaManagedAgentsWebSearchToolConfigParams.user_location",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-28",
+    "name": "T-COMPAT-UPSTREAM-28 BetaManagedAgentsWriteToolConfigParams.type",
+    "surface": "BetaManagedAgentsWriteToolConfigParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: agent_toolset_20260401 rejected; Tetral toolset does not accept configs."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-29",
+    "name": "T-COMPAT-UPSTREAM-29 MemoryVersionListParams.service_account_id",
+    "surface": "MemoryVersionListParams.service_account_id",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown query parameter."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-30",
+    "name": "T-COMPAT-UPSTREAM-30 BetaManagedAgentsUserMessageEventParams.content = redacted",
+    "surface": "BetaManagedAgentsUserMessageEventParams.content = redacted",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unsupported content block type."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-31",
+    "name": "T-COMPAT-UPSTREAM-31 BetaManagedAgentsAdvisorParams.model",
+    "surface": "BetaManagedAgentsAdvisorParams.model",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-32",
+    "name": "T-COMPAT-UPSTREAM-32 BetaManagedAgentsAdvisorParams.type",
+    "surface": "BetaManagedAgentsAdvisorParams.type",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: non-null multiagent is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-33",
+    "name": "T-COMPAT-UPSTREAM-33 SessionCreateParams.budget",
+    "surface": "SessionCreateParams.budget",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error: budget configuration is unsupported; Session responses return budget:null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-34",
+    "name": "T-COMPAT-UPSTREAM-34 SessionCreateParams.initial_events",
+    "surface": "SessionCreateParams.initial_events",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown Session create field."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-35",
+    "name": "T-COMPAT-UPSTREAM-35 SessionUpdateParams.budget",
+    "surface": "SessionUpdateParams.budget",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400 invalid_request_error: budget configuration is unsupported; Session responses return budget:null."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-36",
+    "name": "T-COMPAT-UPSTREAM-36 EventStreamParams.event_deltas",
+    "surface": "EventStreamParams.event_deltas",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: Thread event_deltas unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-57",
+    "name": "T-COMPAT-UPSTREAM-57 files (Files)",
+    "surface": "files (Files)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: beta=true required."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-59",
+    "name": "T-COMPAT-UPSTREAM-59 skills/skills (Skills)",
+    "surface": "skills/skills (Skills)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: beta=true required."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-60",
+    "name": "T-COMPAT-UPSTREAM-60 skills/versions (Versions)",
+    "surface": "skills/versions (Versions)",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: beta=true required."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-61",
+    "name": "T-COMPAT-UPSTREAM-61 BetaManagedAgentsServiceAccountActor.service_account_id",
+    "surface": "BetaManagedAgentsServiceAccountActor.service_account_id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Official service_account_id contains the stable Engine identity ID, not an Anthropic svac_ ID."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-62",
+    "name": "T-COMPAT-UPSTREAM-62 BetaManagedAgentsServiceAccountActor.type",
+    "surface": "BetaManagedAgentsServiceAccountActor.type",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Official discriminator service_account_actor; only public JSON names change, persisted actor types do not."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-63",
+    "name": "T-COMPAT-UPSTREAM-63 BetaManagedAgentsSession.budget",
+    "surface": "BetaManagedAgentsSession.budget",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Session responses return budget:null; budget configuration remains unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-64",
+    "name": "T-COMPAT-UPSTREAM-64 BetaManagedAgentsSessionUpdatedEvent.budget",
+    "surface": "BetaManagedAgentsSessionUpdatedEvent.budget",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Budget changes are not produced; budget configuration is unsupported."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-65",
+    "name": "T-COMPAT-UPSTREAM-65 BetaManagedAgentsSessionUsage.active_seconds",
+    "surface": "BetaManagedAgentsSessionUsage.active_seconds",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Session server_tool_use is projected; optional usage.active_seconds/list_cost and Thread server_tool_use are omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-66",
+    "name": "T-COMPAT-UPSTREAM-66 BetaManagedAgentsSessionUsage.list_cost",
+    "surface": "BetaManagedAgentsSessionUsage.list_cost",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Session server_tool_use is projected; optional usage.active_seconds/list_cost and Thread server_tool_use are omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-67",
+    "name": "T-COMPAT-UPSTREAM-67 BetaManagedAgentsSessionUsage.server_tool_use",
+    "surface": "BetaManagedAgentsSessionUsage.server_tool_use",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Official BetaManagedAgentsServerToolUsage projects web_search_requests and web_fetch_requests."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-68",
+    "name": "T-COMPAT-UPSTREAM-68 BetaManagedAgentsSessionUsageEvent.budget",
+    "surface": "BetaManagedAgentsSessionUsageEvent.budget",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "session.usage is not produced, including its budget field."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-69",
+    "name": "T-COMPAT-UPSTREAM-69 BetaManagedAgentsSessionThreadUsage.active_seconds",
+    "surface": "BetaManagedAgentsSessionThreadUsage.active_seconds",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Session server_tool_use is projected; optional usage.active_seconds/list_cost and Thread server_tool_use are omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-70",
+    "name": "T-COMPAT-UPSTREAM-70 BetaManagedAgentsSessionThreadUsage.list_cost",
+    "surface": "BetaManagedAgentsSessionThreadUsage.list_cost",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Session server_tool_use is projected; optional usage.active_seconds/list_cost and Thread server_tool_use are omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-71",
+    "name": "T-COMPAT-UPSTREAM-71 BetaManagedAgentsSessionThreadUsage.server_tool_use",
+    "surface": "BetaManagedAgentsSessionThreadUsage.server_tool_use",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Session server_tool_use is projected; optional usage.active_seconds/list_cost and Thread server_tool_use are omitted."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-72",
+    "name": "T-COMPAT-UPSTREAM-72 webhook environment.archived",
+    "surface": "webhook environment.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-73",
+    "name": "T-COMPAT-UPSTREAM-73 webhook environment.created",
+    "surface": "webhook environment.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-74",
+    "name": "T-COMPAT-UPSTREAM-74 webhook environment.deleted",
+    "surface": "webhook environment.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-75",
+    "name": "T-COMPAT-UPSTREAM-75 webhook environment.updated",
+    "surface": "webhook environment.updated",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-76",
+    "name": "T-COMPAT-UPSTREAM-76 webhook memory_store.archived",
+    "surface": "webhook memory_store.archived",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-77",
+    "name": "T-COMPAT-UPSTREAM-77 webhook memory_store.created",
+    "surface": "webhook memory_store.created",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-78",
+    "name": "T-COMPAT-UPSTREAM-78 webhook memory_store.deleted",
+    "surface": "webhook memory_store.deleted",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-79",
+    "name": "T-COMPAT-UPSTREAM-79 webhook session.budget_reached",
+    "surface": "webhook session.budget_reached",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Not produced; webhook resource has no route."
   }
 ]

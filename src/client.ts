@@ -9,6 +9,11 @@ export type { Logger, LogLevel } from './internal/utils/log';
 import { castToError, isAbortError } from './internal/errors';
 import type { APIResponseProps } from './internal/parse';
 import { getPlatformHeaders } from './internal/detect-platform';
+import {
+  armAbandonmentBackstop,
+  registerRequestSignalCleanup,
+  releaseRequestSignal,
+} from './internal/request-signal';
 import * as Shims from './internal/shims';
 import * as Opts from './internal/request-options';
 import { stringifyQuery } from './internal/utils/query';
@@ -49,6 +54,14 @@ import {
   Completions,
 } from './resources/completions';
 import {
+  DeletedFile,
+  FileListParams,
+  FileMetadata,
+  FileMetadataPageCursor,
+  FileUploadParams,
+  Files,
+} from './resources/files';
+import {
   CapabilitySupport,
   ContextManagementCapability,
   EffortCapability,
@@ -67,10 +80,12 @@ import {
   BetaAPIError,
   BetaAuthenticationError,
   BetaBillingError,
+  BetaCurrency,
   BetaError,
   BetaErrorResponse,
   BetaGatewayTimeoutError,
   BetaInvalidRequestError,
+  BetaMonetaryAmount,
   BetaNotFoundError,
   BetaOverloadedError,
   BetaPermissionError,
@@ -88,6 +103,46 @@ import {
   BashCodeExecutionToolResultError,
   BashCodeExecutionToolResultErrorCode,
   BashCodeExecutionToolResultErrorParam,
+  BrowserCloseTabConfig,
+  BrowserDoubleClickConfig,
+  BrowserFileUploadConfig,
+  BrowserFindConfig,
+  BrowserFormInputConfig,
+  BrowserGetPageTextConfig,
+  BrowserHoldKeyConfig,
+  BrowserHoverConfig,
+  BrowserJavascriptExecConfig,
+  BrowserKeyConfig,
+  BrowserLeftClickConfig,
+  BrowserLeftClickDragConfig,
+  BrowserLeftMouseDownConfig,
+  BrowserLeftMouseUpConfig,
+  BrowserListTabsConfig,
+  BrowserMiddleClickConfig,
+  BrowserMouseMoveConfig,
+  BrowserNavigateConfig,
+  BrowserNewTabConfig,
+  BrowserReadConsoleConfig,
+  BrowserReadNetworkConfig,
+  BrowserReadPageConfig,
+  BrowserRightClickConfig,
+  BrowserScreenshotConfig,
+  BrowserScrollConfig,
+  BrowserScrollToConfig,
+  BrowserStateBlockParam,
+  BrowserStateChange,
+  BrowserStateChangeDownloadCompleted,
+  BrowserStateChangeDownloadFailed,
+  BrowserStateChangeDownloadStarted,
+  BrowserStateChangeTabOpened,
+  BrowserStateTabEntry,
+  BrowserSwitchTabConfig,
+  BrowserToolset20260801,
+  BrowserToolsetConfigs,
+  BrowserTripleClickConfig,
+  BrowserTypeConfig,
+  BrowserWaitConfig,
+  BrowserZoomConfig,
   CacheControlEphemeral,
   CacheCreation,
   CitationCharLocation,
@@ -118,7 +173,28 @@ import {
   CodeExecutionToolResultError,
   CodeExecutionToolResultErrorCode,
   CodeExecutionToolResultErrorParam,
+  ComputerCursorPositionConfig,
+  ComputerDoubleClickConfig,
+  ComputerHoldKeyConfig,
+  ComputerKeyConfig,
+  ComputerLeftClickConfig,
+  ComputerLeftClickDragConfig,
+  ComputerLeftMouseDownConfig,
+  ComputerLeftMouseUpConfig,
+  ComputerMiddleClickConfig,
+  ComputerMouseMoveConfig,
+  ComputerRightClickConfig,
+  ComputerScreenshotConfig,
+  ComputerScrollConfig,
+  ComputerToolset20260801,
+  ComputerToolsetConfigs,
+  ComputerTripleClickConfig,
+  ComputerTypeConfig,
+  ComputerWaitConfig,
+  ComputerZoomConfig,
   Container,
+  ContainerParams,
+  ContainerSkill,
   ContainerUploadBlock,
   ContainerUploadBlockParam,
   ContentBlock,
@@ -133,7 +209,10 @@ import {
   DocumentBlockParam,
   EncryptedCodeExecutionResultBlock,
   EncryptedCodeExecutionResultBlockParam,
+  FileDocumentSource,
+  FileImageSource,
   ImageBlockParam,
+  ImageTransformationsParam,
   InputJSONDelta,
   JSONOutputFormat,
   MemoryTool20250818,
@@ -142,6 +221,7 @@ import {
   MessageCountTokensParams,
   MessageCountTokensTool,
   MessageCreateParams,
+  MessageCreateParamsContainer,
   MessageCreateParamsNonStreaming,
   MessageCreateParamsStreaming,
   MessageDeltaEvent,
@@ -153,7 +233,6 @@ import {
   MessageTokensCount,
   Messages,
   Metadata,
-  MidConversationSystemBlockParam,
   Model,
   OutputConfig,
   OutputTokensDetails,
@@ -176,6 +255,7 @@ import {
   ServerToolUseBlock,
   ServerToolUseBlockParam,
   SignatureDelta,
+  SkillParams,
   StopReason,
   TextBlock,
   TextBlockParam,
@@ -253,6 +333,15 @@ import {
   WebSearchToolResultError,
   WebSearchToolResultErrorCode,
 } from './resources/messages/messages';
+import {
+  DeletedSkill,
+  Skill,
+  SkillCreateParams,
+  SkillListParams,
+  SkillSource,
+  Skills,
+  SkillsPageCursor,
+} from './resources/skills/skills';
 import { type Fetch } from './internal/builtin-types';
 import { isRunningInBrowser } from './internal/detect-platform';
 import { HeadersLike, NullableHeaders, buildHeaders } from './internal/headers';
@@ -475,7 +564,14 @@ export class BaseAnthropic {
     return this._authState.provider;
   }
   private _authState: AuthState;
-  private _baseURLIsExplicit: boolean;
+  /**
+   * Whether `baseURL` was chosen by the caller (constructor arg or env var)
+   * rather than derived. Non-explicit base URLs may be replaced — by a
+   * profile-supplied host, or by re-derivation in `withOptions()` clones.
+   * Subclasses that derive their own base URL should correct this after
+   * `super()`, since the base constructor can't tell a derived value apart.
+   */
+  protected _baseURLIsExplicit: boolean;
   private _requestAuthFlags = new WeakMap<FinalRequestOptions, RequestAuthFlags>();
 
   baseURL: string;
@@ -628,14 +724,25 @@ export class BaseAnthropic {
           this._applyCredentialBaseURL(result.baseURL);
         } else if (options.profile != null) {
           this._authState.resolution = this._resolveDefaultCredentials(options.profile);
+        } else if (this._shouldResolveDefaultCredentials()) {
+          // No explicit auth provided — lazily resolve from the credential
+          // chain on first request. Errors are captured into _auth.error and
+          // surfaced on first use rather than as an unhandled rejection.
+          this._authState.resolution = this._resolveDefaultCredentials();
         }
-        // No explicit auth: the Tetral fork never falls back to the implicit
-        // Anthropic credential chain (ANTHROPIC_PROFILE / active_config /
-        // config-dir profiles / OIDC env synthesis) and never adopts a
-        // profile-supplied base_url. Requests fail with the missing-auth
-        // error instead.
       }
     }
+  }
+
+  /**
+   * Whether to lazily resolve auth from the default credential chain when no
+   * explicit auth is configured. Called once from the constructor, so
+   * overrides must not depend on subclass instance state. Subclasses that
+   * bring their own auth scheme return false so unrelated local credentials
+   * are never resolved or allowed to supply a base URL.
+   */
+  protected _shouldResolveDefaultCredentials(): boolean {
+    return true;
   }
 
   /**
@@ -870,8 +977,8 @@ export class BaseAnthropic {
     return stringifyQuery(query);
   }
 
-  private getUserAgent(): string {
-    return `${this.constructor.name}/JS ${VERSION}`;
+  protected getUserAgent(): string {
+    return `Anthropic/JS ${VERSION}`;
   }
 
   protected defaultIdempotencyKey(): string {
@@ -1065,6 +1172,7 @@ export class BaseAnthropic {
     const headersTime = Date.now();
 
     if (response instanceof globalThis.Error) {
+      releaseRequestSignal(controller);
       const retryMessage = `retrying, ${retriesRemaining} attempts remaining`;
       if (options.signal?.aborted) {
         throw new Errors.APIUserAbortError();
@@ -1136,7 +1244,7 @@ export class BaseAnthropic {
     }
 
     const specialHeaders = [...response.headers.entries()]
-      .filter(([name]) => name === 'request-id')
+      .filter(([name]) => name === 'request-id' || name === 'anthropic-workspace-id')
       .map(([name, value]) => ', ' + name + ': ' + JSON.stringify(value))
       .join('');
     const responseInfo = `[${requestLogID}${retryLogStr}${specialHeaders}] ${req.method} ${url} ${
@@ -1150,6 +1258,7 @@ export class BaseAnthropic {
 
         // We don't need the body of this response.
         await Shims.CancelReadableStream(response.body);
+        releaseRequestSignal(controller);
         loggerFor(this).info(`${responseInfo} - ${retryMessage}`);
         loggerFor(this).debug(
           `[${requestLogID}] response error (${retryMessage})`,
@@ -1189,6 +1298,7 @@ export class BaseAnthropic {
         }),
       );
 
+      releaseRequestSignal(controller);
       const err = this.makeStatusError(response.status, errJSON, errMessage, response.headers);
       throw err;
     }
@@ -1205,6 +1315,7 @@ export class BaseAnthropic {
       }),
     );
 
+    armAbandonmentBackstop(response.body ?? response, controller);
     return { response, options, controller, requestLogID, retryOfRequestLogID, startTime };
   }
 
@@ -1248,7 +1359,10 @@ export class BaseAnthropic {
     // the lifetime of the signal. Using `.bind()` only retains a reference to the
     // controller itself.
     const abort = this._makeAbort(controller);
-    if (signal) signal.addEventListener('abort', abort, { once: true });
+    if (signal) {
+      signal.addEventListener('abort', abort, { once: true });
+      registerRequestSignalCleanup(controller, signal, abort);
+    }
 
     const isReadableBody =
       ((globalThis as any).ReadableStream && options.body instanceof (globalThis as any).ReadableStream) ||
@@ -1587,15 +1701,23 @@ export class BaseAnthropic {
  * API Client for interfacing with the Anthropic API.
  */
 export class Anthropic extends BaseAnthropic {
+  protected override _shouldResolveDefaultCredentials(): boolean {
+    return false;
+  }
+
   completions: API.Completions = new API.Completions(this);
   messages: API.Messages = new API.Messages(this);
   models: API.Models = new API.Models(this);
+  files: API.Files = new API.Files(this);
+  skills: API.Skills = new API.Skills(this);
   beta: API.Beta = new API.Beta(this);
 }
 
 Anthropic.Completions = Completions;
 Anthropic.Messages = Messages;
 Anthropic.Models = Models;
+Anthropic.Files = Files;
+Anthropic.Skills = Skills;
 Anthropic.Beta = Beta;
 
 export declare namespace Anthropic {
@@ -1640,6 +1762,46 @@ export declare namespace Anthropic {
     type BashCodeExecutionToolResultError as BashCodeExecutionToolResultError,
     type BashCodeExecutionToolResultErrorCode as BashCodeExecutionToolResultErrorCode,
     type BashCodeExecutionToolResultErrorParam as BashCodeExecutionToolResultErrorParam,
+    type BrowserCloseTabConfig as BrowserCloseTabConfig,
+    type BrowserDoubleClickConfig as BrowserDoubleClickConfig,
+    type BrowserFileUploadConfig as BrowserFileUploadConfig,
+    type BrowserFindConfig as BrowserFindConfig,
+    type BrowserFormInputConfig as BrowserFormInputConfig,
+    type BrowserGetPageTextConfig as BrowserGetPageTextConfig,
+    type BrowserHoldKeyConfig as BrowserHoldKeyConfig,
+    type BrowserHoverConfig as BrowserHoverConfig,
+    type BrowserJavascriptExecConfig as BrowserJavascriptExecConfig,
+    type BrowserKeyConfig as BrowserKeyConfig,
+    type BrowserLeftClickConfig as BrowserLeftClickConfig,
+    type BrowserLeftClickDragConfig as BrowserLeftClickDragConfig,
+    type BrowserLeftMouseDownConfig as BrowserLeftMouseDownConfig,
+    type BrowserLeftMouseUpConfig as BrowserLeftMouseUpConfig,
+    type BrowserListTabsConfig as BrowserListTabsConfig,
+    type BrowserMiddleClickConfig as BrowserMiddleClickConfig,
+    type BrowserMouseMoveConfig as BrowserMouseMoveConfig,
+    type BrowserNavigateConfig as BrowserNavigateConfig,
+    type BrowserNewTabConfig as BrowserNewTabConfig,
+    type BrowserReadConsoleConfig as BrowserReadConsoleConfig,
+    type BrowserReadNetworkConfig as BrowserReadNetworkConfig,
+    type BrowserReadPageConfig as BrowserReadPageConfig,
+    type BrowserRightClickConfig as BrowserRightClickConfig,
+    type BrowserScreenshotConfig as BrowserScreenshotConfig,
+    type BrowserScrollConfig as BrowserScrollConfig,
+    type BrowserScrollToConfig as BrowserScrollToConfig,
+    type BrowserStateBlockParam as BrowserStateBlockParam,
+    type BrowserStateChange as BrowserStateChange,
+    type BrowserStateChangeDownloadCompleted as BrowserStateChangeDownloadCompleted,
+    type BrowserStateChangeDownloadFailed as BrowserStateChangeDownloadFailed,
+    type BrowserStateChangeDownloadStarted as BrowserStateChangeDownloadStarted,
+    type BrowserStateChangeTabOpened as BrowserStateChangeTabOpened,
+    type BrowserStateTabEntry as BrowserStateTabEntry,
+    type BrowserSwitchTabConfig as BrowserSwitchTabConfig,
+    type BrowserToolset20260801 as BrowserToolset20260801,
+    type BrowserToolsetConfigs as BrowserToolsetConfigs,
+    type BrowserTripleClickConfig as BrowserTripleClickConfig,
+    type BrowserTypeConfig as BrowserTypeConfig,
+    type BrowserWaitConfig as BrowserWaitConfig,
+    type BrowserZoomConfig as BrowserZoomConfig,
     type CacheControlEphemeral as CacheControlEphemeral,
     type CacheCreation as CacheCreation,
     type CitationCharLocation as CitationCharLocation,
@@ -1670,7 +1832,28 @@ export declare namespace Anthropic {
     type CodeExecutionToolResultError as CodeExecutionToolResultError,
     type CodeExecutionToolResultErrorCode as CodeExecutionToolResultErrorCode,
     type CodeExecutionToolResultErrorParam as CodeExecutionToolResultErrorParam,
+    type ComputerCursorPositionConfig as ComputerCursorPositionConfig,
+    type ComputerDoubleClickConfig as ComputerDoubleClickConfig,
+    type ComputerHoldKeyConfig as ComputerHoldKeyConfig,
+    type ComputerKeyConfig as ComputerKeyConfig,
+    type ComputerLeftClickConfig as ComputerLeftClickConfig,
+    type ComputerLeftClickDragConfig as ComputerLeftClickDragConfig,
+    type ComputerLeftMouseDownConfig as ComputerLeftMouseDownConfig,
+    type ComputerLeftMouseUpConfig as ComputerLeftMouseUpConfig,
+    type ComputerMiddleClickConfig as ComputerMiddleClickConfig,
+    type ComputerMouseMoveConfig as ComputerMouseMoveConfig,
+    type ComputerRightClickConfig as ComputerRightClickConfig,
+    type ComputerScreenshotConfig as ComputerScreenshotConfig,
+    type ComputerScrollConfig as ComputerScrollConfig,
+    type ComputerToolset20260801 as ComputerToolset20260801,
+    type ComputerToolsetConfigs as ComputerToolsetConfigs,
+    type ComputerTripleClickConfig as ComputerTripleClickConfig,
+    type ComputerTypeConfig as ComputerTypeConfig,
+    type ComputerWaitConfig as ComputerWaitConfig,
+    type ComputerZoomConfig as ComputerZoomConfig,
     type Container as Container,
+    type ContainerParams as ContainerParams,
+    type ContainerSkill as ContainerSkill,
     type ContainerUploadBlock as ContainerUploadBlock,
     type ContainerUploadBlockParam as ContainerUploadBlockParam,
     type ContentBlock as ContentBlock,
@@ -1685,12 +1868,16 @@ export declare namespace Anthropic {
     type DocumentBlockParam as DocumentBlockParam,
     type EncryptedCodeExecutionResultBlock as EncryptedCodeExecutionResultBlock,
     type EncryptedCodeExecutionResultBlockParam as EncryptedCodeExecutionResultBlockParam,
+    type FileDocumentSource as FileDocumentSource,
+    type FileImageSource as FileImageSource,
     type ImageBlockParam as ImageBlockParam,
+    type ImageTransformationsParam as ImageTransformationsParam,
     type InputJSONDelta as InputJSONDelta,
     type JSONOutputFormat as JSONOutputFormat,
     type MemoryTool20250818 as MemoryTool20250818,
     type Message as Message,
     type MessageCountTokensTool as MessageCountTokensTool,
+    type MessageCreateParamsContainer as MessageCreateParamsContainer,
     type MessageDeltaEvent as MessageDeltaEvent,
     type MessageDeltaUsage as MessageDeltaUsage,
     type MessageParam as MessageParam,
@@ -1699,7 +1886,6 @@ export declare namespace Anthropic {
     type MessageStreamEvent as MessageStreamEvent,
     type MessageTokensCount as MessageTokensCount,
     type Metadata as Metadata,
-    type MidConversationSystemBlockParam as MidConversationSystemBlockParam,
     type Model as Model,
     type OutputConfig as OutputConfig,
     type OutputTokensDetails as OutputTokensDetails,
@@ -1722,6 +1908,7 @@ export declare namespace Anthropic {
     type ServerToolUseBlock as ServerToolUseBlock,
     type ServerToolUseBlockParam as ServerToolUseBlockParam,
     type SignatureDelta as SignatureDelta,
+    type SkillParams as SkillParams,
     type StopReason as StopReason,
     type TextBlock as TextBlock,
     type TextBlockParam as TextBlockParam,
@@ -1820,15 +2007,36 @@ export declare namespace Anthropic {
   };
 
   export {
+    Files as Files,
+    type DeletedFile as DeletedFile,
+    type FileMetadata as FileMetadata,
+    type FileMetadataPageCursor as FileMetadataPageCursor,
+    type FileListParams as FileListParams,
+    type FileUploadParams as FileUploadParams,
+  };
+
+  export {
+    Skills as Skills,
+    type DeletedSkill as DeletedSkill,
+    type Skill as Skill,
+    type SkillSource as SkillSource,
+    type SkillsPageCursor as SkillsPageCursor,
+    type SkillCreateParams as SkillCreateParams,
+    type SkillListParams as SkillListParams,
+  };
+
+  export {
     Beta as Beta,
     type AnthropicBeta as AnthropicBeta,
     type BetaAPIError as BetaAPIError,
     type BetaAuthenticationError as BetaAuthenticationError,
     type BetaBillingError as BetaBillingError,
+    type BetaCurrency as BetaCurrency,
     type BetaError as BetaError,
     type BetaErrorResponse as BetaErrorResponse,
     type BetaGatewayTimeoutError as BetaGatewayTimeoutError,
     type BetaInvalidRequestError as BetaInvalidRequestError,
+    type BetaMonetaryAmount as BetaMonetaryAmount,
     type BetaNotFoundError as BetaNotFoundError,
     type BetaOverloadedError as BetaOverloadedError,
     type BetaPermissionError as BetaPermissionError,

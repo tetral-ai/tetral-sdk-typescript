@@ -302,6 +302,13 @@ export class Work extends APIResource {
    * await client.beta.environments.work.worker({ workdir: '/workspace' }).handleItem();
    * ```
    */
+  worker(opts: Omit<RunnerEnvironmentWorkerOptions, 'client' | 'unrestrictedPaths'>): EnvironmentWorker;
+  /** @deprecated `unrestrictedPaths` is no longer accepted — see {@link RunnerEnvironmentWorkerOptions.unrestrictedPaths}. */
+  worker(
+    opts: Omit<RunnerEnvironmentWorkerOptions, 'client' | 'unrestrictedPaths'> & {
+      unrestrictedPaths: boolean;
+    },
+  ): EnvironmentWorker; // help language servers see deprecation
   worker(opts: Omit<RunnerEnvironmentWorkerOptions, 'client'>): EnvironmentWorker {
     return new EnvironmentWorker({ ...opts, client: this._client as Anthropic });
   }
@@ -370,6 +377,12 @@ export interface BetaSelfHostedWork {
    * User-provided metadata key-value pairs associated with this work item
    */
   metadata: { [key: string]: string };
+
+  /**
+   * Credential payload used by the environment worker to execute this work item. May
+   * be populated when polling for work; null on all other retrieval paths.
+   */
+  secret: string | null;
 
   /**
    * RFC 3339 timestamp when work execution started

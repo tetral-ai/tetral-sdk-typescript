@@ -5,7 +5,7 @@ import type {
   BetaEnvironment,
   BetaEnvironmentDeleteResponse,
 } from '@tetral-ai/sdk/resources/beta/environments';
-import type { FileMetadata } from '@tetral-ai/sdk/resources/beta/files';
+import type { BetaFileMetadata } from '@tetral-ai/sdk/resources/beta/files';
 import type {
   BetaManagedAgentsMemory,
   BetaManagedAgentsMemoryListItem,
@@ -182,7 +182,7 @@ function assertThread(thread: BetaManagedAgentsSessionThread): void {
   expectField(thread.usage, 'usage');
 }
 
-function assertFile(file: FileMetadata): void {
+function assertFile(file: BetaFileMetadata): void {
   expectField(file.id, 'id');
   expectField(file.created_at, 'created_at');
   expectField(file.filename, 'filename');

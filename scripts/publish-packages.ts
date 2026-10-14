@@ -80,17 +80,14 @@ function main() {
   console.log('Using publish script at', publishScriptPath);
 
   console.log('Ensuring root package is built');
-  console.log(`$ yarn build`);
-  execSync(`yarn build`, { cwd: rootDir, encoding: 'utf8', stdio: 'inherit' });
+  console.log(`$ pnpm build`);
+  execSync(`pnpm build`, { cwd: rootDir, encoding: 'utf8', stdio: 'inherit' });
 
   for (const relPackagePath of paths) {
     console.log('\n');
 
     const packagePath = path.join(rootDir, relPackagePath);
     console.log(`Publishing in directory: ${packagePath}`);
-
-    console.log(`$ yarn install`);
-    execSync(`yarn install`, { cwd: packagePath, encoding: 'utf8', stdio: 'inherit' });
 
     console.log(`$ bash ${publishScriptPath}`);
     execSync(`bash ${publishScriptPath}`, { cwd: packagePath, encoding: 'utf8', stdio: 'inherit' });

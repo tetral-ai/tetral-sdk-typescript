@@ -32,6 +32,7 @@ import {
   BetaManagedAgentsModelRateLimitedError,
   BetaManagedAgentsModelRequestFailedError,
   BetaManagedAgentsPlainTextDocumentSource,
+  BetaManagedAgentsRedactedBlock,
   BetaManagedAgentsRetryStatusExhausted,
   BetaManagedAgentsRetryStatusRetrying,
   BetaManagedAgentsRetryStatusTerminal,
@@ -39,6 +40,7 @@ import {
   BetaManagedAgentsSearchResultCitations,
   BetaManagedAgentsSearchResultContent,
   BetaManagedAgentsSendSessionEvents,
+  BetaManagedAgentsSessionBudgetReached,
   BetaManagedAgentsSessionDeletedEvent,
   BetaManagedAgentsSessionEndTurn,
   BetaManagedAgentsSessionErrorEvent,
@@ -55,6 +57,7 @@ import {
   BetaManagedAgentsSessionThreadStatusRescheduledEvent,
   BetaManagedAgentsSessionThreadStatusRunningEvent,
   BetaManagedAgentsSessionThreadStatusTerminatedEvent,
+  BetaManagedAgentsSessionUsageSnapshot,
   BetaManagedAgentsSpanModelRequestEndEvent,
   BetaManagedAgentsSpanModelRequestStartEvent,
   BetaManagedAgentsSpanModelUsage,
@@ -293,6 +296,21 @@ export class Sessions extends APIResource {
 export type BetaManagedAgentsSessionsBidirectionalPageCursor =
   BidirectionalPageCursor<BetaManagedAgentsSession>;
 
+/**
+ * Platform advisor roster entry: a model the session's primary thread may consult
+ * mid-turn. At most one per roster; the entry occupies the roster name
+ * `anthropic.advisor`.
+ */
+export interface BetaManagedAgentsAdvisorParams {
+  /**
+   * A Claude model id. The model must be permitted as an advisor for this agent's
+   * model — see the sessions/threads/advisor spec.
+   */
+  model: string;
+
+  type: 'advisor';
+}
+
 export interface BetaManagedAgentsAgentMessagePreview {
   /**
    * The id the buffered agent.message will carry if it is emitted. Matches the
@@ -352,7 +370,7 @@ export interface BetaManagedAgentsAgentWithOverridesParams {
   mcp_servers?: Array<AgentsAPI.BetaManagedAgentsURLMCPServerParams>;
 
   /**
-   * Replacement model. Accepts the model string, e.g. `claude-opus-4-6`, or a
+   * Replacement model. Accepts the model string, e.g. `claude-opus-5`, or a
    * `model_config` object. Omit to use the agent's model.
    */
   model?: AgentsAPI.BetaManagedAgentsModel | AgentsAPI.BetaManagedAgentsModelConfigParams;
@@ -392,6 +410,19 @@ export interface BetaManagedAgentsBranchCheckout {
   name: string;
 
   type: 'branch';
+}
+
+/**
+ * A hard spend ceiling. The session stops issuing new model requests once the
+ * tracked list cost reaches `max_list_cost`.
+ */
+export interface BetaManagedAgentsBudgetLimit {
+  /**
+   * A monetary amount in a specific currency.
+   */
+  max_list_cost: BetaAPI.BetaMonetaryAmount;
+
+  type: 'limit';
 }
 
 /**
@@ -557,7 +588,7 @@ export interface BetaManagedAgentsMultiagent {
    * Agents the coordinator may spawn as session threads, each resolved to a specific
    * version.
    */
-  agents: Array<AgentsAPI.BetaManagedAgentsAgentReference>;
+  agents: Array<AgentsAPI.BetaManagedAgentsAgentReference | AgentsAPI.BetaManagedAgentsAdvisor>;
 
   type: 'coordinator';
 }
@@ -587,7 +618,8 @@ export interface BetaManagedAgentsMultiagentParams {
 export type BetaManagedAgentsMultiagentRosterEntryParams =
   | string
   | BetaManagedAgentsAgentParams
-  | AgentsAPI.BetaManagedAgentsMultiagentSelfParams;
+  | AgentsAPI.BetaManagedAgentsMultiagentSelfParams
+  | BetaManagedAgentsAdvisorParams;
 
 /**
  * Evaluation state for a single outcome defined via a define_outcome event.
@@ -631,6 +663,21 @@ export interface BetaManagedAgentsOutcomeEvaluationResource {
 }
 
 /**
+ * Cumulative count of server-executed tool invocations, broken down by tool.
+ */
+export interface BetaManagedAgentsServerToolUsage {
+  /**
+   * Number of server-executed web fetch requests.
+   */
+  web_fetch_requests?: number;
+
+  /**
+   * Number of server-executed web search requests.
+   */
+  web_search_requests?: number;
+}
+
+/**
  * A Managed Agents `session`.
  */
 export interface BetaManagedAgentsSession {
@@ -646,6 +693,12 @@ export interface BetaManagedAgentsSession {
    * A timestamp in RFC 3339 format
    */
   archived_at: string | null;
+
+  /**
+   * A hard spend ceiling. The session stops issuing new model requests once the
+   * tracked list cost reaches `max_list_cost`.
+   */
+  budget: BetaManagedAgentsBudgetLimit | null;
 
   /**
    * A timestamp in RFC 3339 format
@@ -785,7 +838,7 @@ export interface BetaManagedAgentsSessionMultiagentCoordinator {
   /**
    * Full `agent` definitions the coordinator may spawn as session threads.
    */
-  agents: Array<AgentsAPI.BetaManagedAgentsSessionThreadAgent>;
+  agents: Array<AgentsAPI.BetaManagedAgentsSessionThreadAgent | AgentsAPI.BetaManagedAgentsAdvisor>;
 
   type: 'coordinator';
 }
@@ -832,6 +885,12 @@ export interface BetaManagedAgentsSessionUpdatedEvent {
   agent?: BetaManagedAgentsSessionAgent | null;
 
   /**
+   * A hard spend ceiling. The session stops issuing new model requests once the
+   * tracked list cost reaches `max_list_cost`.
+   */
+  budget?: BetaManagedAgentsBudgetLimit | null;
+
+  /**
    * The session's full metadata bag after the update. Present when the update set
    * non-empty metadata; absent when metadata was unchanged or cleared to empty.
    */
@@ -848,6 +907,14 @@ export interface BetaManagedAgentsSessionUpdatedEvent {
  */
 export interface BetaManagedAgentsSessionUsage {
   /**
+   * Cumulative time in seconds during which the session had at least one thread in
+   * running status. Overlapping activity from concurrent threads is counted once,
+   * unlike `stats.active_seconds`, which sums each thread's own active time. This is
+   * the duration the session's runtime cost is priced on.
+   */
+  active_seconds?: number;
+
+  /**
    * Prompt-cache creation token usage broken down by cache lifetime.
    */
   cache_creation?: BetaManagedAgentsCacheCreationUsage;
@@ -863,17 +930,47 @@ export interface BetaManagedAgentsSessionUsage {
   input_tokens?: number;
 
   /**
+   * A monetary amount in a specific currency.
+   */
+  list_cost?: BetaAPI.BetaMonetaryAmount | null;
+
+  /**
    * Total output tokens generated across all turns.
    */
   output_tokens?: number;
 
-  server_tool_use?: BetaManagedAgentsSessionServerToolUse;
+  /**
+   * Cumulative count of server-executed tool invocations, broken down by tool.
+   */
+  server_tool_use?: BetaManagedAgentsServerToolUsage | null;
 }
 
-export interface BetaManagedAgentsSessionServerToolUse {
-  web_fetch_requests?: number;
+/**
+ * Periodic snapshot of the session's cumulative usage and tracked list cost.
+ */
+export interface BetaManagedAgentsSessionUsageEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
 
-  web_search_requests?: number;
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  processed_at: string;
+
+  type: 'session.usage';
+
+  /**
+   * Point-in-time snapshot of a session's cumulative usage.
+   */
+  usage: EventsAPI.BetaManagedAgentsSessionUsageSnapshot;
+
+  /**
+   * A hard spend ceiling. The session stops issuing new model requests once the
+   * tracked list cost reaches `max_list_cost`.
+   */
+  budget?: BetaManagedAgentsBudgetLimit | null;
 }
 
 /**
@@ -998,6 +1095,22 @@ export interface SessionCreateParams {
   environment_id: string;
 
   /**
+   * Body param: A hard spend ceiling. The session stops issuing new model requests
+   * once the tracked list cost reaches `max_list_cost`.
+   */
+  budget?: BetaManagedAgentsBudgetLimit;
+
+  /**
+   * Body param: Initial events to send to the `session` at creation, processed in
+   * order. Supports `user.message` and `user.define_outcome` events. Maximum 50
+   * events.
+   */
+  initial_events?: Array<
+    | EventsAPI.BetaManagedAgentsUserMessageEventParams
+    | EventsAPI.BetaManagedAgentsUserDefineOutcomeEventParams
+  >;
+
+  /**
    * Body param: Arbitrary key-value metadata attached to the session. Maximum 16
    * pairs, keys up to 64 chars, values up to 512 chars.
    */
@@ -1047,6 +1160,12 @@ export interface SessionUpdateParams {
    * POST it back.
    */
   agent?: BetaManagedAgentsSessionAgentUpdate;
+
+  /**
+   * Body param: A hard spend ceiling. The session stops issuing new model requests
+   * once the tracked list cost reaches `max_list_cost`.
+   */
+  budget?: BetaManagedAgentsBudgetLimit | null;
 
   /**
    * Body param: Metadata patch. Set a key to a string to upsert it, or to null to
@@ -1159,11 +1278,13 @@ Sessions.Threads = Threads;
 
 export declare namespace Sessions {
   export {
+    type BetaManagedAgentsAdvisorParams as BetaManagedAgentsAdvisorParams,
     type BetaManagedAgentsAgentMessagePreview as BetaManagedAgentsAgentMessagePreview,
     type BetaManagedAgentsAgentParams as BetaManagedAgentsAgentParams,
     type BetaManagedAgentsAgentThinkingPreview as BetaManagedAgentsAgentThinkingPreview,
     type BetaManagedAgentsAgentWithOverridesParams as BetaManagedAgentsAgentWithOverridesParams,
     type BetaManagedAgentsBranchCheckout as BetaManagedAgentsBranchCheckout,
+    type BetaManagedAgentsBudgetLimit as BetaManagedAgentsBudgetLimit,
     type BetaManagedAgentsCacheCreationUsage as BetaManagedAgentsCacheCreationUsage,
     type BetaManagedAgentsCommitCheckout as BetaManagedAgentsCommitCheckout,
     type BetaManagedAgentsDeletedSession as BetaManagedAgentsDeletedSession,
@@ -1177,14 +1298,15 @@ export declare namespace Sessions {
     type BetaManagedAgentsMultiagentParams as BetaManagedAgentsMultiagentParams,
     type BetaManagedAgentsMultiagentRosterEntryParams as BetaManagedAgentsMultiagentRosterEntryParams,
     type BetaManagedAgentsOutcomeEvaluationResource as BetaManagedAgentsOutcomeEvaluationResource,
+    type BetaManagedAgentsServerToolUsage as BetaManagedAgentsServerToolUsage,
     type BetaManagedAgentsSession as BetaManagedAgentsSession,
     type BetaManagedAgentsSessionAgent as BetaManagedAgentsSessionAgent,
     type BetaManagedAgentsSessionAgentUpdate as BetaManagedAgentsSessionAgentUpdate,
     type BetaManagedAgentsSessionMultiagentCoordinator as BetaManagedAgentsSessionMultiagentCoordinator,
-    type BetaManagedAgentsSessionServerToolUse as BetaManagedAgentsSessionServerToolUse,
     type BetaManagedAgentsSessionStats as BetaManagedAgentsSessionStats,
     type BetaManagedAgentsSessionUpdatedEvent as BetaManagedAgentsSessionUpdatedEvent,
     type BetaManagedAgentsSessionUsage as BetaManagedAgentsSessionUsage,
+    type BetaManagedAgentsSessionUsageEvent as BetaManagedAgentsSessionUsageEvent,
     type BetaManagedAgentsStartEvent as BetaManagedAgentsStartEvent,
     type BetaManagedAgentsStartEventPreview as BetaManagedAgentsStartEventPreview,
     type BetaManagedAgentsSystemContentBlock as BetaManagedAgentsSystemContentBlock,
@@ -1231,6 +1353,7 @@ export declare namespace Sessions {
     type BetaManagedAgentsModelRateLimitedError as BetaManagedAgentsModelRateLimitedError,
     type BetaManagedAgentsModelRequestFailedError as BetaManagedAgentsModelRequestFailedError,
     type BetaManagedAgentsPlainTextDocumentSource as BetaManagedAgentsPlainTextDocumentSource,
+    type BetaManagedAgentsRedactedBlock as BetaManagedAgentsRedactedBlock,
     type BetaManagedAgentsRetryStatusExhausted as BetaManagedAgentsRetryStatusExhausted,
     type BetaManagedAgentsRetryStatusRetrying as BetaManagedAgentsRetryStatusRetrying,
     type BetaManagedAgentsRetryStatusTerminal as BetaManagedAgentsRetryStatusTerminal,
@@ -1238,6 +1361,7 @@ export declare namespace Sessions {
     type BetaManagedAgentsSearchResultCitations as BetaManagedAgentsSearchResultCitations,
     type BetaManagedAgentsSearchResultContent as BetaManagedAgentsSearchResultContent,
     type BetaManagedAgentsSendSessionEvents as BetaManagedAgentsSendSessionEvents,
+    type BetaManagedAgentsSessionBudgetReached as BetaManagedAgentsSessionBudgetReached,
     type BetaManagedAgentsSessionDeletedEvent as BetaManagedAgentsSessionDeletedEvent,
     type BetaManagedAgentsSessionEndTurn as BetaManagedAgentsSessionEndTurn,
     type BetaManagedAgentsSessionErrorEvent as BetaManagedAgentsSessionErrorEvent,
@@ -1253,6 +1377,7 @@ export declare namespace Sessions {
     type BetaManagedAgentsSessionThreadStatusRescheduledEvent as BetaManagedAgentsSessionThreadStatusRescheduledEvent,
     type BetaManagedAgentsSessionThreadStatusRunningEvent as BetaManagedAgentsSessionThreadStatusRunningEvent,
     type BetaManagedAgentsSessionThreadStatusTerminatedEvent as BetaManagedAgentsSessionThreadStatusTerminatedEvent,
+    type BetaManagedAgentsSessionUsageSnapshot as BetaManagedAgentsSessionUsageSnapshot,
     type BetaManagedAgentsSpanModelRequestEndEvent as BetaManagedAgentsSpanModelRequestEndEvent,
     type BetaManagedAgentsSpanModelRequestStartEvent as BetaManagedAgentsSpanModelRequestStartEvent,
     type BetaManagedAgentsSpanModelUsage as BetaManagedAgentsSpanModelUsage,

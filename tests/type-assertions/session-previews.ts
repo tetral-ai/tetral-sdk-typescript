@@ -7,7 +7,7 @@ import type { EventStreamParams as ThreadStreamParams } from '@tetral-ai/sdk/res
 
 type Assert<T extends true> = T;
 type SessionOptIn = Assert<'event_deltas' extends keyof EventStreamParams ? true : false>;
-type ThreadFormalOnly = Assert<'event_deltas' extends keyof ThreadStreamParams ? false : true>;
+type ThreadOptIn = Assert<'event_deltas' extends keyof ThreadStreamParams ? true : false>;
 type ListFormalOnly = Assert<
   Extract<BetaManagedAgentsSessionEvent, { type: 'event_start' | 'event_delta' }> extends never ? true : false
 >;
@@ -18,7 +18,7 @@ type StreamHasDelta = Assert<
   Extract<BetaManagedAgentsStreamSessionEvents, { type: 'event_delta' }> extends never ? false : true
 >;
 
-const typeProofs: [SessionOptIn, ThreadFormalOnly, ListFormalOnly, StreamHasStart, StreamHasDelta] = [
+const typeProofs: [SessionOptIn, ThreadOptIn, ListFormalOnly, StreamHasStart, StreamHasDelta] = [
   true,
   true,
   true,

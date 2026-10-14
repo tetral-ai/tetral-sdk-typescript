@@ -2,6 +2,7 @@ import { STAINLESS_HELPER_METHOD_HEADER } from '../internal/stainless-helper-hea
 import type { Logger } from '../client';
 import { AnthropicError, APIUserAbortError } from '../error';
 import { isAbortError } from '../internal/errors';
+import { checkNever } from '../internal/utils/values';
 import { type RequestOptions } from '../internal/request-options';
 import {
   type BetaContentBlock,
@@ -74,6 +75,7 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
   #catchingPromiseCreated = false;
   #response: Response | null | undefined;
   #request_id: string | null | undefined;
+  #workspace_id: string | null | undefined;
   #logger: Logger;
 
   constructor(params: MessageCreateParamsBase | null, opts?: { logger?: Logger | undefined }) {
@@ -106,6 +108,10 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
     return this.#request_id;
   }
 
+  get workspace_id(): string | null | undefined {
+    return this.#workspace_id;
+  }
+
   /**
    * Returns the `MessageStream` data, the raw `Response` instance and the ID of the request,
    * returned vie the `request-id` header which is useful for debugging requests and resporting
@@ -120,6 +126,7 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
     data: BetaMessageStream<ParsedT>;
     response: Response;
     request_id: string | null | undefined;
+    workspace_id: string | null | undefined;
   }> {
     this.#catchingPromiseCreated = true;
 
@@ -132,6 +139,7 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
       data: this,
       response,
       request_id: response.headers.get('request-id'),
+      workspace_id: response.headers.get('anthropic-workspace-id'),
     };
   }
 
@@ -223,6 +231,7 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
     if (this.ended) return;
     this.#response = response;
     this.#request_id = response?.headers.get('request-id');
+    this.#workspace_id = response?.headers.get('anthropic-workspace-id');
     this.#resolveConnectedPromise(response);
     this._emit('connect');
   }
@@ -581,15 +590,21 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
       case 'message_stop':
         return snapshot;
       case 'message_delta':
-        snapshot.container = event.delta.container;
         snapshot.stop_reason = event.delta.stop_reason;
         snapshot.stop_sequence = event.delta.stop_sequence;
-        if (event.delta.stop_details != null) {
-          snapshot.stop_details = event.delta.stop_details;
-        }
+        snapshot.stop_details = event.delta.stop_details;
         snapshot.usage.output_tokens = event.usage.output_tokens;
-        snapshot.context_management = event.context_management;
 
+        if (event.delta.container != null) {
+          snapshot.container = event.delta.container;
+        }
+
+        if (event.context_management != null) {
+          snapshot.context_management = event.context_management;
+        }
+
+        // The remaining usage counters are cumulative whole-message totals that are
+        // omitted when they don't apply, so overwrite when present and never add.
         if (event.usage.input_tokens != null) {
           snapshot.usage.input_tokens = event.usage.input_tokens;
         }
@@ -608,6 +623,14 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
 
         if (event.usage.iterations != null) {
           snapshot.usage.iterations = event.usage.iterations;
+        }
+
+        if (event.usage.fallback_credit != null) {
+          snapshot.usage.fallback_credit = event.usage.fallback_credit;
+        }
+
+        if (event.usage.output_tokens_details != null) {
+          snapshot.usage.output_tokens_details = event.usage.output_tokens_details;
         }
 
         return snapshot;
@@ -776,6 +799,3 @@ export class BetaMessageStream<ParsedT = null> implements AsyncIterable<BetaMess
     return stream.toReadableStream();
   }
 }
-
-// used to ensure exhaustive case matching without throwing a runtime error
-function checkNever(x: never) {}

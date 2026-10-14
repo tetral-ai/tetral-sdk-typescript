@@ -17,7 +17,7 @@ describe('resource batches', () => {
           params: {
             max_tokens: 1024,
             messages: [{ content: 'Hello, world', role: 'user' }],
-            model: 'claude-opus-4-6',
+            model: 'claude-opus-5',
           },
         },
       ],
@@ -39,7 +39,7 @@ describe('resource batches', () => {
           params: {
             max_tokens: 1024,
             messages: [{ content: 'Hello, world', role: 'user' }],
-            model: 'claude-opus-4-6',
+            model: 'claude-opus-5',
             cache_control: { type: 'ephemeral', ttl: '5m' },
             container: {
               id: 'id',
@@ -65,30 +65,7 @@ describe('resource batches', () => {
             },
             diagnostics: { previous_message_id: 'previous_message_id' },
             fallback_credit_token: 'x',
-            fallbacks: [
-              {
-                model: 'claude-sonnet-5',
-                max_tokens: 0,
-                output_config: {
-                  effort: 'low',
-                  format: {
-                    schema: { foo: 'bar' },
-                    type: 'json_schema',
-                  },
-                  task_budget: {
-                    total: 1024,
-                    type: 'tokens',
-                    remaining: 0,
-                  },
-                },
-                speed: 'standard',
-                thinking: {
-                  budget_tokens: 1024,
-                  type: 'enabled',
-                  display: 'summarized',
-                },
-              },
-            ],
+            fallbacks: 'default',
             inference_geo: 'inference_geo',
             mcp_servers: [
               {
@@ -127,7 +104,7 @@ describe('resource batches', () => {
                 cache_control: { type: 'ephemeral', ttl: '5m' },
                 citations: [
                   {
-                    cited_text: 'cited_text',
+                    cited_text: 'The grass is green. The sky is blue.',
                     document_index: 0,
                     document_title: 'x',
                     end_char_index: 0,

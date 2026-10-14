@@ -2,11 +2,24 @@ import { BetaRunnableTool } from './BetaRunnableTool';
 import { ToolError } from './ToolError';
 import { Anthropic } from '../..';
 import { AnthropicError } from '../../core/error';
-import { BetaMessage, BetaMessageParam, BetaToolUnion, MessageCreateParams } from '../../resources/beta';
+import {
+  BetaContentBlockParam,
+  BetaMessage,
+  BetaMessageParam,
+  BetaRequestToolAdditionBlock,
+  BetaRequestToolRemovalBlock,
+  BetaStopReason,
+  BetaToolChangeMCPToolReference,
+  BetaToolChangeMCPToolsetReference,
+  BetaToolChangeToolReference,
+  BetaToolUnion,
+  MessageCreateParams,
+} from '../../resources/beta';
 import { BetaMessageStream } from '../BetaMessageStream';
 import { RequestOptions } from '../../internal/request-options';
 import { buildHeaders } from '../../internal/headers';
 import { promiseWithResolvers } from '../../internal/utils/promise';
+import { checkNever } from '../../internal/utils/values';
 import { CompactionControl, DEFAULT_SUMMARY_PROMPT, DEFAULT_TOKEN_THRESHOLD } from './CompactionControl';
 import {
   collectStainlessHelpers,
@@ -209,15 +222,25 @@ export class BetaToolRunner<Stream extends boolean> {
           if (!isCompacted) {
             if (!this.#mutated) {
               const message = await this.#message;
+              const nextStep = determineNextStepFromStopReason(message.stop_reason);
               this.#state.params.messages.push({ role: message.role, content: message.content });
 
-              // Refusal-terminated turns are terminal: the refusal may have cut a tool_use off
-              // with partial input, so executing this turn's tools would fire side effects the
-              // model never confirmed — and once middleware strips the refusal turn, their
-              // tool_results could never be replayed coherently. Surface the refusal as the
-              // final message instead.
-              if (message.stop_reason === 'refusal') {
+              // Container-bound server tools reject a follow-up request that omits the container the
+              // previous turn ran in, so carry its id forward unless the caller pinned one themselves.
+              const { container } = this.#state.params;
+              if (message.container) {
+                if (container == null) {
+                  this.#state.params.container = message.container.id;
+                } else if (typeof container === 'object' && container.id == null) {
+                  this.#state.params.container = { ...container, id: message.container.id };
+                }
+              }
+
+              if (nextStep === 'stop') {
                 break;
+              }
+              if (nextStep === 'resume') {
+                continue;
               }
             }
 
@@ -467,16 +490,19 @@ async function generateToolResponse(
     return null;
   }
 
+  const available = availableToolNames(params);
   const toolResults = await Promise.all(
     toolUseBlocks.map(async (toolUse) => {
-      const tool = params.tools.find((t) => ('name' in t ? t.name : t.mcp_server_name) === toolUse.name);
-      if (!tool || !('run' in tool)) {
-        return {
-          type: 'tool_result' as const,
-          tool_use_id: toolUse.id,
-          content: `Error: Tool '${toolUse.name}' not found`,
-          is_error: true,
-        };
+      const tool = params.tools.find(
+        (t) =>
+          ('name' in t ? t.name
+          : 'mcp_server_name' in t ? t.mcp_server_name
+          : t.type) === toolUse.name,
+      );
+      // A `tool_removal` is only a hint to the model, which may still emit a tool_use for a
+      // withdrawn tool — treat those exactly like a tool that was never defined.
+      if (!tool || !('run' in tool) || !available.has(toolUse.name)) {
+        return toolNotFoundResult(toolUse);
       }
 
       try {
@@ -513,6 +539,109 @@ async function generateToolResponse(
     role: 'user' as const,
     content: toolResults,
   };
+}
+
+function toolNotFoundResult(toolUse: { id: string; name: string }) {
+  return {
+    type: 'tool_result' as const,
+    tool_use_id: toolUse.id,
+    content: `Error: Tool '${toolUse.name}' not found`,
+    is_error: true,
+  };
+}
+
+/**
+ * Computes the names of locally runnable tools that are still available for the assistant
+ * turn being answered, by folding `tool_removal` / `tool_addition` blocks from the
+ * `role: "system"` messages over the runnable tools. The assistant turn being answered is
+ * terminal-or-absent and only `system` messages are inspected, so folding the whole current
+ * history is exactly folding the messages preceding that turn — call this before appending
+ * anything after it. MCP references are ignored — those tools are executed server-side and
+ * never dispatched by this runner.
+ */
+function availableToolNames(params: BetaToolRunnerParams): Set<string> {
+  const available = new Set<string>();
+  for (const tool of params.tools) {
+    if ('run' in tool) {
+      available.add(tool.name);
+    }
+  }
+
+  for (const message of params.messages) {
+    if (message.role !== 'system' || typeof message.content === 'string') {
+      continue;
+    }
+    for (const block of message.content) {
+      applyToolChange(block, available);
+    }
+  }
+  return available;
+}
+
+function applyToolChange(block: BetaContentBlockParam, available: Set<string>): void {
+  switch (block.type) {
+    case 'tool_removal':
+    case 'tool_addition':
+      applyToolReference(block, available);
+      break;
+  }
+}
+
+function applyToolReference(
+  block: BetaRequestToolAdditionBlock | BetaRequestToolRemovalBlock,
+  available: Set<string>,
+): void {
+  const name = referencedToolName(block.tool);
+  if (name === undefined) return;
+  if (block.type === 'tool_removal') {
+    available.delete(name);
+  } else {
+    available.add(name);
+  }
+}
+
+function referencedToolName(
+  ref: BetaToolChangeToolReference | BetaToolChangeMCPToolReference | BetaToolChangeMCPToolsetReference,
+): string | undefined {
+  switch (ref.type) {
+    case 'tool_reference':
+      return ref.name;
+    default:
+      // mcp_tool_reference / mcp_toolset_reference run server-side; unknown reference
+      // types are ignored rather than rejected.
+      return undefined;
+  }
+}
+
+type NextStep = 'run_tools' | 'resume' | 'stop';
+
+/**
+ * Sorts every stop reason into one of three buckets: `run_tools` turns run their client tool
+ * calls and continue the loop; `resume` turns are sent back unchanged so the server continues
+ * them; `stop` turns end the loop without running any tool calls.
+ */
+function determineNextStepFromStopReason(stopReason: BetaStopReason | null): NextStep {
+  if (stopReason === null) return 'stop';
+  switch (stopReason) {
+    case 'tool_use':
+      return 'run_tools';
+    case 'pause_turn':
+    // pause_after_compaction hands the turn back before the model answers; sending it back
+    // unchanged continues it.
+    case 'compaction':
+      return 'resume';
+    case 'end_turn':
+    case 'stop_sequence':
+    case 'max_tokens':
+    case 'model_context_window_exceeded':
+    case 'refusal':
+      return 'stop';
+    default:
+      // The union is forward-compatible, so a stop reason this SDK doesn't know yet ends the
+      // loop rather than throwing; the `never` check makes tsc reject an unclassified member.
+      checkNever(stopReason);
+      return 'stop';
+  }
 }
 
 // vendored from typefest just to make things look a bit nicer on hover

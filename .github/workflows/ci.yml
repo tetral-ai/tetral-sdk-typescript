@@ -14,12 +14,16 @@ on:
       - 'stl-preview-head/**'
       - 'stl-preview-base/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     timeout-minutes: 10
     name: lint
     runs-on: 'ubuntu-latest'
-    if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork)
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -30,6 +34,11 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '10.34.5'
 
       - name: Bootstrap
         run: ./scripts/bootstrap
@@ -48,7 +57,7 @@ jobs:
     timeout-minutes: 5
     name: build
     runs-on: 'ubuntu-latest'
-    if: (github.event_name == 'push' || github.event.pull_request.head.repo.fork)
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.fork
     permissions:
       contents: read
     steps:
@@ -58,6 +67,11 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '10.34.5'
 
       - name: Bootstrap
         run: ./scripts/bootstrap
@@ -80,6 +94,11 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '10.34.5'
 
       - name: Bootstrap
         run: ./scripts/bootstrap
@@ -110,6 +129,11 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '10.34.5'
+
       - name: Bootstrap
         run: ./scripts/bootstrap
 
@@ -119,26 +143,34 @@ jobs:
   detect_breaking_changes_vs_main:
     timeout-minutes: 10
     name: detect-breaking-changes-vs-main
-    runs-on: ${{ github.repository == 'stainless-sdks/anthropic-typescript' && 'depot-ubuntu-24.04' || 'ubuntu-latest' }}
-    if: |
+    runs-on: 'ubuntu-latest'
+    if: |-
       (github.event_name == 'push' &&
        !startsWith(github.ref, 'refs/heads/release-please--')) ||
-      github.event_name == 'pull_request'
+      github.event.pull_request.head.repo.fork
     steps:
+      # fetch-depth: 0 fetches full commit history (all branches, so
+      # origin/main is available) so `git merge-base HEAD origin/main`
+      # below can resolve the fork point. filter: blob:none keeps the
+      # fetch cheap: commit metadata is downloaded eagerly, file blobs
+      # only when a later `git checkout` asks for them.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - name: Fetch history for current branch and main
-        run: |
-          git fetch origin --filter=blob:none --no-tags --depth=2147483647 ${{ github.sha }}
-          git fetch origin --filter=blob:none --no-tags main 2>/dev/null || true
+        with:
+          fetch-depth: 0
+          filter: blob:none
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: '22'
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+        with:
+          version: '10.34.5'
+
       - name: Install dependencies
-        run: yarn install
+        run: pnpm install
 
       - name: Determine base SHA
         run: |
@@ -148,19 +180,6 @@ jobs:
       - name: Detect breaking changes vs. main
         if: env.BASE_SHA != ''
         run: |
-          # Fork bootstrap guard: the check compiles the base ref's tests
-          # against the current SDK, which is meaningless across the
-          # @anthropic-ai/sdk -> @tetral-ai/sdk rename — the base's tests
-          # import the upstream package name and the documented divergences
-          # (see COMPATIBILITY.md) are expected to break them. Once main carries the
-          # Tetral package, base and current names match and the check is
-          # enforced for every subsequent commit.
-          BASE_NAME=$(git show "$BASE_SHA:package.json" 2>/dev/null | jq -r '.name // empty')
-          CURRENT_NAME=$(jq -r '.name // empty' package.json)
-          if [ -n "$BASE_NAME" ] && [ "$BASE_NAME" != "$CURRENT_NAME" ]; then
-            echo "Base package ($BASE_NAME) differs from current ($CURRENT_NAME); skipping old-test compatibility check for the fork bootstrap."
-            exit 0
-          fi
           # Try to check out previous versions of the breaking change detection script. This ensures that
           # we still detect breaking changes when entire files and their tests are removed.
           git checkout "$BASE_SHA" -- ./scripts/detect-breaking-changes 2>/dev/null || true

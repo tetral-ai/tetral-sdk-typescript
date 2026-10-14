@@ -75,15 +75,39 @@ import {
   DeploymentUpdateParams,
   Deployments,
 } from './deployments';
+import * as DreamsAPI from './dreams';
+import {
+  BetaDream,
+  BetaDreamError,
+  BetaDreamInput,
+  BetaDreamMemoryStoreInput,
+  BetaDreamMemoryStoreOutput,
+  BetaDreamModelConfig,
+  BetaDreamModelConfigParam,
+  BetaDreamOutput,
+  BetaDreamSessionsInput,
+  BetaDreamStatus,
+  BetaDreamUsage,
+  BetaDreamsPageCursor,
+  BetaOutputBehavior,
+  BetaOutputBehaviorCreateNew,
+  BetaOutputBehaviorUpdateExisting,
+  DreamArchiveParams,
+  DreamCancelParams,
+  DreamCreateParams,
+  DreamListParams,
+  DreamRetrieveParams,
+  Dreams,
+} from './dreams';
 import * as FilesAPI from './files';
 import {
+  BetaDeletedFile,
+  BetaFileMetadata,
+  BetaFileMetadataPage,
   BetaFileScope,
-  DeletedFile,
   FileDeleteParams,
   FileDownloadParams,
   FileListParams,
-  FileMetadata,
-  FileMetadataPage,
   FileRetrieveMetadataParams,
   FileUploadParams,
   Files,
@@ -130,9 +154,17 @@ import {
   BetaWebhookDeploymentRunSucceededEventData,
   BetaWebhookDeploymentUnpausedEventData,
   BetaWebhookDeploymentUpdatedEventData,
+  BetaWebhookEnvironmentArchivedEventData,
+  BetaWebhookEnvironmentCreatedEventData,
+  BetaWebhookEnvironmentDeletedEventData,
+  BetaWebhookEnvironmentUpdatedEventData,
   BetaWebhookEvent,
   BetaWebhookEventData,
+  BetaWebhookMemoryStoreArchivedEventData,
+  BetaWebhookMemoryStoreCreatedEventData,
+  BetaWebhookMemoryStoreDeletedEventData,
   BetaWebhookSessionArchivedEventData,
+  BetaWebhookSessionBudgetReachedEventData,
   BetaWebhookSessionCreatedEventData,
   BetaWebhookSessionDeletedEventData,
   BetaWebhookSessionIdledEventData,
@@ -167,6 +199,7 @@ import {
   AgentUpdateParams,
   Agents,
   AgentApprovalMode,
+  BetaManagedAgentsAdvisor,
   BetaManagedAgentsAgent,
   BetaManagedAgentsAgentReference,
   BetaManagedAgentsAgentToolConfig,
@@ -186,11 +219,24 @@ import {
   BetaManagedAgentsAlwaysAskPolicy,
   BetaManagedAgentsAnthropicSkill,
   BetaManagedAgentsAnthropicSkillParams,
+  BetaManagedAgentsBashToolConfig,
+  BetaManagedAgentsBashToolConfigParams,
   BetaManagedAgentsCustomSkill,
   BetaManagedAgentsCustomSkillParams,
   BetaManagedAgentsCustomTool,
   BetaManagedAgentsCustomToolInputSchema,
   BetaManagedAgentsCustomToolParams,
+  BetaManagedAgentsEditToolConfig,
+  BetaManagedAgentsEditToolConfigParams,
+  BetaManagedAgentsEffortHigh,
+  BetaManagedAgentsEffortLow,
+  BetaManagedAgentsEffortMax,
+  BetaManagedAgentsEffortMedium,
+  BetaManagedAgentsEffortXhigh,
+  BetaManagedAgentsGlobToolConfig,
+  BetaManagedAgentsGlobToolConfigParams,
+  BetaManagedAgentsGrepToolConfig,
+  BetaManagedAgentsGrepToolConfigParams,
   BetaManagedAgentsMCPServerURLDefinition,
   BetaManagedAgentsMCPToolConfig,
   BetaManagedAgentsMCPToolConfigParams,
@@ -204,6 +250,8 @@ import {
   BetaManagedAgentsMultiagentCoordinator,
   BetaManagedAgentsMultiagentCoordinatorParams,
   BetaManagedAgentsMultiagentSelfParams,
+  BetaManagedAgentsReadToolConfig,
+  BetaManagedAgentsReadToolConfigParams,
   BetaManagedAgentsSessionThreadAgent,
   BetaManagedAgentsSkillParams,
   BetaManagedAgentsTetralAgentToolset,
@@ -220,6 +268,13 @@ import {
   BetaManagedAgentsTetralGPTToolName,
   BetaManagedAgentsTetralPlatformToolName,
   BetaManagedAgentsURLMCPServerParams,
+  BetaManagedAgentsUserLocation,
+  BetaManagedAgentsWebFetchToolConfig,
+  BetaManagedAgentsWebFetchToolConfigParams,
+  BetaManagedAgentsWebSearchToolConfig,
+  BetaManagedAgentsWebSearchToolConfigParams,
+  BetaManagedAgentsWriteToolConfig,
+  BetaManagedAgentsWriteToolConfigParams,
 } from './agents/agents';
 import * as EnvironmentsAPI from './environments/environments';
 import {
@@ -283,6 +338,46 @@ import {
   BetaBashCodeExecutionToolResultBlockParam,
   BetaBashCodeExecutionToolResultError,
   BetaBashCodeExecutionToolResultErrorParam,
+  BetaBrowserCloseTabConfig,
+  BetaBrowserDoubleClickConfig,
+  BetaBrowserFileUploadConfig,
+  BetaBrowserFindConfig,
+  BetaBrowserFormInputConfig,
+  BetaBrowserGetPageTextConfig,
+  BetaBrowserHoldKeyConfig,
+  BetaBrowserHoverConfig,
+  BetaBrowserJavascriptExecConfig,
+  BetaBrowserKeyConfig,
+  BetaBrowserLeftClickConfig,
+  BetaBrowserLeftClickDragConfig,
+  BetaBrowserLeftMouseDownConfig,
+  BetaBrowserLeftMouseUpConfig,
+  BetaBrowserListTabsConfig,
+  BetaBrowserMiddleClickConfig,
+  BetaBrowserMouseMoveConfig,
+  BetaBrowserNavigateConfig,
+  BetaBrowserNewTabConfig,
+  BetaBrowserReadConsoleConfig,
+  BetaBrowserReadNetworkConfig,
+  BetaBrowserReadPageConfig,
+  BetaBrowserRightClickConfig,
+  BetaBrowserScreenshotConfig,
+  BetaBrowserScrollConfig,
+  BetaBrowserScrollToConfig,
+  BetaBrowserStateBlockParam,
+  BetaBrowserStateChange,
+  BetaBrowserStateChangeDownloadCompleted,
+  BetaBrowserStateChangeDownloadFailed,
+  BetaBrowserStateChangeDownloadStarted,
+  BetaBrowserStateChangeTabOpened,
+  BetaBrowserStateTabEntry,
+  BetaBrowserSwitchTabConfig,
+  BetaBrowserToolset20260801,
+  BetaBrowserToolsetConfigs,
+  BetaBrowserTripleClickConfig,
+  BetaBrowserTypeConfig,
+  BetaBrowserWaitConfig,
+  BetaBrowserZoomConfig,
   BetaCacheControlEphemeral,
   BetaCacheCreation,
   BetaCacheMissMessagesChanged,
@@ -328,6 +423,25 @@ import {
   BetaCompactionBlockParam,
   BetaCompactionContentBlockDelta,
   BetaCompactionIterationUsage,
+  BetaComputerCursorPositionConfig,
+  BetaComputerDoubleClickConfig,
+  BetaComputerHoldKeyConfig,
+  BetaComputerKeyConfig,
+  BetaComputerLeftClickConfig,
+  BetaComputerLeftClickDragConfig,
+  BetaComputerLeftMouseDownConfig,
+  BetaComputerLeftMouseUpConfig,
+  BetaComputerMiddleClickConfig,
+  BetaComputerMouseMoveConfig,
+  BetaComputerRightClickConfig,
+  BetaComputerScreenshotConfig,
+  BetaComputerScrollConfig,
+  BetaComputerToolset20260801,
+  BetaComputerToolsetConfigs,
+  BetaComputerTripleClickConfig,
+  BetaComputerTypeConfig,
+  BetaComputerWaitConfig,
+  BetaComputerZoomConfig,
   BetaContainer,
   BetaContainerParams,
   BetaContainerUploadBlock,
@@ -347,14 +461,20 @@ import {
   BetaEncryptedCodeExecutionResultBlockParam,
   BetaFallbackBlock,
   BetaFallbackBlockParam,
+  BetaFallbackCreditNotApplied,
+  BetaFallbackCreditRedeemed,
+  BetaFallbackCreditTokenParam,
+  BetaFallbackCreditUsage,
   BetaFallbackInfo,
   BetaFallbackInfoParam,
   BetaFallbackMessageIterationUsage,
   BetaFallbackParam,
   BetaFallbackRefusalTrigger,
+  BetaFallbacksParam,
   BetaFileDocumentSource,
   BetaFileImageSource,
   BetaImageBlockParam,
+  BetaImageTransformationsParam,
   BetaInputJSONDelta,
   BetaJSONOutputFormat,
   BetaInputTokensClearAtLeast,
@@ -377,7 +497,6 @@ import {
   BetaMessageParam,
   BetaMessageTokensCount,
   BetaMetadata,
-  BetaMidConversationSystemBlockParam,
   BetaOutputConfig,
   BetaOutputTokensDetails,
   BetaPlainTextSource,
@@ -396,6 +515,8 @@ import {
   BetaRequestMCPServerToolConfiguration,
   BetaRequestMCPServerURLDefinition,
   BetaRequestMCPToolResultBlockParam,
+  BetaRequestToolAdditionBlock,
+  BetaRequestToolRemovalBlock,
   BetaSearchResultBlockParam,
   BetaServerToolCaller,
   BetaServerToolCaller20260120,
@@ -433,6 +554,9 @@ import {
   BetaTool,
   BetaToolBash20241022,
   BetaToolBash20250124,
+  BetaToolChangeMCPToolReference,
+  BetaToolChangeMCPToolsetReference,
+  BetaToolChangeToolReference,
   BetaToolChoice,
   BetaToolChoiceAny,
   BetaToolChoiceAuto,
@@ -488,13 +612,17 @@ import {
   BetaMCPToolConfig,
   BetaMCPToolDefaultConfig,
 } from './messages/messages';
+import * as OrganizationAPI from './organization/organization';
+import { BetaOrganization, BetaOrganizationRole, Organization } from './organization/organization';
 import * as SessionsAPI from './sessions/sessions';
 import {
+  BetaManagedAgentsAdvisorParams,
   BetaManagedAgentsAgentMessagePreview,
   BetaManagedAgentsAgentParams,
   BetaManagedAgentsAgentThinkingPreview,
   BetaManagedAgentsAgentWithOverridesParams,
   BetaManagedAgentsBranchCheckout,
+  BetaManagedAgentsBudgetLimit,
   BetaManagedAgentsCacheCreationUsage,
   BetaManagedAgentsCommitCheckout,
   BetaManagedAgentsDeletedSession,
@@ -508,6 +636,7 @@ import {
   BetaManagedAgentsMultiagentParams,
   BetaManagedAgentsMultiagentRosterEntryParams,
   BetaManagedAgentsOutcomeEvaluationResource,
+  BetaManagedAgentsServerToolUsage,
   BetaManagedAgentsSession,
   BetaManagedAgentsSessionAgent,
   BetaManagedAgentsSessionAgentUpdate,
@@ -515,6 +644,7 @@ import {
   BetaManagedAgentsSessionStats,
   BetaManagedAgentsSessionUpdatedEvent,
   BetaManagedAgentsSessionUsage,
+  BetaManagedAgentsSessionUsageEvent,
   BetaManagedAgentsSessionsBidirectionalPageCursor,
   BetaManagedAgentsStartEvent,
   BetaManagedAgentsStartEventPreview,
@@ -545,6 +675,19 @@ import {
   SkillRetrieveResponse,
   Skills,
 } from './skills/skills';
+import * as TunnelsAPI from './tunnels/tunnels';
+import {
+  BetaTunnel,
+  BetaTunnelToken,
+  BetaTunnelsPageCursor,
+  TunnelArchiveParams,
+  TunnelCreateParams,
+  TunnelListParams,
+  TunnelRetrieveParams,
+  TunnelRevealTokenParams,
+  TunnelRotateTokenParams,
+  Tunnels,
+} from './tunnels/tunnels';
 import * as VaultsAPI from './vaults/vaults';
 import {
   BetaManagedAgentsDeletedVault,
@@ -573,6 +716,9 @@ export class Beta extends APIResource {
   skills: SkillsAPI.Skills = new SkillsAPI.Skills(this._client);
   webhooks: WebhooksAPI.Webhooks = new WebhooksAPI.Webhooks(this._client);
   userProfiles: UserProfilesAPI.UserProfiles = new UserProfilesAPI.UserProfiles(this._client);
+  dreams: DreamsAPI.Dreams = new DreamsAPI.Dreams(this._client);
+  tunnels: TunnelsAPI.Tunnels = new TunnelsAPI.Tunnels(this._client);
+  organization: OrganizationAPI.Organization = new OrganizationAPI.Organization(this._client);
 }
 
 export type AnthropicBeta =
@@ -599,13 +745,25 @@ export type AnthropicBeta =
   | 'fast-mode-2026-02-01'
   | 'output-300k-2026-03-24'
   | 'user-profiles-2026-03-24'
+  | 'user-profiles-2026-08-18'
   | 'advisor-tool-2026-03-01'
   | 'managed-agents-2026-04-01'
   | 'cache-diagnosis-2026-04-07'
+  | 'dreaming-2026-04-21'
   | 'thinking-token-count-2026-05-13'
   | 'server-side-fallback-2026-06-01'
+  | 'server-side-fallback-2026-07-01'
   | 'fallback-credit-2026-06-01'
-  | 'agent-memory-2026-07-22';
+  | 'fallback-credit-2026-07-01'
+  | 'agent-memory-2026-07-22'
+  | 'mid-conversation-tool-changes-2026-07-01'
+  | 'compact-2026-01-12'
+  | 'computer-use-2025-11-24'
+  | 'mcp-tunnels-2026-06-22'
+  | 'structured-outputs-2025-11-13'
+  | 'task-budgets-2026-03-13'
+  | 'thinking-display-updates-2026-08-18'
+  | 'ce-user-management-2026-07-13';
 
 export interface BetaAPIError {
   message: string;
@@ -624,6 +782,8 @@ export interface BetaBillingError {
 
   type: 'billing_error';
 }
+
+export type BetaCurrency = 'USD';
 
 export type BetaError =
   | BetaInvalidRequestError
@@ -654,6 +814,25 @@ export interface BetaInvalidRequestError {
   message: string;
 
   type: 'invalid_request_error';
+}
+
+/**
+ * A monetary amount in a specific currency.
+ */
+export interface BetaMonetaryAmount {
+  /**
+   * Amount in minor units of the currency, as an integer decimal string with no
+   * leading zeros: "2500" is $25.00 and "50" is fifty cents. A string rather than a
+   * number so no float rounding is ever applied.
+   */
+  amount: string;
+
+  /**
+   * Uppercase ISO-4217 currency code. `USD` is the only currency currently
+   * supported; the accepted set is closed and grows only when a new currency is
+   * priced.
+   */
+  currency: BetaCurrency;
 }
 
 export interface BetaNotFoundError {
@@ -693,6 +872,9 @@ Beta.Files = Files;
 Beta.Skills = Skills;
 Beta.Webhooks = Webhooks;
 Beta.UserProfiles = UserProfiles;
+Beta.Dreams = Dreams;
+Beta.Tunnels = Tunnels;
+Beta.Organization = Organization;
 
 export declare namespace Beta {
   export {
@@ -700,10 +882,12 @@ export declare namespace Beta {
     type BetaAPIError as BetaAPIError,
     type BetaAuthenticationError as BetaAuthenticationError,
     type BetaBillingError as BetaBillingError,
+    type BetaCurrency as BetaCurrency,
     type BetaError as BetaError,
     type BetaErrorResponse as BetaErrorResponse,
     type BetaGatewayTimeoutError as BetaGatewayTimeoutError,
     type BetaInvalidRequestError as BetaInvalidRequestError,
+    type BetaMonetaryAmount as BetaMonetaryAmount,
     type BetaNotFoundError as BetaNotFoundError,
     type BetaOverloadedError as BetaOverloadedError,
     type BetaPermissionError as BetaPermissionError,
@@ -747,6 +931,46 @@ export declare namespace Beta {
     type BetaBashCodeExecutionToolResultBlockParam as BetaBashCodeExecutionToolResultBlockParam,
     type BetaBashCodeExecutionToolResultError as BetaBashCodeExecutionToolResultError,
     type BetaBashCodeExecutionToolResultErrorParam as BetaBashCodeExecutionToolResultErrorParam,
+    type BetaBrowserCloseTabConfig as BetaBrowserCloseTabConfig,
+    type BetaBrowserDoubleClickConfig as BetaBrowserDoubleClickConfig,
+    type BetaBrowserFileUploadConfig as BetaBrowserFileUploadConfig,
+    type BetaBrowserFindConfig as BetaBrowserFindConfig,
+    type BetaBrowserFormInputConfig as BetaBrowserFormInputConfig,
+    type BetaBrowserGetPageTextConfig as BetaBrowserGetPageTextConfig,
+    type BetaBrowserHoldKeyConfig as BetaBrowserHoldKeyConfig,
+    type BetaBrowserHoverConfig as BetaBrowserHoverConfig,
+    type BetaBrowserJavascriptExecConfig as BetaBrowserJavascriptExecConfig,
+    type BetaBrowserKeyConfig as BetaBrowserKeyConfig,
+    type BetaBrowserLeftClickConfig as BetaBrowserLeftClickConfig,
+    type BetaBrowserLeftClickDragConfig as BetaBrowserLeftClickDragConfig,
+    type BetaBrowserLeftMouseDownConfig as BetaBrowserLeftMouseDownConfig,
+    type BetaBrowserLeftMouseUpConfig as BetaBrowserLeftMouseUpConfig,
+    type BetaBrowserListTabsConfig as BetaBrowserListTabsConfig,
+    type BetaBrowserMiddleClickConfig as BetaBrowserMiddleClickConfig,
+    type BetaBrowserMouseMoveConfig as BetaBrowserMouseMoveConfig,
+    type BetaBrowserNavigateConfig as BetaBrowserNavigateConfig,
+    type BetaBrowserNewTabConfig as BetaBrowserNewTabConfig,
+    type BetaBrowserReadConsoleConfig as BetaBrowserReadConsoleConfig,
+    type BetaBrowserReadNetworkConfig as BetaBrowserReadNetworkConfig,
+    type BetaBrowserReadPageConfig as BetaBrowserReadPageConfig,
+    type BetaBrowserRightClickConfig as BetaBrowserRightClickConfig,
+    type BetaBrowserScreenshotConfig as BetaBrowserScreenshotConfig,
+    type BetaBrowserScrollConfig as BetaBrowserScrollConfig,
+    type BetaBrowserScrollToConfig as BetaBrowserScrollToConfig,
+    type BetaBrowserStateBlockParam as BetaBrowserStateBlockParam,
+    type BetaBrowserStateChange as BetaBrowserStateChange,
+    type BetaBrowserStateChangeDownloadCompleted as BetaBrowserStateChangeDownloadCompleted,
+    type BetaBrowserStateChangeDownloadFailed as BetaBrowserStateChangeDownloadFailed,
+    type BetaBrowserStateChangeDownloadStarted as BetaBrowserStateChangeDownloadStarted,
+    type BetaBrowserStateChangeTabOpened as BetaBrowserStateChangeTabOpened,
+    type BetaBrowserStateTabEntry as BetaBrowserStateTabEntry,
+    type BetaBrowserSwitchTabConfig as BetaBrowserSwitchTabConfig,
+    type BetaBrowserToolset20260801 as BetaBrowserToolset20260801,
+    type BetaBrowserToolsetConfigs as BetaBrowserToolsetConfigs,
+    type BetaBrowserTripleClickConfig as BetaBrowserTripleClickConfig,
+    type BetaBrowserTypeConfig as BetaBrowserTypeConfig,
+    type BetaBrowserWaitConfig as BetaBrowserWaitConfig,
+    type BetaBrowserZoomConfig as BetaBrowserZoomConfig,
     type BetaCacheControlEphemeral as BetaCacheControlEphemeral,
     type BetaCacheCreation as BetaCacheCreation,
     type BetaCacheMissMessagesChanged as BetaCacheMissMessagesChanged,
@@ -792,6 +1016,25 @@ export declare namespace Beta {
     type BetaCompactionBlockParam as BetaCompactionBlockParam,
     type BetaCompactionContentBlockDelta as BetaCompactionContentBlockDelta,
     type BetaCompactionIterationUsage as BetaCompactionIterationUsage,
+    type BetaComputerCursorPositionConfig as BetaComputerCursorPositionConfig,
+    type BetaComputerDoubleClickConfig as BetaComputerDoubleClickConfig,
+    type BetaComputerHoldKeyConfig as BetaComputerHoldKeyConfig,
+    type BetaComputerKeyConfig as BetaComputerKeyConfig,
+    type BetaComputerLeftClickConfig as BetaComputerLeftClickConfig,
+    type BetaComputerLeftClickDragConfig as BetaComputerLeftClickDragConfig,
+    type BetaComputerLeftMouseDownConfig as BetaComputerLeftMouseDownConfig,
+    type BetaComputerLeftMouseUpConfig as BetaComputerLeftMouseUpConfig,
+    type BetaComputerMiddleClickConfig as BetaComputerMiddleClickConfig,
+    type BetaComputerMouseMoveConfig as BetaComputerMouseMoveConfig,
+    type BetaComputerRightClickConfig as BetaComputerRightClickConfig,
+    type BetaComputerScreenshotConfig as BetaComputerScreenshotConfig,
+    type BetaComputerScrollConfig as BetaComputerScrollConfig,
+    type BetaComputerToolset20260801 as BetaComputerToolset20260801,
+    type BetaComputerToolsetConfigs as BetaComputerToolsetConfigs,
+    type BetaComputerTripleClickConfig as BetaComputerTripleClickConfig,
+    type BetaComputerTypeConfig as BetaComputerTypeConfig,
+    type BetaComputerWaitConfig as BetaComputerWaitConfig,
+    type BetaComputerZoomConfig as BetaComputerZoomConfig,
     type BetaContainer as BetaContainer,
     type BetaContainerParams as BetaContainerParams,
     type BetaContainerUploadBlock as BetaContainerUploadBlock,
@@ -811,14 +1054,20 @@ export declare namespace Beta {
     type BetaEncryptedCodeExecutionResultBlockParam as BetaEncryptedCodeExecutionResultBlockParam,
     type BetaFallbackBlock as BetaFallbackBlock,
     type BetaFallbackBlockParam as BetaFallbackBlockParam,
+    type BetaFallbackCreditNotApplied as BetaFallbackCreditNotApplied,
+    type BetaFallbackCreditRedeemed as BetaFallbackCreditRedeemed,
+    type BetaFallbackCreditTokenParam as BetaFallbackCreditTokenParam,
+    type BetaFallbackCreditUsage as BetaFallbackCreditUsage,
     type BetaFallbackInfo as BetaFallbackInfo,
     type BetaFallbackInfoParam as BetaFallbackInfoParam,
     type BetaFallbackMessageIterationUsage as BetaFallbackMessageIterationUsage,
     type BetaFallbackParam as BetaFallbackParam,
     type BetaFallbackRefusalTrigger as BetaFallbackRefusalTrigger,
+    type BetaFallbacksParam as BetaFallbacksParam,
     type BetaFileDocumentSource as BetaFileDocumentSource,
     type BetaFileImageSource as BetaFileImageSource,
     type BetaImageBlockParam as BetaImageBlockParam,
+    type BetaImageTransformationsParam as BetaImageTransformationsParam,
     type BetaInputJSONDelta as BetaInputJSONDelta,
     type BetaJSONOutputFormat as BetaJSONOutputFormat,
     type BetaInputTokensClearAtLeast as BetaInputTokensClearAtLeast,
@@ -843,7 +1092,6 @@ export declare namespace Beta {
     type BetaMessageParam as BetaMessageParam,
     type BetaMessageTokensCount as BetaMessageTokensCount,
     type BetaMetadata as BetaMetadata,
-    type BetaMidConversationSystemBlockParam as BetaMidConversationSystemBlockParam,
     type BetaOutputConfig as BetaOutputConfig,
     type BetaOutputTokensDetails as BetaOutputTokensDetails,
     type BetaPlainTextSource as BetaPlainTextSource,
@@ -862,6 +1110,8 @@ export declare namespace Beta {
     type BetaRequestMCPServerToolConfiguration as BetaRequestMCPServerToolConfiguration,
     type BetaRequestMCPServerURLDefinition as BetaRequestMCPServerURLDefinition,
     type BetaRequestMCPToolResultBlockParam as BetaRequestMCPToolResultBlockParam,
+    type BetaRequestToolAdditionBlock as BetaRequestToolAdditionBlock,
+    type BetaRequestToolRemovalBlock as BetaRequestToolRemovalBlock,
     type BetaSearchResultBlockParam as BetaSearchResultBlockParam,
     type BetaServerToolCaller as BetaServerToolCaller,
     type BetaServerToolCaller20260120 as BetaServerToolCaller20260120,
@@ -899,6 +1149,9 @@ export declare namespace Beta {
     type BetaTool as BetaTool,
     type BetaToolBash20241022 as BetaToolBash20241022,
     type BetaToolBash20250124 as BetaToolBash20250124,
+    type BetaToolChangeMCPToolReference as BetaToolChangeMCPToolReference,
+    type BetaToolChangeMCPToolsetReference as BetaToolChangeMCPToolsetReference,
+    type BetaToolChangeToolReference as BetaToolChangeToolReference,
     type BetaToolChoice as BetaToolChoice,
     type BetaToolChoiceAny as BetaToolChoiceAny,
     type BetaToolChoiceAuto as BetaToolChoiceAuto,
@@ -955,6 +1208,7 @@ export declare namespace Beta {
 
   export {
     Agents as Agents,
+    type BetaManagedAgentsAdvisor as BetaManagedAgentsAdvisor,
     type BetaManagedAgentsAgent as BetaManagedAgentsAgent,
     type BetaManagedAgentsAgentReference as BetaManagedAgentsAgentReference,
     type BetaManagedAgentsAgentToolConfig as BetaManagedAgentsAgentToolConfig,
@@ -987,11 +1241,24 @@ export declare namespace Beta {
     type BetaManagedAgentsAlwaysAskPolicy as BetaManagedAgentsAlwaysAskPolicy,
     type BetaManagedAgentsAnthropicSkill as BetaManagedAgentsAnthropicSkill,
     type BetaManagedAgentsAnthropicSkillParams as BetaManagedAgentsAnthropicSkillParams,
+    type BetaManagedAgentsBashToolConfig as BetaManagedAgentsBashToolConfig,
+    type BetaManagedAgentsBashToolConfigParams as BetaManagedAgentsBashToolConfigParams,
     type BetaManagedAgentsCustomSkill as BetaManagedAgentsCustomSkill,
     type BetaManagedAgentsCustomSkillParams as BetaManagedAgentsCustomSkillParams,
     type BetaManagedAgentsCustomTool as BetaManagedAgentsCustomTool,
     type BetaManagedAgentsCustomToolInputSchema as BetaManagedAgentsCustomToolInputSchema,
     type BetaManagedAgentsCustomToolParams as BetaManagedAgentsCustomToolParams,
+    type BetaManagedAgentsEditToolConfig as BetaManagedAgentsEditToolConfig,
+    type BetaManagedAgentsEditToolConfigParams as BetaManagedAgentsEditToolConfigParams,
+    type BetaManagedAgentsEffortHigh as BetaManagedAgentsEffortHigh,
+    type BetaManagedAgentsEffortLow as BetaManagedAgentsEffortLow,
+    type BetaManagedAgentsEffortMax as BetaManagedAgentsEffortMax,
+    type BetaManagedAgentsEffortMedium as BetaManagedAgentsEffortMedium,
+    type BetaManagedAgentsEffortXhigh as BetaManagedAgentsEffortXhigh,
+    type BetaManagedAgentsGlobToolConfig as BetaManagedAgentsGlobToolConfig,
+    type BetaManagedAgentsGlobToolConfigParams as BetaManagedAgentsGlobToolConfigParams,
+    type BetaManagedAgentsGrepToolConfig as BetaManagedAgentsGrepToolConfig,
+    type BetaManagedAgentsGrepToolConfigParams as BetaManagedAgentsGrepToolConfigParams,
     type BetaManagedAgentsMCPServerURLDefinition as BetaManagedAgentsMCPServerURLDefinition,
     type BetaManagedAgentsMCPToolConfig as BetaManagedAgentsMCPToolConfig,
     type BetaManagedAgentsMCPToolConfigParams as BetaManagedAgentsMCPToolConfigParams,
@@ -1005,9 +1272,18 @@ export declare namespace Beta {
     type BetaManagedAgentsMultiagentCoordinator as BetaManagedAgentsMultiagentCoordinator,
     type BetaManagedAgentsMultiagentCoordinatorParams as BetaManagedAgentsMultiagentCoordinatorParams,
     type BetaManagedAgentsMultiagentSelfParams as BetaManagedAgentsMultiagentSelfParams,
+    type BetaManagedAgentsReadToolConfig as BetaManagedAgentsReadToolConfig,
+    type BetaManagedAgentsReadToolConfigParams as BetaManagedAgentsReadToolConfigParams,
     type BetaManagedAgentsSessionThreadAgent as BetaManagedAgentsSessionThreadAgent,
     type BetaManagedAgentsSkillParams as BetaManagedAgentsSkillParams,
     type BetaManagedAgentsURLMCPServerParams as BetaManagedAgentsURLMCPServerParams,
+    type BetaManagedAgentsUserLocation as BetaManagedAgentsUserLocation,
+    type BetaManagedAgentsWebFetchToolConfig as BetaManagedAgentsWebFetchToolConfig,
+    type BetaManagedAgentsWebFetchToolConfigParams as BetaManagedAgentsWebFetchToolConfigParams,
+    type BetaManagedAgentsWebSearchToolConfig as BetaManagedAgentsWebSearchToolConfig,
+    type BetaManagedAgentsWebSearchToolConfigParams as BetaManagedAgentsWebSearchToolConfigParams,
+    type BetaManagedAgentsWriteToolConfig as BetaManagedAgentsWriteToolConfig,
+    type BetaManagedAgentsWriteToolConfigParams as BetaManagedAgentsWriteToolConfigParams,
     type BetaManagedAgentsAgentsPageCursor as BetaManagedAgentsAgentsPageCursor,
     type AgentCreateParams as AgentCreateParams,
     type AgentRetrieveParams as AgentRetrieveParams,
@@ -1043,11 +1319,13 @@ export declare namespace Beta {
 
   export {
     Sessions as Sessions,
+    type BetaManagedAgentsAdvisorParams as BetaManagedAgentsAdvisorParams,
     type BetaManagedAgentsAgentMessagePreview as BetaManagedAgentsAgentMessagePreview,
     type BetaManagedAgentsAgentParams as BetaManagedAgentsAgentParams,
     type BetaManagedAgentsAgentThinkingPreview as BetaManagedAgentsAgentThinkingPreview,
     type BetaManagedAgentsAgentWithOverridesParams as BetaManagedAgentsAgentWithOverridesParams,
     type BetaManagedAgentsBranchCheckout as BetaManagedAgentsBranchCheckout,
+    type BetaManagedAgentsBudgetLimit as BetaManagedAgentsBudgetLimit,
     type BetaManagedAgentsCacheCreationUsage as BetaManagedAgentsCacheCreationUsage,
     type BetaManagedAgentsCommitCheckout as BetaManagedAgentsCommitCheckout,
     type BetaManagedAgentsDeletedSession as BetaManagedAgentsDeletedSession,
@@ -1061,6 +1339,7 @@ export declare namespace Beta {
     type BetaManagedAgentsMultiagentParams as BetaManagedAgentsMultiagentParams,
     type BetaManagedAgentsMultiagentRosterEntryParams as BetaManagedAgentsMultiagentRosterEntryParams,
     type BetaManagedAgentsOutcomeEvaluationResource as BetaManagedAgentsOutcomeEvaluationResource,
+    type BetaManagedAgentsServerToolUsage as BetaManagedAgentsServerToolUsage,
     type BetaManagedAgentsSession as BetaManagedAgentsSession,
     type BetaManagedAgentsSessionAgent as BetaManagedAgentsSessionAgent,
     type BetaManagedAgentsSessionAgentUpdate as BetaManagedAgentsSessionAgentUpdate,
@@ -1068,6 +1347,7 @@ export declare namespace Beta {
     type BetaManagedAgentsSessionStats as BetaManagedAgentsSessionStats,
     type BetaManagedAgentsSessionUpdatedEvent as BetaManagedAgentsSessionUpdatedEvent,
     type BetaManagedAgentsSessionUsage as BetaManagedAgentsSessionUsage,
+    type BetaManagedAgentsSessionUsageEvent as BetaManagedAgentsSessionUsageEvent,
     type BetaManagedAgentsStartEvent as BetaManagedAgentsStartEvent,
     type BetaManagedAgentsStartEventPreview as BetaManagedAgentsStartEventPreview,
     type BetaManagedAgentsSystemContentBlock as BetaManagedAgentsSystemContentBlock,
@@ -1187,10 +1467,10 @@ export declare namespace Beta {
 
   export {
     Files as Files,
+    type BetaDeletedFile as BetaDeletedFile,
+    type BetaFileMetadata as BetaFileMetadata,
     type BetaFileScope as BetaFileScope,
-    type DeletedFile as DeletedFile,
-    type FileMetadata as FileMetadata,
-    type FileMetadataPage as FileMetadataPage,
+    type BetaFileMetadataPage as BetaFileMetadataPage,
     type FileListParams as FileListParams,
     type FileDeleteParams as FileDeleteParams,
     type FileDownloadParams as FileDownloadParams,
@@ -1226,9 +1506,17 @@ export declare namespace Beta {
     type BetaWebhookDeploymentRunSucceededEventData as BetaWebhookDeploymentRunSucceededEventData,
     type BetaWebhookDeploymentUnpausedEventData as BetaWebhookDeploymentUnpausedEventData,
     type BetaWebhookDeploymentUpdatedEventData as BetaWebhookDeploymentUpdatedEventData,
+    type BetaWebhookEnvironmentArchivedEventData as BetaWebhookEnvironmentArchivedEventData,
+    type BetaWebhookEnvironmentCreatedEventData as BetaWebhookEnvironmentCreatedEventData,
+    type BetaWebhookEnvironmentDeletedEventData as BetaWebhookEnvironmentDeletedEventData,
+    type BetaWebhookEnvironmentUpdatedEventData as BetaWebhookEnvironmentUpdatedEventData,
     type BetaWebhookEvent as BetaWebhookEvent,
     type BetaWebhookEventData as BetaWebhookEventData,
+    type BetaWebhookMemoryStoreArchivedEventData as BetaWebhookMemoryStoreArchivedEventData,
+    type BetaWebhookMemoryStoreCreatedEventData as BetaWebhookMemoryStoreCreatedEventData,
+    type BetaWebhookMemoryStoreDeletedEventData as BetaWebhookMemoryStoreDeletedEventData,
     type BetaWebhookSessionArchivedEventData as BetaWebhookSessionArchivedEventData,
+    type BetaWebhookSessionBudgetReachedEventData as BetaWebhookSessionBudgetReachedEventData,
     type BetaWebhookSessionCreatedEventData as BetaWebhookSessionCreatedEventData,
     type BetaWebhookSessionDeletedEventData as BetaWebhookSessionDeletedEventData,
     type BetaWebhookSessionIdledEventData as BetaWebhookSessionIdledEventData,
@@ -1265,5 +1553,48 @@ export declare namespace Beta {
     type UserProfileUpdateParams as UserProfileUpdateParams,
     type UserProfileListParams as UserProfileListParams,
     type UserProfileCreateEnrollmentURLParams as UserProfileCreateEnrollmentURLParams,
+  };
+
+  export {
+    Dreams as Dreams,
+    type BetaDream as BetaDream,
+    type BetaDreamError as BetaDreamError,
+    type BetaDreamInput as BetaDreamInput,
+    type BetaDreamMemoryStoreInput as BetaDreamMemoryStoreInput,
+    type BetaDreamMemoryStoreOutput as BetaDreamMemoryStoreOutput,
+    type BetaDreamModelConfig as BetaDreamModelConfig,
+    type BetaDreamModelConfigParam as BetaDreamModelConfigParam,
+    type BetaDreamOutput as BetaDreamOutput,
+    type BetaDreamSessionsInput as BetaDreamSessionsInput,
+    type BetaDreamStatus as BetaDreamStatus,
+    type BetaDreamUsage as BetaDreamUsage,
+    type BetaOutputBehavior as BetaOutputBehavior,
+    type BetaOutputBehaviorCreateNew as BetaOutputBehaviorCreateNew,
+    type BetaOutputBehaviorUpdateExisting as BetaOutputBehaviorUpdateExisting,
+    type BetaDreamsPageCursor as BetaDreamsPageCursor,
+    type DreamCreateParams as DreamCreateParams,
+    type DreamRetrieveParams as DreamRetrieveParams,
+    type DreamListParams as DreamListParams,
+    type DreamArchiveParams as DreamArchiveParams,
+    type DreamCancelParams as DreamCancelParams,
+  };
+
+  export {
+    Tunnels as Tunnels,
+    type BetaTunnel as BetaTunnel,
+    type BetaTunnelToken as BetaTunnelToken,
+    type BetaTunnelsPageCursor as BetaTunnelsPageCursor,
+    type TunnelCreateParams as TunnelCreateParams,
+    type TunnelRetrieveParams as TunnelRetrieveParams,
+    type TunnelListParams as TunnelListParams,
+    type TunnelArchiveParams as TunnelArchiveParams,
+    type TunnelRevealTokenParams as TunnelRevealTokenParams,
+    type TunnelRotateTokenParams as TunnelRotateTokenParams,
+  };
+
+  export {
+    Organization as Organization,
+    type BetaOrganization as BetaOrganization,
+    type BetaOrganizationRole as BetaOrganizationRole,
   };
 }

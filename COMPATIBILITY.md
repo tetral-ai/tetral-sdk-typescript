@@ -10,10 +10,10 @@ The Tetral SDK is a fork of the [Anthropic TypeScript SDK](https://github.com/an
 
 Pinned upstream baseline:
 
-| Item                        | Value                                                              |
-| --------------------------- | ------------------------------------------------------------------ |
-| Upstream package version    | `0.110.0`                                                          |
-| Last synced upstream commit | `4f2eb807` (fork point `0ffdbfa41186434824e98c90473b5c4ba5501045`) |
+| Item                        | Value                                      |
+| --------------------------- | ------------------------------------------ |
+| Upstream package version    | `0.121.0`                                  |
+| Last synced upstream commit | `7ba6a3fc3000f9bd1f6f9f45526cc66db3167e6b` |
 
 ## 2. Type-Level Divergences
 
@@ -25,11 +25,6 @@ type, but Deployments remain unsupported; this extension enables Session creatio
 Closed alignment: `BetaManagedAgentsModel` follows the upstream known-literal
 union widened by `(string & {})`. Known IDs autocomplete, arbitrary strings
 type-check, and the engine remains the runtime model gatekeeper.
-
-Memory `BetaManagedAgentsActor` adds the Tetral Engine response variant
-`BetaManagedAgentsServiceActor`: `{type: 'service_actor', service_id: string}`.
-Both `created_by` and nullable `redacted_by` use the shared union; API, Session
-and User variants retain their fields and discriminators.
 
 Session create uses plain Agent references; the generated `agent_with_overrides`
 variant is intentionally excluded from `SessionCreateParams.agent`.
@@ -49,21 +44,19 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Managed Agent model catalog    | Known IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`, `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`, `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`. `moonshotai/kimi-k2.7-code` is retired; the 5.6 generation uses the precise `openai/gpt-5.6-sol` variant ID.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Models resource                | `client.models` and `client.beta.models` support list and retrieve. Page envelopes and `limit` / `before_id` / `after_id` match upstream; catalog contents use Tetral provider/model IDs rather than Anthropic `claude-*` IDs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Model effort                   | No public effort selector is exposed. The engine applies its pinned platform default for each model.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Model effort                   | The upstream effort selector is retained but rejected by Engine admission. The engine applies its pinned platform default for each model.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `approval_mode`                | Supported on Agents and as a Session-local `agent.approval_mode` update. Values are `full_access`, `ask_for_approval`, and `approve_for_me`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `tetral_agent_toolset.family`  | Required on Tetral toolset declarations. Supported families are `claude` and `gpt`. Every Agent must declare exactly one `tetral_agent_toolset`: omitting it, declaring two (same or mixed family), or clearing `tools` so none remains (empty array or `null` — this supersedes the generated docstring's "send empty array or null to clear" for this entry) is a 400. A Session-local `agent.tools` update must keep the entry with the Session's pinned family — the family cannot change for a live Session; change it by updating the Agent (new version) and starting a new Session. Only the declared family's builtin tools are installed in the sandbox. `configs` / `default_config` on this declaration are rejected. |
 | MCP declarations               | Supported as credential-free curated-catalog declarations. Admission accepts the curated catalog and rejects non-catalog URLs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Agent skill references         | Supported for workspace `custom` skill references (created via `/v1/skills`). Read-only guidance, not model-facing tools.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Session creation               | Requires explicit `vault_ids`, using `[]` when no Vault is bound.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Session `providers`            | Supported as `{ [provider_id]: { credential_id } }` on create/update. The provider key must match the agent's canonical `provider/model` provider; credentials must come from a Session-bound Vault.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `usage.server_tool_use`        | Supported response usage sub-block with `web_search_requests` and `web_fetch_requests`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | Session image input            | Multimodal stage 1 accepts only Files API references (`source.type = "file"`) for `image/jpeg`, `image/png`, `image/gif`, and `image/webp`, up to 10 MB each. An events request may contain at most 32 file-backed image and document references combined, narrower than Anthropic's documented image allowance. Base64 and URL sources are rejected with an upload-first 400. Accepted `file_id` values are stored and echoed verbatim; media remains eligible to ride provider requests until a turn commits settled output.                                                                                                                                                                                                    |
 | Session document input         | Multimodal stage 1 accepts only Files API references for `application/pdf` and `text/plain`. PDFs in one events request are limited to 32 MB and 600 pages in aggregate; `text/plain` has no separate admission byte cap. Inline base64, text, and URL sources are rejected with an upload-first 400. Document `file_id`, `context`, and `title` are stored and echoed verbatim.                                                                                                                                                                                                                                                                                                                                                  |
 | Session resources              | Supported subset: file add/list/retrieve/delete, memory-store attachment, and GitHub repository params with a required write-only `authorization_token`. GitHub resource tokens rotate through `client.beta.sessions.resources.update(...)` and are never echoed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | GitHub resource URL uniqueness | Session create rejects duplicate `github_repository` URLs by comparison key: trim an optional case-sensitive `.git` suffix first, then case-fold owner/repo. Stored and echoed URLs remain verbatim. This is an undocumented upstream corner recorded as Tetral behavior.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Cloud Environments             | Supported for cloud environments with `unrestricted`, `blocked`, or `cidr_allow_list` networking.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Provider credentials in Vault  | Supported through `provider_api_key` and OpenAI `provider_oauth`. OpenAI OAuth create requires `access_mode: "oauth"` plus access token, refresh token, expiry, and account ID.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| MCP OAuth validation refresh   | On `mcp_oauth_validate`, the refresh leg keeps `http_response.body` and `http_response.content_type` in the response shape but always returns both as empty strings. `status_code` and `body_truncated` remain available; MCP probe diagnostics are unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 ### Engine authentication and Memory attribution
 
@@ -85,19 +78,18 @@ These Engine rules do not replace hosted Anthropic's workspace-selection rules.
 
 Memory attribution identifies the actor that performed the operation:
 
-| Credential or execution                 | Actor           | Identity field                          |
-| --------------------------------------- | --------------- | --------------------------------------- |
-| Direct service identity token           | `service_actor` | `service_id`: stable Engine identity ID |
-| Direct human identity token             | `user_actor`    | `user_id`: stable Engine identity ID    |
-| Independent or identity-derived API key | `api_actor`     | `api_key_id`: actual key ID             |
-| Runtime Session operation               | `session_actor` | `session_id`: Session ID                |
+| Credential or execution                 | Actor                   | Identity field                                  |
+| --------------------------------------- | ----------------------- | ----------------------------------------------- |
+| Direct service identity token           | `service_account_actor` | `service_account_id`: stable Engine identity ID |
+| Direct human identity token             | `user_actor`            | `user_id`: stable Engine identity ID            |
+| Independent or identity-derived API key | `api_actor`             | `api_key_id`: actual key ID                     |
+| Runtime Session operation               | `session_actor`         | `session_id`: Session ID                        |
 
-The service ID is neither the upstream JWT subject nor the service-account
-selector. SDK HTTP fixture tests check received typed variants and preserve the
-older union arms. Integration rows CONN-20 and MEM-24 require the native
-`TestOIDCKeycloakSDK` composition with real HTTPS Keycloak, Auth, PostgreSQL and
+The service*account_id is the stable Engine identity ID, not an Anthropic
+`svac*`ID, upstream JWT subject or service-account selector. SDK HTTP fixture tests check received typed variants and preserve the
+older union arms. Integration rows CONN-20 and MEM-24 require the native`TestOIDCKeycloakSDK`composition with real HTTPS Keycloak, Auth, PostgreSQL and
 actual SDK responses. They require both identity flows, cache/revocation/retry
-observations and typed `created_by`/`redacted_by` identity checks. A fabricated
+observations and typed`created_by`/`redacted_by` identity checks. A fabricated
 object, raw JSON cast, source scan or skipped composition does not prove those
 rows. Source support and actual integration evidence do not imply an npm release.
 
@@ -109,7 +101,9 @@ thread is eligible. `agent.message` previews use `event_start` followed by
 best-effort `event_delta` text fragments; `agent.thinking` is a start-only
 notification with no thinking body or signature. Omitting `event_deltas` keeps
 Session delivery formal-only. Every Thread stream, including the primary
-Thread endpoint, remains formal-only and has no delta request parameter.
+Thread endpoint, remains formal-only. The upstream Thread `event_deltas`
+parameter remains in the SDK type, but supplying it returns 400
+`invalid_request_error`.
 Session and Thread event lists contain only formal events.
 
 Open the stream before sending input to observe previews for the new request.
@@ -155,7 +149,7 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 
 | Surface                                                                  | Tetral status                                                                                                                                                                      |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public multiagent topology                                               | Non-null topology is rejected. Responses use `null`.                                                                                                                               |
+| Public multiagent topology                                               | Non-null topology, including coordinator, self and advisor variants, is rejected with 400 `invalid_request_error`. Responses use `null`.                                           |
 | Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
 | Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
 | Agent and deployment webhook event types                                 | Deferred with the Webhooks resource.                                                                                                                                               |
@@ -171,6 +165,47 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 | `user.custom_tool_result`                                                | Retained unsupported/deferred.                                                                                                                                                     |
 | `user.define_outcome`                                                    | Retained unsupported/deferred.                                                                                                                                                     |
 | `system.message`                                                         | Retained unsupported/deferred.                                                                                                                                                     |
+
+### Additional retained resources and helpers
+
+These entries describe scope; they do not claim executed compatibility proof.
+New rejected parameters and unproduced events are individually registered in
+`tests/compatibility/compat-cases.json`. GA `client.files` and `client.skills`
+are present but require the currently supported beta route shape; ordinary GA
+requests without `beta=true` return 400. `agents.update` without `version` and
+Memory store updates with `name: null` return 400 `invalid_request_error`.
+
+| Surface                                                                 | Scope                                                                                                    |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `WorkPoller.[Symbol.asyncIterator]`                                     | No Environment work routes.                                                                              |
+| `EnvironmentWorker.run`                                                 | No Environment work routes.                                                                              |
+| `SessionToolRunner.[Symbol.asyncIterator]`                              | user.tool_result rejected; hosted runtime owns execution.                                                |
+| `SessionMemoryStores.download`                                          | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
+| `SessionMemoryStores.finish`                                            | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
+| `SessionMemoryStores.flushWrites`                                       | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
+| `SessionMemoryStores.syncIfDue`                                         | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
+| `setupSkills`                                                           | Existing Session/Skill APIs; local Skill setup remains unsupported and unverified for the hosted Engine. |
+| `beta/dreams (Dreams)`                                                  | No public Engine route for this resource.                                                                |
+| `beta/messages/messages (Messages)`                                     | No public Engine route for this resource.                                                                |
+| `beta/organization/api-keys (APIKeys)`                                  | No public Engine route for this resource.                                                                |
+| `beta/organization/external-keys (ExternalKeys)`                        | No public Engine route for this resource.                                                                |
+| `beta/organization/federation/issuers (Issuers)`                        | No public Engine route for this resource.                                                                |
+| `beta/organization/federation/rules/rules (Rules)`                      | No public Engine route for this resource.                                                                |
+| `beta/organization/federation/rules/workspaces (Workspaces)`            | No public Engine route for this resource.                                                                |
+| `beta/organization/invites (Invites)`                                   | No public Engine route for this resource.                                                                |
+| `beta/organization/organization (Organization)`                         | No public Engine route for this resource.                                                                |
+| `beta/organization/rate-limits (RateLimits)`                            | No public Engine route for this resource.                                                                |
+| `beta/organization/service-accounts/service-accounts (ServiceAccounts)` | No public Engine route for this resource.                                                                |
+| `beta/organization/service-accounts/workspaces (Workspaces)`            | No public Engine route for this resource.                                                                |
+| `beta/organization/users (Users)`                                       | No public Engine route for this resource.                                                                |
+| `beta/organization/workspaces/members (Members)`                        | No public Engine route for this resource.                                                                |
+| `beta/organization/workspaces/rate-limits (RateLimits)`                 | No public Engine route for this resource.                                                                |
+| `beta/organization/workspaces/service-accounts (ServiceAccounts)`       | No public Engine route for this resource.                                                                |
+| `beta/organization/workspaces/workspaces (Workspaces)`                  | No public Engine route for this resource.                                                                |
+| `beta/tunnels/certificates (Certificates)`                              | No public Engine route for this resource.                                                                |
+| `beta/tunnels/tunnels (Tunnels)`                                        | No public Engine route for this resource.                                                                |
+| `beta/user-profiles (UserProfiles)`                                     | No public Engine route for this resource.                                                                |
+| `messages/messages (Messages)`                                          | No public Engine route for this resource.                                                                |
 
 ## 5. Authentication And Upstream Sync
 

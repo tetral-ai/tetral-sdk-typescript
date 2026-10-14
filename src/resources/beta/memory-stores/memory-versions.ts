@@ -117,8 +117,8 @@ export type BetaManagedAgentsMemoryVersionsPageCursor = PageCursor<BetaManagedAg
 export type BetaManagedAgentsActor =
   | BetaManagedAgentsSessionActor
   | BetaManagedAgentsAPIActor
-  | BetaManagedAgentsServiceActor
-  | BetaManagedAgentsUserActor;
+  | BetaManagedAgentsUserActor
+  | BetaManagedAgentsServiceAccountActor;
 
 /**
  * Attribution for a write made directly via the public API (outside of any
@@ -137,10 +137,12 @@ export interface BetaManagedAgentsAPIActor {
 /**
  * A `memory_version` object: one immutable, attributed row in a memory's
  * append-only history. Every non-no-op mutation to a memory produces a new
- * version. Versions belong to the store (not the individual memory) and persist
- * after the memory is deleted. Retrieving a redacted version returns 200 with
- * `content`, `path`, `content_size_bytes`, and `content_sha256` set to `null`;
- * branch on `redacted_at`, not HTTP status.
+ * version. Versions belong to the store (not the individual memory) and are not
+ * deleted with the memory; each version is retained for at least the version
+ * retention period after it was written, unless the store itself is deleted.
+ * Retrieving a redacted version returns 200 with `content`, `path`,
+ * `content_size_bytes`, and `content_sha256` set to `null`; branch on
+ * `redacted_at`, not HTTP status.
  */
 export interface BetaManagedAgentsMemoryVersion {
   /**
@@ -157,7 +159,8 @@ export interface BetaManagedAgentsMemoryVersion {
    * ID of the memory this version snapshots (a `mem_...` value). Remains valid after
    * the memory is deleted; pass it as `memory_id` to
    * [List memory versions](/en/api/beta/memory_stores/memory_versions/list) to
-   * retrieve the full lineage including the `deleted` row.
+   * retrieve the memory's retained versions, including the `deleted` row while the
+   * lineage is retained.
    */
   memory_id: string;
 
@@ -230,6 +233,19 @@ export interface BetaManagedAgentsMemoryVersion {
 export type BetaManagedAgentsMemoryVersionOperation = 'created' | 'modified' | 'deleted';
 
 /**
+ * Attribution for a write made by a workload authenticated as a service account,
+ * for example via Workload Identity Federation.
+ */
+export interface BetaManagedAgentsServiceAccountActor {
+  /**
+   * ID of the service account that performed the write (a `svac_...` value).
+   */
+  service_account_id: string;
+
+  type: 'service_account_actor';
+}
+
+/**
  * Attribution for a write made by an agent during a session, through the mounted
  * filesystem at `/mnt/memory/`.
  */
@@ -242,12 +258,6 @@ export interface BetaManagedAgentsSessionActor {
   session_id: string;
 
   type: 'session_actor';
-}
-
-export interface BetaManagedAgentsServiceActor {
-  service_id: string;
-
-  type: 'service_actor';
 }
 
 /**
@@ -306,6 +316,11 @@ export interface MemoryVersionListParams extends PageCursorParams {
   operation?: BetaManagedAgentsMemoryVersionOperation;
 
   /**
+   * Query param: Query parameter for service_account_id
+   */
+  service_account_id?: string;
+
+  /**
    * Query param: Query parameter for session_id
    */
   session_id?: string;
@@ -339,8 +354,8 @@ export declare namespace MemoryVersions {
     type BetaManagedAgentsAPIActor as BetaManagedAgentsAPIActor,
     type BetaManagedAgentsMemoryVersion as BetaManagedAgentsMemoryVersion,
     type BetaManagedAgentsMemoryVersionOperation as BetaManagedAgentsMemoryVersionOperation,
+    type BetaManagedAgentsServiceAccountActor as BetaManagedAgentsServiceAccountActor,
     type BetaManagedAgentsSessionActor as BetaManagedAgentsSessionActor,
-    type BetaManagedAgentsServiceActor as BetaManagedAgentsServiceActor,
     type BetaManagedAgentsUserActor as BetaManagedAgentsUserActor,
     type BetaManagedAgentsMemoryVersionsPageCursor as BetaManagedAgentsMemoryVersionsPageCursor,
     type MemoryVersionRetrieveParams as MemoryVersionRetrieveParams,

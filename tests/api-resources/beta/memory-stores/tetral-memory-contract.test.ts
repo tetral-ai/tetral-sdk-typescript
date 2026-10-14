@@ -25,7 +25,7 @@ import {
 } from '../../../integration/fixtures/oidc-memory-actors';
 import type { MemoryStores } from '@tetral-ai/sdk/resources/beta/memory-stores';
 import type { MemoryVersions } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
-import type { BetaManagedAgentsServiceActor } from '@tetral-ai/sdk/resources/beta/memory-stores';
+import type { BetaManagedAgentsServiceAccountActor } from '@tetral-ai/sdk/resources/beta/memory-stores';
 
 const MEMORY_STORE: BetaManagedAgentsMemoryStore = {
   id: 'memstore_123',
@@ -303,7 +303,7 @@ describe('Tetral Memory SDK contract', () => {
   });
 
   test.each<BetaManagedAgentsActor>([
-    { type: 'service_actor', service_id: 'identity_service_fixture' },
+    { type: 'service_account_actor', service_account_id: 'identity_service_fixture' },
     { type: 'user_actor', user_id: 'identity_human_fixture' },
     { type: 'api_actor', api_key_id: 'key_123' },
     { type: 'session_actor', session_id: 'sesn_123' },
@@ -335,16 +335,16 @@ describe('Tetral Memory SDK contract', () => {
     expect(retrieved.redacted_by).toBeNull();
     expect(redacted.created_by).toEqual(actor);
     expect(redacted.redacted_by).toEqual(actor);
-    if (retrieved.created_by.type === 'service_actor') {
-      const exported: BetaManagedAgentsServiceActor = retrieved.created_by;
-      const storeExport: MemoryStores.BetaManagedAgentsServiceActor = exported;
-      const versionExport: MemoryVersions.BetaManagedAgentsServiceActor = storeExport;
-      expect(versionExport.service_id).toBe('identity_service_fixture');
+    if (retrieved.created_by.type === 'service_account_actor') {
+      const exported: BetaManagedAgentsServiceAccountActor = retrieved.created_by;
+      const storeExport: MemoryStores.BetaManagedAgentsServiceAccountActor = exported;
+      const versionExport: MemoryVersions.BetaManagedAgentsServiceAccountActor = storeExport;
+      expect(versionExport.service_account_id).toBe('identity_service_fixture');
       // @ts-expect-error A service actor identifies the service, not an API key.
       void retrieved.created_by.api_key_id;
     }
-    if (redacted.redacted_by?.type === 'service_actor') {
-      expect(redacted.redacted_by.service_id).toBe('identity_service_fixture');
+    if (redacted.redacted_by?.type === 'service_account_actor') {
+      expect(redacted.redacted_by.service_account_id).toBe('identity_service_fixture');
       // @ts-expect-error A service actor must not be narrowed as a user actor.
       void redacted.redacted_by.user_id;
     }
@@ -357,7 +357,7 @@ describe('Tetral Memory SDK contract', () => {
       fetch: async () =>
         jsonResponse({
           ...MEMORY_VERSION,
-          created_by: { type: 'service_actor', service_id: 'upstream-service-selector' },
+          created_by: { type: 'service_account_actor', service_account_id: 'upstream-service-selector' },
         }),
     });
     await expect(
@@ -365,7 +365,7 @@ describe('Tetral Memory SDK contract', () => {
         client,
         'memver_123',
         { memory_store_id: 'memstore_123' },
-        { type: 'service_actor', service_id: 'identity_service_fixture' },
+        { type: 'service_account_actor', service_account_id: 'identity_service_fixture' },
       ),
     ).rejects.toThrow('Received Memory attribution does not match the fixture identity');
   });
