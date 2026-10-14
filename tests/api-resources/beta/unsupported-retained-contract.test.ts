@@ -106,11 +106,11 @@ describe('Tetral retained unsupported SDK surface contract', () => {
       status: 400,
       type: 'invalid_request_error',
     });
-    expect(
-      client.beta.webhooks.unwrap(JSON.stringify({ type: 'event', data: {} }), {
-        headers: undefined as never,
-      }),
-    ).toEqual({ type: 'event', data: {} });
+    const body = JSON.stringify({ type: 'event', data: {} });
+    expect(client.beta.webhooks.parseUnverified(body)).toEqual({ type: 'event', data: {} });
+    expect(() => client.beta.webhooks.unwrap(body, { headers: undefined as never })).toThrow(
+      'Webhook headers are required',
+    );
 
     expect(captured.map((r) => [r.method, r.url])).toEqual([
       ['POST', 'https://api.tetral.example/v1/deployments?beta=true'],
@@ -151,11 +151,10 @@ describe('Tetral retained unsupported SDK surface contract', () => {
     ];
 
     expect(retainedResources).toHaveLength(6);
-    expect(
-      client.beta.webhooks.unwrap(JSON.stringify({ type: 'event', data: {} }), {
-        headers: undefined as never,
-      }),
-    ).toEqual({ type: 'event', data: {} });
+    expect(client.beta.webhooks.parseUnverified(JSON.stringify({ type: 'event', data: {} }))).toEqual({
+      type: 'event',
+      data: {},
+    });
   });
 
   test('type smoke covers retained unsupported params and event variants', () => {

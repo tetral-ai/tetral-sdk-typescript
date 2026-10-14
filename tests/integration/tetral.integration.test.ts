@@ -29,8 +29,8 @@ import type {
 } from '@tetral-ai/sdk/resources/beta/sessions/events';
 import type { BetaManagedAgentsStreamSessionThreadEvents } from '@tetral-ai/sdk/resources/beta/sessions/threads';
 import type { BetaManagedAgentsSessionThread } from '@tetral-ai/sdk/resources/beta/sessions/threads';
-import type { SkillCreateResponse } from '@tetral-ai/sdk/resources/beta/skills';
-import type { VersionCreateResponse } from '@tetral-ai/sdk/resources/beta/skills/versions';
+import type { BetaSkill } from '@tetral-ai/sdk/resources/beta/skills';
+import type { BetaSkillVersion } from '@tetral-ai/sdk/resources/beta/skills/versions';
 import type {
   BetaManagedAgentsCredential,
   BetaManagedAgentsVault,
@@ -234,25 +234,23 @@ function assertDeletedEnvironment(deleted: BetaEnvironmentDeleteResponse): void 
   expect(deleted.type).toBe('environment_deleted');
 }
 
-function assertSkill(skill: SkillCreateResponse): void {
+function assertSkill(skill: BetaSkill): void {
   expectField(skill.id, 'id');
   expectField(skill.created_at, 'created_at');
-  expectField(skill.display_title, 'display_title');
-  expectField(skill.latest_version, 'latest_version');
-  expectField(skill.source, 'source');
+  expectField(skill.display_name, 'display_name');
+  expectField(skill.latest_version_id, 'latest_version_id');
+  expect(skill.source.type).toBe('custom');
   expectField(skill.type, 'type');
   expectField(skill.updated_at, 'updated_at');
 }
 
-function assertSkillVersion(version: VersionCreateResponse): void {
+function assertSkillVersion(version: BetaSkillVersion): void {
   expectField(version.id, 'id');
   expectField(version.created_at, 'created_at');
   expectField(version.description, 'description');
-  expectField(version.directory, 'directory');
   expectField(version.name, 'name');
   expectField(version.skill_id, 'skill_id');
   expectField(version.type, 'type');
-  expectField(version.version, 'version');
 }
 
 function assertMemoryStore(store: BetaManagedAgentsMemoryStore): void {
@@ -510,7 +508,9 @@ describeIntegration('Tetral live integration suite', () => {
     });
     assertFile(file);
     assertFile(await client.beta.files.retrieveMetadata(file.id));
-    assertFile(await firstPageItem(client.beta.files.list({ limit: 1 })));
+    const filesPage = await client.beta.files.list({ limit: 1 });
+    expectField(filesPage.next_page, 'next_page');
+    assertFile(filesPage.data[0]!);
     const resource = await client.beta.sessions.resources.add(lifecycleSession.id, {
       type: 'file',
       file_id: file.id,
@@ -582,7 +582,7 @@ describeIntegration('Tetral live integration suite', () => {
       'integration/SKILL.md',
     );
     const skill = await client.beta.skills.create({
-      display_title: `integration-skill-${Date.now()}`,
+      display_name: `integration-skill-${Date.now()}`,
       files: [skillFile],
     });
     assertSkill(skill);
@@ -599,8 +599,23 @@ describeIntegration('Tetral live integration suite', () => {
       files: [versionFile],
     });
     assertSkillVersion(version);
-    assertSkillVersion(await client.beta.skills.versions.retrieve(version.version, { skill_id: skill.id }));
+    assertSkillVersion(await client.beta.skills.versions.retrieve(version.id, { skill_id: skill.id }));
     assertSkillVersion(await firstPageItem(client.beta.skills.versions.list(skill.id, { limit: 1 })));
+    expect((await client.beta.skills.versions.retrieve('latest', { skill_id: skill.id })).id).toBe(
+      version.id,
+    );
+    await client.beta.skills.versions.delete(version.id, { skill_id: skill.id });
+    expect((await client.beta.skills.retrieve(skill.id)).latest_version_id).toBe(skill.latest_version_id);
+    await expect(
+      client.beta.skills.versions.delete(skill.latest_version_id, { skill_id: skill.id }),
+    ).rejects.toMatchObject({
+      status: 400,
+      error: { type: 'invalid_request_error', message: expect.stringContaining('last version') },
+    });
+    expect((await client.beta.skills.delete(skill.id)).type).toBe('skill_deleted');
+    await expect(
+      client.beta.skills.versions.retrieve(skill.latest_version_id, { skill_id: skill.id }),
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   test('memory stores, memories, and memory versions', async () => {

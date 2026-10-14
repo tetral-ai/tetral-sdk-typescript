@@ -231,7 +231,7 @@ export {
   type FileDownloadParams,
   type FileRetrieveMetadataParams,
   type FileUploadParams,
-  type BetaFileMetadataPage,
+  type BetaFileMetadataPageCursor,
 } from './files';
 export {
   MemoryStores,
@@ -374,6 +374,7 @@ export {
   type BetaComputerZoomConfig,
   type BetaContainer,
   type BetaContainerParams,
+  type BetaContainerSkill,
   type BetaContainerUploadBlock,
   type BetaContainerUploadBlockParam,
   type BetaContentBlock,
@@ -457,7 +458,6 @@ export {
   type BetaServerToolUseBlock,
   type BetaServerToolUseBlockParam,
   type BetaSignatureDelta,
-  type BetaSkill,
   type BetaSkillParams,
   type BetaStopReason,
   type BetaTextBlock,
@@ -615,15 +615,14 @@ export {
 } from './sessions/index';
 export {
   Skills,
-  type SkillCreateResponse,
-  type SkillRetrieveResponse,
-  type SkillListResponse,
-  type SkillDeleteResponse,
+  type BetaDeletedSkill,
+  type BetaSkill,
+  type BetaSkillSource,
   type SkillCreateParams,
   type SkillRetrieveParams,
   type SkillListParams,
   type SkillDeleteParams,
-  type SkillListResponsesPageCursor,
+  type BetaSkillsPageCursor,
 } from './skills/index';
 export {
   Tunnels,

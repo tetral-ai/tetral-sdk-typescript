@@ -226,8 +226,7 @@ Generated API reference is in [api.md](./api.md).
 
 ## Requirements
 
-Node.js 18 or later.
-TypeScript >= 4.9 is supported.
+TypeScript >= 5.0 is supported.
 
 The following runtimes are supported:
 

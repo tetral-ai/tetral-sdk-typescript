@@ -1,31 +1,26 @@
 import Anthropic, { toFile } from '@tetral-ai/sdk';
 import type { AgentCreateParams } from '@tetral-ai/sdk/resources/beta/agents';
-import type { SkillCreateResponse, SkillListResponse } from '@tetral-ai/sdk/resources/beta/skills/skills';
-import type {
-  VersionCreateResponse,
-  VersionRetrieveResponse,
-} from '@tetral-ai/sdk/resources/beta/skills/versions';
+import type { BetaSkill } from '@tetral-ai/sdk/resources/beta/skills/skills';
+import type { BetaSkillVersion } from '@tetral-ai/sdk/resources/beta/skills/versions';
 import { jsonResponse } from '../tetral-contract-helpers';
 
-const SKILL_RESPONSE: SkillCreateResponse = {
+const SKILL_RESPONSE: BetaSkill = {
   id: 'skill_123',
   created_at: '2026-01-01T00:00:00Z',
-  display_title: 'Greeting',
-  latest_version: '1759178010641129',
-  source: 'custom',
+  display_name: 'Greeting',
+  latest_version_id: 'skver_123',
+  source: { type: 'custom' },
   type: 'skill',
   updated_at: '2026-01-01T00:00:00Z',
 };
 
-const VERSION_RESPONSE: VersionCreateResponse = {
-  id: 'skillver_123',
+const VERSION_RESPONSE: BetaSkillVersion = {
+  id: 'skver_123',
   created_at: '2026-01-01T00:00:00Z',
   description: 'Say hello clearly.',
-  directory: 'greeting',
   name: 'Greeting',
   skill_id: 'skill_123',
   type: 'skill_version',
-  version: '1759178010641129',
 };
 
 async function multipartBody(init: RequestInit | undefined): Promise<string> {
@@ -36,7 +31,7 @@ async function multipartBody(init: RequestInit | undefined): Promise<string> {
 }
 
 describe('Tetral Skills SDK contract', () => {
-  test('skills.create returns parent metadata with latest_version after initial package upload', async () => {
+  test('skills.create returns parent metadata with latest_version_id after initial package upload', async () => {
     const captured: { url: string; body: string }[] = [];
     const client = new Anthropic({
       apiKey: 'test-tetral-key',
@@ -50,17 +45,18 @@ describe('Tetral Skills SDK contract', () => {
     });
 
     const skill = await client.beta.skills.create({
-      display_title: 'Greeting',
+      display_name: 'Greeting',
       files: [await toFile(Buffer.from('# Greeting\n'), 'greeting/SKILL.md')],
     });
 
-    expect(skill.latest_version).toBe('1759178010641129');
+    expect(skill.latest_version_id).toBe('skver_123');
     expect(captured).toHaveLength(1);
     expect(captured[0]!.url).toBe('https://api.tetral.example/v1/skills?beta=true');
     expect(captured[0]!.body).toContain(
       'Content-Disposition: form-data; name="files[]"; filename="greeting/SKILL.md"',
     );
     expect(captured[0]!.body).toContain('# Greeting');
+    expect(captured[0]!.body).toContain('name="display_name"');
   });
 
   test('skills.versions.create uploads an immutable package version with directory-qualified filenames', async () => {
@@ -81,10 +77,9 @@ describe('Tetral Skills SDK contract', () => {
     });
 
     expect(version).toMatchObject({
+      id: 'skver_123',
       skill_id: 'skill_123',
-      directory: 'greeting',
       type: 'skill_version',
-      version: '1759178010641129',
     });
     expect(captured).toHaveLength(1);
     expect(captured[0]!.url).toBe('https://api.tetral.example/v1/skills/skill_123/versions?beta=true');
@@ -125,7 +120,7 @@ describe('Tetral Skills SDK contract', () => {
     const agentWithSkills: AgentCreateParams = {
       name: 'skill agent',
       model: 'anthropic/claude-opus-4-8',
-      skills: [{ type: 'custom', skill_id: 'skill_123', version: '1759178010641129' }],
+      skills: [{ type: 'custom', skill_id: 'skill_123', version: 'skver_123' }],
       tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
     };
     const retainedUnsupportedCatalogReference: NonNullable<AgentCreateParams['skills']>[number] = {
@@ -133,20 +128,19 @@ describe('Tetral Skills SDK contract', () => {
       skill_id: 'xlsx',
     };
     expect(retainedUnsupportedCatalogReference.type).toBe('anthropic');
-    const parentProjection: Pick<SkillListResponse, 'id' | 'latest_version' | 'type'> = {
+    const parentProjection: Pick<BetaSkill, 'id' | 'latest_version_id' | 'type'> = {
       id: 'skill_123',
-      latest_version: '1759178010641129',
+      latest_version_id: 'skver_123',
       type: 'skill',
     };
-    const immutableVersionProjection: Pick<VersionRetrieveResponse, 'directory' | 'skill_id' | 'version'> = {
-      directory: 'greeting',
+    const immutableVersionProjection: Pick<BetaSkillVersion, 'id' | 'skill_id'> = {
+      id: 'skver_123',
       skill_id: 'skill_123',
-      version: '1759178010641129',
     };
 
     expect(agentWithSkills.skills).toHaveLength(1);
     expect(agentWithSkills.tools?.[0]?.type).toBe('tetral_agent_toolset');
-    expect(parentProjection.latest_version).toBe(immutableVersionProjection.version);
+    expect(parentProjection.latest_version_id).toBe(immutableVersionProjection.id);
   });
 });
 

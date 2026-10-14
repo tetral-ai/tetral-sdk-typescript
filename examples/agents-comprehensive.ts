@@ -65,7 +65,7 @@ async function main() {
   // Create a workspace skill: Tetral skill references point at skills created
   // via /v1/skills and visible to the workspace.
   const skill = await client.beta.skills.create({
-    display_title: 'comprehensive-example-skill',
+    display_name: 'comprehensive-example-skill',
     files: [
       await toFile(
         Buffer.from('# Reporting Skill\n\nSummarize tool inventories as a markdown table.\n'),

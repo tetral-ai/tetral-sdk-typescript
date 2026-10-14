@@ -1361,7 +1361,7 @@
     "surface": "files.list",
     "status": "supported",
     "proof": "documented",
-    "expectation": "GET /v1/files; scope_id + PageParams(limit,before_id,after_id); Page envelope {data,has_more,first_id,last_id}"
+    "expectation": "GET /v1/files?beta=true; limit/page/scope_id; signed workspace/scope-bound cursor; {data,next_page}; oldest first; cursor-anchor deletion does not break continuation."
   },
   {
     "id": "T-COMPAT-FILE-2",
@@ -1377,7 +1377,7 @@
     "surface": "files.upload",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /v1/files multipart 'file'; 500MB cap; 413 request_too_large on overflow; returns FileMetadata"
+    "expectation": "POST /v1/files multipart file; omitted/empty filename defaults to unnamed with a fixed known MIME extension; paths reduced to basename; 500MB cap; 413 request_too_large."
   },
   {
     "id": "T-COMPAT-FILE-4",
@@ -1777,7 +1777,7 @@
     "surface": "skills.create",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /v1/skills multipart files[]/display_title; Skill 7 fields (type='skill', source='custom')"
+    "expectation": "POST /v1/skills?beta=true multipart files[]/display_name; display_name defaults to frontmatter name, single-line <=255 characters; source:{type:custom}; latest_version_id always present."
   },
   {
     "id": "T-COMPAT-SKILL-2",
@@ -1785,7 +1785,7 @@
     "surface": "skills.retrieve",
     "status": "supported",
     "proof": "documented",
-    "expectation": "7-field Skill"
+    "expectation": "Skill with id/type/created_at/updated_at/display_name/latest_version_id/source:{type:custom}."
   },
   {
     "id": "T-COMPAT-SKILL-3",
@@ -1801,7 +1801,7 @@
     "surface": "skills.delete",
     "status": "supported",
     "proof": "documented",
-    "expectation": "{id,type=skill_deleted}"
+    "expectation": "Delete Skill and all versions atomically; existing Sessions retain saved versions/content; new references rejected; {id,type:skill_deleted}."
   },
   {
     "id": "T-COMPAT-SKILL-5",
@@ -1809,7 +1809,7 @@
     "surface": "versions.create",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST .../versions multipart files[]; SkillVersion 8 fields; display_title rejected on versions"
+    "expectation": "POST versions multipart files[]; immutable frontmatter name; SkillVersion id/type/skill_id/name/description/created_at; display_name rejected on version upload."
   },
   {
     "id": "T-COMPAT-SKILL-6",
@@ -1817,7 +1817,7 @@
     "surface": "versions.retrieve",
     "status": "supported",
     "proof": "documented",
-    "expectation": "8-field SkillVersion; empty version \u2192 404"
+    "expectation": "GET SkillVersion by skver_ ID or latest alias; content and DELETE require concrete ID; no version/directory fields."
   },
   {
     "id": "T-COMPAT-SKILL-7",
@@ -1833,7 +1833,7 @@
     "surface": "versions.delete",
     "status": "supported",
     "proof": "documented",
-    "expectation": "{id,type=skill_version_deleted}"
+    "expectation": "Delete a non-final version; deleting last version returns 400 invalid_request_error; latest falls back for future Sessions; existing Session references remain readable."
   },
   {
     "id": "T-COMPAT-SKILL-9",
@@ -2720,5 +2720,157 @@
     "status": "not-produced",
     "proof": "not-produced",
     "expectation": "Not produced; webhook resource has no route."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-81",
+    "name": "T-COMPAT-UPSTREAM-81 FileListParams.page / limit via PageCursorParams",
+    "surface": "FileListParams.page / limit via PageCursorParams",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-82",
+    "name": "T-COMPAT-UPSTREAM-82 FileListParams.ids",
+    "surface": "FileListParams.ids",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unknown query parameter."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-83",
+    "name": "T-COMPAT-UPSTREAM-83 FileUploadParams.expires_in_seconds",
+    "surface": "FileUploadParams.expires_in_seconds",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "400: unsupported upload field."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-84",
+    "name": "T-COMPAT-UPSTREAM-84 SkillCreateParams.display_name",
+    "surface": "SkillCreateParams.display_name",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-85",
+    "name": "T-COMPAT-UPSTREAM-85 BetaFileMetadata.expires_at",
+    "surface": "BetaFileMetadata.expires_at",
+    "status": "not-produced",
+    "proof": "not-produced",
+    "expectation": "Optional upstream expires_at is not emitted by Engine."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-86",
+    "name": "T-COMPAT-UPSTREAM-86 BetaSkill.created_at",
+    "surface": "BetaSkill.created_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-87",
+    "name": "T-COMPAT-UPSTREAM-87 BetaSkill.display_name",
+    "surface": "BetaSkill.display_name",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-88",
+    "name": "T-COMPAT-UPSTREAM-88 BetaSkill.id",
+    "surface": "BetaSkill.id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-89",
+    "name": "T-COMPAT-UPSTREAM-89 BetaSkill.latest_version_id",
+    "surface": "BetaSkill.latest_version_id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-90",
+    "name": "T-COMPAT-UPSTREAM-90 BetaSkill.source",
+    "surface": "BetaSkill.source",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-91",
+    "name": "T-COMPAT-UPSTREAM-91 BetaSkill.type",
+    "surface": "BetaSkill.type",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-92",
+    "name": "T-COMPAT-UPSTREAM-92 BetaSkill.updated_at",
+    "surface": "BetaSkill.updated_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-93",
+    "name": "T-COMPAT-UPSTREAM-93 BetaSkillSource.type",
+    "surface": "BetaSkillSource.type",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-94",
+    "name": "T-COMPAT-UPSTREAM-94 BetaSkillVersion.created_at",
+    "surface": "BetaSkillVersion.created_at",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-95",
+    "name": "T-COMPAT-UPSTREAM-95 BetaSkillVersion.description",
+    "surface": "BetaSkillVersion.description",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-96",
+    "name": "T-COMPAT-UPSTREAM-96 BetaSkillVersion.id",
+    "surface": "BetaSkillVersion.id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-97",
+    "name": "T-COMPAT-UPSTREAM-97 BetaSkillVersion.name",
+    "surface": "BetaSkillVersion.name",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-98",
+    "name": "T-COMPAT-UPSTREAM-98 BetaSkillVersion.skill_id",
+    "surface": "BetaSkillVersion.skill_id",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
+  },
+  {
+    "id": "T-COMPAT-UPSTREAM-99",
+    "name": "T-COMPAT-UPSTREAM-99 BetaSkillVersion.type",
+    "surface": "BetaSkillVersion.type",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Supported by beta Files/Skills with the GA data shape; see COMPATIBILITY \u00a73."
   }
 ]

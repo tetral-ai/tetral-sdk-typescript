@@ -12,8 +12,8 @@ Pinned upstream baseline:
 
 | Item                        | Value                                      |
 | --------------------------- | ------------------------------------------ |
-| Upstream package version    | `0.121.0`                                  |
-| Last synced upstream commit | `7ba6a3fc3000f9bd1f6f9f45526cc66db3167e6b` |
+| Upstream package version    | `0.122.0`                                  |
+| Last synced upstream commit | `7f3898c525b1a1486c85b3808f03935418fed0b8` |
 
 ## 2. Type-Level Divergences
 
@@ -129,10 +129,32 @@ Files upload size failures return HTTP 413 `request_too_large`. If bytes are
 stored but metadata commit fails, backend cleanup removes the orphaned object
 on a best-effort basis. Downloads return durable file content.
 
-Skill creation validates the uploaded package before committing the initial
-immutable version. The latest pointer advances after the version commits.
-Public Skill projections describe stored metadata; they do not expose storage
-locations or grant direct access to the Sandbox filesystem.
+Beta Files lists use `limit` and `page` with `{data, next_page}`. Signed page
+cursors bind the workspace and `scope_id`; files are ordered oldest first and
+pagination survives deletion of the cursor's last file. `after_id` and
+`before_id` are rejected. Uploads without a filename use `unnamed`, with a fixed
+extension for known MIME types; path-qualified filenames keep only the basename.
+
+Beta Skills use the upstream GA data shape: `id`, `type`, `created_at`,
+`updated_at`, `display_name`, `latest_version_id`, and `source: {type: 'custom'}`.
+The single-line display name is limited to 255 characters and defaults to the
+SKILL.md frontmatter `name`. All versions of a skill must keep that name.
+Versions expose `id`, `type`, `skill_id`, `name`, `description`, and `created_at`;
+`version`, `directory`, and list `has_more` are no longer returned. Version IDs
+use `skver_`; GET accepts `latest`, while download and delete require a concrete ID.
+The Skill mount directory is the uploaded package root, not the version `name`.
+Public metadata does not expose storage locations or grant filesystem access.
+
+Session creation resolves Agent `latest` references in its transaction and
+saves concrete Skill versions. Session/Thread responses, Sandbox loading and
+Bridge runtime configuration use those saved references. Uploading or deleting
+a version never changes an existing Session's content. Agent configuration
+keeps `latest` for future Sessions. Deleting a Skill also deletes all its
+versions from the public API, while existing Sessions retain access to their
+saved content. Historical Agent reads are unchanged; Agent writes and new
+Sessions referencing deleted Skills or versions return 400. Deleting the last
+version alone returns 400; deleting the latest of multiple versions falls back
+to the previous active version for future Sessions.
 
 Memory APIs are synchronous CRUD and versioning operations. Attach stores by
 explicit `memory_store_id` in Session resources; there is no implicit default
@@ -208,6 +230,16 @@ Memory store updates with `name: null` return 400 `invalid_request_error`.
 | `beta/tunnels/tunnels (Tunnels)`                                        | No public Engine route for this resource.                                                                |
 | `beta/user-profiles (UserProfiles)`                                     | No public Engine route for this resource.                                                                |
 | `messages/messages (Messages)`                                          | No public Engine route for this resource.                                                                |
+
+### Files and Skills additions in 0.122
+
+- `FileListParams.ids` and `FileUploadParams.expires_in_seconds` are retained but
+  rejected with 400 `invalid_request_error`. `BetaFileMetadata.expires_at` is
+  optional upstream and is not produced by Engine.
+- `setupSkills GA version/name adaptation` remains unsupported for local setup
+  against the hosted Engine. Its upstream helper now resolves `latest` through
+  GET and downloads by returned version ID; Engine's own mount uses the uploaded
+  package root as described in §3.
 
 ## 5. Authentication And Upstream Sync
 
