@@ -185,7 +185,6 @@ async function runOIDCIntegration(context: ProofScenarioContext): Promise<ProofE
 }
 
 export const integrationScenarioRunners = {
-  // The registry separates actual production observations from source contracts.
   'integration-preview': runPreviewIntegration,
   'integration-oidc': runOIDCIntegration,
 };

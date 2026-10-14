@@ -39,12 +39,8 @@ provider stream and the actual SDK parser. Source revisions are checked before
 and after execution, and the child Go JSONL is retained on stdout. Go workspace
 and flag overrides are disabled for this execution.
 
-SDK CI contract tests use fixture responses to verify request construction,
-parsing, helper reconciliation and type boundaries. They do not establish Engine
-production eligibility or broker behavior. The resource integration suite
-above does not supply the streaming topology. Engine's owning
-streaming compositions separately cover recovery/error/interrupt Ends, child
-visibility, loss and backpressure against the identified SDK revision.
+Engine's own streaming compositions, not this command, cover recovery, error
+and interrupt Ends, child visibility, loss and backpressure.
 
 ## Observed OIDC and Memory actor proofs
 

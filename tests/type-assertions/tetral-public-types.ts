@@ -52,7 +52,7 @@ void providerlessModelAcceptedBySDKType;
 const unknownModelAcceptedBySDKType: BetaManagedAgentsModel = 'anthropic/claude-sonnet-4-5';
 void unknownModelAcceptedBySDKType;
 
-const supportedCredentialAuth: Array<CredentialCreateParams['auth']> = [
+const credentialAuthVariants: Array<CredentialCreateParams['auth']> = [
   {
     type: 'mcp_oauth',
     mcp_server_url: 'https://mcp.example/sse',
@@ -85,10 +85,10 @@ const supportedCredentialAuth: Array<CredentialCreateParams['auth']> = [
     secret_value: 'provider-secret-value',
   },
 ];
-void supportedCredentialAuth;
+void credentialAuthVariants;
 
 const unsupportedCredentialAuth: CredentialCreateParams['auth'] = {
-  // @ts-expect-error Credential auth union is closed to the planned supported and retained variants.
+  // @ts-expect-error Credential auth union is closed to the supported and retained variants.
   type: 'shell_command',
 };
 void unsupportedCredentialAuth;

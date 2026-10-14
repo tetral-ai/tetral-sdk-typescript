@@ -453,7 +453,7 @@ Methods:
 ## Batches
 
 Top-level Message Batches are retained upstream compatibility resources, not a
-Tetral-supported route family in this stage.
+Tetral-supported route family.
 
 Types:
 
@@ -818,7 +818,7 @@ Types:
 
 `client.beta.models` lists and retrieves Tetral's live model catalog using the
 same upstream page and model shapes as `client.models`. Beta model responses
-also expose `allowed_fallback_models`, which is `null` in this stage.
+also expose `allowed_fallback_models`, which is `null`.
 
 Types:
 
@@ -1524,7 +1524,7 @@ Methods:
 
 ## Environments
 
-Tetral supports Cloud Environment lifecycle APIs in this stage. Cloud networking
+Tetral supports Cloud Environment lifecycle APIs. Cloud networking
 supports `unrestricted`, `blocked`, and `cidr_allow_list` with caller-supplied
 CIDRs in `network_allow_list`; the SDK does not translate hostnames to CIDRs.
 Self-host config, explicit Environment `scope`, host allowlists, and
@@ -1560,7 +1560,7 @@ Methods:
 ### Work
 
 Environment work APIs and helper runners are retained self-host compatibility
-surface. Tetral Cloud Environments do not implement them in this stage; calls
+surface. Tetral Cloud Environments do not implement them; calls
 remain normal SDK request paths and Tetral backend admission rejects them
 fail-closed.
 
@@ -1652,7 +1652,7 @@ Methods:
 ### Events
 
 Tetral admits `user.message`, `user.interrupt`, and live-pending
-`user.tool_confirmation` input events in this stage. `system.message`,
+`user.tool_confirmation` input events. `system.message`,
 `user.custom_tool_result`, `user.define_outcome`, and `user.tool_result`
 request-param types remain listed for SDK compatibility, but Tetral backend
 admission rejects them fail-closed with `400 invalid_request_error`.
@@ -1831,7 +1831,7 @@ Methods:
 ## Deployments
 
 Deployments are retained for Anthropic-compatible SDK surface but are
-unsupported/deferred by Tetral in this stage. Supported Tetral Session DTOs keep
+unsupported/deferred by Tetral. Supported Tetral Session DTOs keep
 `deployment_id` as `null`. Deployment lifecycle methods continue to send their
 normal generated request paths; Tetral backend admission owns the fail-closed
 `400 invalid_request_error` response.
@@ -1886,7 +1886,7 @@ Methods:
 ## DeploymentRuns
 
 Deployment Runs are retained for compatibility with the generated SDK surface
-but are unsupported/deferred by Tetral in this stage. Calls keep the generated
+but are unsupported/deferred by Tetral. Calls keep the generated
 request paths and Tetral backend admission returns SDK-compatible errors until
 the route family is admitted.
 
@@ -2030,7 +2030,7 @@ Methods:
 
 Memory-specific error type exports remain as retained upstream compatibility
 types. Tetral path conflicts and precondition failures use the shared
-SDK-compatible `409 invalid_request_error` envelope in this stage.
+SDK-compatible `409 invalid_request_error` envelope.
 
 Types:
 
@@ -2145,7 +2145,7 @@ Methods:
 
 Webhook payload types and the local `unwrap` verifier are retained for
 compatibility. Tetral webhook delivery and management behavior is
-unsupported/deferred in this stage; do not treat these types as a supported
+unsupported/deferred; do not treat these types as a supported
 Tetral webhook lifecycle API.
 
 Types:
@@ -2206,7 +2206,7 @@ Methods:
 ## UserProfiles
 
 User Profiles are retained for compatibility with the generated SDK surface but
-are unsupported/deferred by Tetral in this stage. Calls keep their generated
+are unsupported/deferred by Tetral. Calls keep their generated
 request paths and Tetral backend admission returns SDK-compatible errors until
 the route family is admitted.
 

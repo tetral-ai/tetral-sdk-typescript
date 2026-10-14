@@ -51,8 +51,8 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | Agent skill references         | Supported for workspace `custom` skill references (created via `/v1/skills`). Read-only guidance, not model-facing tools.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Session creation               | Requires explicit `vault_ids`, using `[]` when no Vault is bound.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Session `providers`            | Supported as `{ [provider_id]: { credential_id } }` on create/update. The provider key must match the agent's canonical `provider/model` provider; credentials must come from a Session-bound Vault.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Session image input            | Multimodal stage 1 accepts only Files API references (`source.type = "file"`) for `image/jpeg`, `image/png`, `image/gif`, and `image/webp`, up to 10 MB each. An events request may contain at most 32 file-backed image and document references combined, narrower than Anthropic's documented image allowance. Base64 and URL sources are rejected with an upload-first 400. Accepted `file_id` values are stored and echoed verbatim; media remains eligible to ride provider requests until a turn commits settled output.                                                                                                                                                                                                    |
-| Session document input         | Multimodal stage 1 accepts only Files API references for `application/pdf` and `text/plain`. PDFs in one events request are limited to 32 MB and 600 pages in aggregate; `text/plain` has no separate admission byte cap. Inline base64, text, and URL sources are rejected with an upload-first 400. Document `file_id`, `context`, and `title` are stored and echoed verbatim.                                                                                                                                                                                                                                                                                                                                                  |
+| Session image input            | Accepts only Files API references (`source.type = "file"`) for `image/jpeg`, `image/png`, `image/gif`, and `image/webp`, up to 10 MB each. An events request may contain at most 32 file-backed image and document references combined, narrower than Anthropic's documented image allowance. Base64 and URL sources are rejected with an upload-first 400. Accepted `file_id` values are stored and echoed verbatim; media remains eligible to ride provider requests until a turn commits settled output.                                                                                                                                                                                                                       |
+| Session document input         | Accepts only Files API references for `application/pdf` and `text/plain`. PDFs in one events request are limited to 32 MB and 600 pages in aggregate; `text/plain` has no separate admission byte cap. Inline base64, text, and URL sources are rejected with an upload-first 400. Document `file_id`, `context`, and `title` are stored and echoed verbatim.                                                                                                                                                                                                                                                                                                                                                                     |
 | Session resources              | Supported subset: file add/list/retrieve/delete, memory-store attachment, and GitHub repository params with a required write-only `authorization_token`. GitHub resource tokens rotate through `client.beta.sessions.resources.update(...)` and are never echoed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | GitHub resource URL uniqueness | Session create rejects duplicate `github_repository` URLs by comparison key: trim an optional case-sensitive `.git` suffix first, then case-fold owner/repo. Stored and echoed URLs remain verbatim. This is an undocumented upstream corner recorded as Tetral behavior.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Cloud Environments             | Supported for cloud environments with `unrestricted`, `blocked`, or `cidr_allow_list` networking.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -78,6 +78,11 @@ There is no upstream organization-default fallback. A service-account selector
 must match its service binding and cannot be supplied for a human identity.
 These Engine rules do not replace hosted Anthropic's workspace-selection rules.
 
+On supported routes, `workspace_id` sends `anthropic-workspace-id`. A single
+value matching the token workspace is supported; a different, empty, or repeated
+header returns 403 `permission_error`. This does not grant access to another
+workspace or enable an otherwise unsupported route.
+
 Memory attribution identifies the actor that performed the operation:
 
 | Credential or execution                 | Actor                   | Identity field                                  |
@@ -88,14 +93,7 @@ Memory attribution identifies the actor that performed the operation:
 | Runtime Session operation               | `session_actor`         | `session_id`: Session ID                        |
 
 The `service_account_id` is the stable Engine identity ID, not an Anthropic
-`svac_` ID, upstream JWT subject or service-account selector. SDK HTTP fixture
-tests check that every received actor variant keeps its typed identity.
-Integration rows CONN-20 and MEM-24 require the native `TestOIDCKeycloakSDK`
-composition with real HTTPS Keycloak, Auth, PostgreSQL and actual SDK responses.
-They require both identity flows, cache/revocation/retry observations and typed
-`created_by`/`redacted_by` identity checks. A fabricated object, raw JSON cast,
-source scan or skipped composition does not prove those rows. Source support
-and actual integration evidence do not imply an npm release.
+`svac_` ID, upstream JWT subject or service-account selector.
 
 ### Session streaming
 
@@ -146,7 +144,7 @@ Beta Skills use the upstream GA data shape: `id`, `type`, `created_at`,
 The single-line display name is limited to 255 characters and defaults to the
 SKILL.md frontmatter `name`. All versions of a skill must keep that name.
 Versions expose `id`, `type`, `skill_id`, `name`, `description`, and `created_at`;
-`version`, `directory`, and list `has_more` are no longer returned. Version IDs
+`version`, `directory`, and list `has_more` are not returned. Version IDs
 use `skver_`; GET accepts `latest`, while download and delete require a concrete ID.
 The Skill mount directory is the uploaded package root, not the version `name`.
 Public metadata does not expose storage locations or grant filesystem access.
@@ -166,17 +164,8 @@ to the previous active version for future Sessions.
 
 Memory APIs are synchronous CRUD and versioning operations. Attach stores by
 explicit `memory_store_id` in Session resources; there is no implicit default
-store. Memory HTTP 409 responses use `invalid_request_error`.
-
-### Compatibility registry
-
-The compatibility registry records support scope separately from execution.
-Only rows with integration locators enter the compatibility proof runner.
-Documented, rejected and not-produced rows are scope records: the SDK does not
-execute them, and they do not count as passes or skips. Where Engine verifies
-the behavior, Engine-native tests own that verification.
-The standard error unions are checked by the SDK's ordinary typecheck and
-`tests/compatibility/error-widening.test.ts`.
+store. Memory HTTP 409 responses use `invalid_request_error`. Memory store
+`description` is a string, empty when unset.
 
 ## 4. Retained Unsupported Or Deferred Surface
 
@@ -203,10 +192,9 @@ These surfaces remain in the SDK for Anthropic compatibility or generated surfac
 
 ### Additional retained resources and helpers
 
-These entries describe scope; they do not claim executed compatibility proof.
 New rejected parameters and unproduced events are individually registered in
 `tests/compatibility/compat-cases.json`. GA `client.files` and `client.skills`
-are present but require the currently supported beta route shape; ordinary GA
+are present but require the beta route shape; ordinary GA
 requests without `beta=true` return 400. `agents.update` without `version` and
 Memory store updates with `name: null` return 400 `invalid_request_error`.
 
@@ -242,27 +230,22 @@ Memory store updates with `name: null` return 400 `invalid_request_error`.
 | `beta/user-profiles (UserProfiles)`                                     | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
 | `messages/messages (Messages)`                                          | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
 
-### Files and Skills additions in 0.122
+### Retained Files and Skills parameters
 
 - `FileListParams.ids` and `FileUploadParams.expires_in_seconds` are retained but
   rejected with 400 `invalid_request_error`. `BetaFileMetadata.expires_at` is
   optional upstream and is not produced by Engine.
 - `setupSkills GA version/name adaptation` remains unsupported for local setup
-  against the hosted Engine. Its upstream helper now resolves `latest` through
+  against the hosted Engine. Its upstream helper resolves `latest` through
   GET and downloads by returned version ID; Engine's own mount uses the uploaded
   package root as described in §3.
 
-### Additions through 0.133
-
-On supported routes, `workspace_id` sends `anthropic-workspace-id`. A single
-value matching the token workspace is supported; a different, empty, or repeated
-header returns 403 `permission_error`. This does not grant access to another
-workspace or enable an otherwise unsupported route.
+### Retained parameters, events and resources
 
 GitHub repository `authorization_token` is optional in upstream SDK types, but
-Engine still requires it, including for public repositories: omission returns
-400 `invalid_request_error` with `authorization_token is required`. Tokens remain
-write-only and rotatable. Memory store `description` is a string, empty when unset.
+Engine requires it, including for public repositories: omission returns
+400 `invalid_request_error` with `authorization_token is required`. Tokens are
+write-only and rotatable.
 
 `ThreadListParams.statuses`, model-list `lifecycle`, per-tool `permission_policy`
 with `type: auto`, multiagent configuration, and other retained unsupported
@@ -348,7 +331,7 @@ Create returns the raw API key once. List and retrieve-style responses expose on
 
 Provider credentials belong in Vault and are selected by Sessions through `providers`; the SDK does not mint, recover, derive, or persist raw public API keys.
 
-Upstream sync runs as small rolling merges — on each upstream release or biweekly, whichever comes first (adopted 2026-07-04; the cadence starts after live integration):
+Upstream sync runs as small rolling merges — on each upstream release or biweekly, whichever comes first:
 
 1. Merge the upstream SDK changes.
 2. Run full CI.
