@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import Anthropic from '@anthropic-ai/sdk';
+import Anthropic, { BaseAnthropic } from '@anthropic-ai/sdk';
 import type { AccessToken } from '@anthropic-ai/sdk/lib/credentials/types';
 import { OAUTH_API_BETA_HEADER } from '@anthropic-ai/sdk/lib/credentials/types';
 
@@ -225,7 +225,10 @@ describe('client credentials integration', () => {
     expect(client.credentials).toBeNull();
   });
 
-  it('does not fall back to the implicit Anthropic credential chain (chain-off)', async () => {
+  it.each([
+    ['Anthropic', Anthropic],
+    ['BaseAnthropic', BaseAnthropic],
+  ])('%s does not fall back to the implicit Anthropic credential chain (chain-off)', async (_, Client) => {
     // A fully resolvable default profile exists — with a base_url that a
     // fallback would adopt — and ANTHROPIC_PROFILE points at it. None of it
     // may be read without an explicit `profile` option.
@@ -243,14 +246,8 @@ describe('client credentials integration', () => {
       { mode: 0o600 },
     );
 
-    const client = new Anthropic({ fetch: async () => jsonResponse(VALID_MSG_RESPONSE) });
-    await expect(
-      client.messages.create({
-        model: 'claude-opus-4-8',
-        max_tokens: 1,
-        messages: [{ role: 'user', content: 'hi' }],
-      }),
-    ).rejects.toThrow('Could not resolve authentication method');
+    const client = new Client({ fetch: async () => jsonResponse(VALID_MSG_RESPONSE) });
+    await expect(client.get('/v1/models')).rejects.toThrow('Could not resolve authentication method');
     expect(client.credentials).toBeNull();
     expect(client.baseURL).toBe('https://api.tetral.example');
   });

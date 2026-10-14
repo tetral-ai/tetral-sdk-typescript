@@ -929,7 +929,7 @@ export class BaseAnthropic {
    * are never resolved or allowed to supply a base URL.
    */
   protected _shouldResolveDefaultCredentials(): boolean {
-    return true;
+    return false;
   }
 
   /**
@@ -1890,10 +1890,6 @@ export class BaseAnthropic {
  * API Client for interfacing with the Anthropic API.
  */
 export class Anthropic extends BaseAnthropic {
-  protected override _shouldResolveDefaultCredentials(): boolean {
-    return false;
-  }
-
   completions: API.Completions = new API.Completions(this);
   messages: API.Messages = new API.Messages(this);
   models: API.Models = new API.Models(this);

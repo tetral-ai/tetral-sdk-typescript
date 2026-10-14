@@ -323,6 +323,8 @@ not expose Engine API-key or identity administration through that upstream API.
 
 Tetral public API calls use `TETRAL_API_KEY`, the `apiKey` client option, `X-Api-Key`, and Tetral `baseURL`. Anthropic provider API keys do not authenticate Tetral public APIs.
 
+Every client class, including `BaseAnthropic` and its subclasses, skips upstream default credential discovery. Without an explicit `profile` or `config` option, no client reads `ANTHROPIC_PROFILE`, config-directory profiles or `ANTHROPIC_*` federation variables, and no profile `base_url` is adopted.
+
 API key management is a Tetral auth-service extension:
 
 ```text
