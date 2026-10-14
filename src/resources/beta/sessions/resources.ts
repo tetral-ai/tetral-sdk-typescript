@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
 import * as SessionsAPI from './sessions';
@@ -27,11 +25,14 @@ export class Resources extends APIResource {
     params: ResourceRetrieveParams,
     options?: RequestOptions,
   ): APIPromise<ResourceRetrieveResponse> {
-    const { session_id, betas } = params;
+    const { session_id, betas, workspace_id } = params;
     return this._client.get(path`/v1/sessions/${session_id}/resources/${resourceID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -57,12 +58,15 @@ export class Resources extends APIResource {
     params: ResourceUpdateParams,
     options?: RequestOptions,
   ): APIPromise<ResourceUpdateResponse> {
-    const { session_id, betas, ...body } = params;
+    const { session_id, betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/sessions/${session_id}/resources/${resourceID}?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -86,7 +90,7 @@ export class Resources extends APIResource {
     params: ResourceListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsSessionResourcesPageCursor, BetaManagedAgentsSessionResource> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList(
       path`/v1/sessions/${sessionID}/resources?beta=true`,
       PageCursor<BetaManagedAgentsSessionResource>,
@@ -94,7 +98,10 @@ export class Resources extends APIResource {
         query,
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -118,11 +125,14 @@ export class Resources extends APIResource {
     params: ResourceDeleteParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsDeleteSessionResource> {
-    const { session_id, betas } = params;
+    const { session_id, betas, workspace_id } = params;
     return this._client.delete(path`/v1/sessions/${session_id}/resources/${resourceID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -130,9 +140,6 @@ export class Resources extends APIResource {
 
   /**
    * Add Session Resource
-   *
-   * Adds an existing durable Files API object to the session by `file_id`. This
-   * endpoint does not upload bytes; use `client.beta.files.upload(...)` first.
    *
    * @example
    * ```ts
@@ -151,12 +158,15 @@ export class Resources extends APIResource {
     params: ResourceAddParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsFileResource> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/sessions/${sessionID}/resources?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -215,11 +225,6 @@ export interface BetaManagedAgentsGitHubRepositoryResource {
 
   checkout?: SessionsAPI.BetaManagedAgentsBranchCheckout | SessionsAPI.BetaManagedAgentsCommitCheckout | null;
 
-  /**
-   * Unredacted identity declared at Session creation. Omitted when no identity
-   * was declared, even though the Sandbox uses the platform default. Immutable
-   * through the API, including during authorization token rotation.
-   */
   git_identity?: SessionsAPI.TetralGitIdentity;
 }
 
@@ -236,7 +241,8 @@ export interface BetaManagedAgentsMemoryStoreResource {
   type: 'memory_store';
 
   /**
-   * Access mode for an attached memory store.
+   * Access mode for the mounted store. Defaults to `read_write`. `read_only` mounts
+   * the store as a read-only filesystem.
    */
   access?: 'read_write' | 'read_only' | null;
 
@@ -265,9 +271,6 @@ export interface BetaManagedAgentsMemoryStoreResource {
   name?: string | null;
 }
 
-/**
- * A memory store attached to an agent session.
- */
 export type BetaManagedAgentsSessionResource =
   | BetaManagedAgentsGitHubRepositoryResource
   | BetaManagedAgentsFileResource
@@ -291,7 +294,7 @@ export type ResourceUpdateResponse =
 
 export interface ResourceRetrieveParams {
   /**
-   * Path param: Path parameter session_id
+   * Path param
    */
   session_id: string;
 
@@ -299,17 +302,27 @@ export interface ResourceRetrieveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface ResourceUpdateParams {
   /**
-   * Path param: Path parameter session_id
+   * Path param
    */
   session_id: string;
 
   /**
    * Body param: New authorization token for the resource. Currently only
-   * `github_repository` resources support token rotation. Git identity cannot be updated.
+   * `github_repository` resources support token rotation.
    */
   authorization_token: string;
 
@@ -317,6 +330,16 @@ export interface ResourceUpdateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface ResourceListParams extends PageCursorParams {
@@ -324,11 +347,21 @@ export interface ResourceListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface ResourceDeleteParams {
   /**
-   * Path param: Path parameter session_id
+   * Path param
    */
   session_id: string;
 
@@ -336,11 +369,21 @@ export interface ResourceDeleteParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface ResourceAddParams {
   /**
-   * Body param: ID of a previously uploaded durable Files API object.
+   * Body param: ID of a previously uploaded file.
    */
   file_id: string;
 
@@ -350,7 +393,7 @@ export interface ResourceAddParams {
   type: 'file';
 
   /**
-   * Body param: Mount path in the session container. Defaults to
+   * Body param: Mount path in the container. Defaults to
    * `/mnt/session/uploads/<file_id>`.
    */
   mount_path?: string | null;
@@ -359,6 +402,16 @@ export interface ResourceAddParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export declare namespace Resources {

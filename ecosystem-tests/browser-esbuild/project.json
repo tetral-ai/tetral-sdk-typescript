@@ -1,0 +1,12 @@
+{
+  "description": "esbuild --platform=browser bundle (esm + iife) of the SDK, run in headless Chromium via playwright-core",
+  "requires": ["node"],
+  "packageManager": "npm",
+  "minNodeVersion": 20,
+  "steps": [
+    ["npx", "tsc"],
+    ["node", "build.mjs"],
+    ["node", "check-bundle.mjs"],
+    ["node", "--test", "tests/browser.test.mjs"]
+  ]
+}

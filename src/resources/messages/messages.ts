@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIPromise } from '../../core/api-promise';
 import { APIResource } from '../../core/resource';
 import { Stream } from '../../core/streaming';
@@ -15,8 +13,12 @@ import {
 } from '../../lib/parser';
 import * as BatchesAPI from './batches';
 import {
+  BatchCancelParams,
   BatchCreateParams,
+  BatchDeleteParams,
   BatchListParams,
+  BatchResultsParams,
+  BatchRetrieveParams,
   Batches,
   DeletedMessageBatch,
   MessageBatch,
@@ -51,7 +53,7 @@ export class Messages extends APIResource {
    * const message = await client.messages.create({
    *   max_tokens: 1024,
    *   messages: [{ content: 'Hello, world', role: 'user' }],
-   *   model: 'claude-opus-4-6',
+   *   model: 'claude-opus-5',
    * });
    * ```
    */
@@ -68,7 +70,7 @@ export class Messages extends APIResource {
     params: MessageCreateParams,
     options?: RequestOptions,
   ): APIPromise<Message> | APIPromise<Stream<RawMessageStreamEvent>> {
-    const { user_profile_id, ...body } = params;
+    const { user_profile_id, workspace_id, ...body } = params;
     if (body.model in DEPRECATED_MODELS) {
       console.warn(
         `The model '${body.model}' is deprecated and will reach end-of-life on ${
@@ -86,7 +88,7 @@ export class Messages extends APIResource {
       );
     }
 
-    let timeout = (this._client as any)._options.timeout as number | null;
+    let timeout = options?.timeout ?? ((this._client as any)._options.timeout as number | null);
     if (!body.stream && timeout == null) {
       const maxNonstreamingTokens = MODEL_NONSTREAMING_TOKENS[body.model] ?? undefined;
       timeout = this._client.calculateNonstreamingTimeout(body.max_tokens, maxNonstreamingTokens);
@@ -99,7 +101,10 @@ export class Messages extends APIResource {
       timeout: timeout ?? 600000,
       ...options,
       headers: buildHeaders([
-        { ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined) },
+        {
+          ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         helperHeader,
         options?.headers,
       ]),
@@ -114,7 +119,7 @@ export class Messages extends APIResource {
    * @example
    * ```ts
    * const message = await client.messages.parse({
-   *   model: 'claude-sonnet-4-5-20250929',
+   *   model: 'claude-sonnet-5-5',
    *   max_tokens: 1024,
    *   messages: [{ role: 'user', content: 'What is 2+2?' }],
    *   output_config: {
@@ -143,7 +148,7 @@ export class Messages extends APIResource {
    * @example
    * ```ts
    * const stream = client.messages.stream({
-   *   model: 'claude-sonnet-4-5-20250929',
+   *   model: 'claude-sonnet-5-5',
    *   max_tokens: 1024,
    *   messages: [{ role: 'user', content: 'What is 2+2?' }],
    *   output_config: {
@@ -181,17 +186,20 @@ export class Messages extends APIResource {
    * const messageTokensCount =
    *   await client.messages.countTokens({
    *     messages: [{ content: 'Hello, world', role: 'user' }],
-   *     model: 'claude-opus-4-6',
+   *     model: 'claude-opus-5',
    *   });
    * ```
    */
   countTokens(params: MessageCountTokensParams, options?: RequestOptions): APIPromise<MessageTokensCount> {
-    const { user_profile_id, ...body } = params;
+    const { user_profile_id, workspace_id, ...body } = params;
     return this._client.post('/v1/messages/count_tokens', {
       body,
       ...options,
       headers: buildHeaders([
-        { ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined) },
+        {
+          ...(user_profile_id != null ? { 'anthropic-user-profile-id': user_profile_id } : undefined),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -290,6 +298,2289 @@ export interface BashCodeExecutionToolResultErrorParam {
   type: 'bash_code_execution_tool_result_error';
 }
 
+/**
+ * Where to act: either a viewport coordinate or an element reference.
+ */
+export type BrowserClickTarget = BrowserCoordinateTarget | BrowserRefTarget;
+
+/**
+ * `close_tab`'s config overrides.
+ */
+export interface BrowserCloseTabConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Close the tab with the given tab_id.
+ */
+export interface BrowserCloseTabInput {
+  /**
+   * The tab to close.
+   */
+  tab_id: string;
+}
+
+export interface BrowserCloseTabToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Close the tab with the given tab_id.
+   */
+  input: BrowserCloseTabInput;
+
+  name: 'close_tab';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * A point in the browser viewport, in viewport pixels (the same frame as a
+ * full-viewport screenshot).
+ */
+export interface BrowserCoordinateTarget {
+  type: 'coordinate';
+
+  /**
+   * Pixels from the left edge of the viewport.
+   */
+  x: number;
+
+  /**
+   * Pixels from the top edge of the viewport.
+   */
+  y: number;
+}
+
+/**
+ * `double_click`'s config overrides.
+ */
+export interface BrowserDoubleClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Double left-click at a viewport coordinate or on an element by reference.
+ */
+export interface BrowserDoubleClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserDoubleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Double left-click at a viewport coordinate or on an element by reference.
+   */
+  input: BrowserDoubleClickInput;
+
+  name: 'double_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `file_upload`'s config overrides.
+ */
+export interface BrowserFileUploadConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Set the value of a file-input element to one or more files. The target must be
+ * an element reference; at least one of paths or document_ids is required.
+ */
+export interface BrowserFileUploadInput {
+  /**
+   * An element on the page, identified by a reference from a prior `read_page` or
+   * `find` result. References are scoped to the tab that produced them and become
+   * stale after navigation or a major re-render.
+   */
+  target: BrowserRefTarget;
+
+  /**
+   * References to files the harness has staged, for deployments where the browser
+   * executor cannot read the caller's filesystem.
+   */
+  document_ids?: Array<string> | null;
+
+  /**
+   * File paths on the browser executor's filesystem.
+   */
+  paths?: Array<string> | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserFileUploadToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Set the value of a file-input element to one or more files. The target must be
+   * an element reference; at least one of paths or document_ids is required.
+   */
+  input: BrowserFileUploadInput;
+
+  name: 'file_upload';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `find`'s config overrides.
+ */
+export interface BrowserFindConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Find elements matching a natural-language description (e.g. "search bar", "add
+ * to cart button") and return up to 20 matches with element references.
+ */
+export interface BrowserFindInput {
+  /**
+   * Natural-language description of the element(s) to find.
+   */
+  query: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserFindToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Find elements matching a natural-language description (e.g. "search bar", "add
+   * to cart button") and return up to 20 matches with element references.
+   */
+  input: BrowserFindInput;
+
+  name: 'find';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `form_input`'s config overrides.
+ */
+export interface BrowserFormInputConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Set the value of a form element (input, textarea, select, checkbox). Use a
+ * boolean for checkboxes, an option value or text for selects.
+ */
+export interface BrowserFormInputInput {
+  /**
+   * An element on the page, identified by a reference from a prior `read_page` or
+   * `find` result. References are scoped to the tab that produced them and become
+   * stale after navigation or a major re-render.
+   */
+  target: BrowserRefTarget;
+
+  /**
+   * The value to set.
+   */
+  value: BrowserFormInputValue;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserFormInputToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Set the value of a form element (input, textarea, select, checkbox). Use a
+   * boolean for checkboxes, an option value or text for selects.
+   */
+  input: BrowserFormInputInput;
+
+  name: 'form_input';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+export type BrowserFormInputValue = string | number | boolean;
+
+/**
+ * `get_page_text`'s config overrides.
+ */
+export interface BrowserGetPageTextConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Return the page's visible text content as plain text, prioritizing article
+ * content. Suited to articles, documentation, and other text-heavy pages.
+ */
+export interface BrowserGetPageTextInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserGetPageTextToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Return the page's visible text content as plain text, prioritizing article
+   * content. Suited to articles, documentation, and other text-heavy pages.
+   */
+  input: BrowserGetPageTextInput;
+
+  name: 'get_page_text';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `hold_key`'s config overrides.
+ */
+export interface BrowserHoldKeyConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Hold a key or key chord down for a duration, then release it. Uses the same key
+ * names and "+" chord syntax as the key action.
+ */
+export interface BrowserHoldKeyInput {
+  /**
+   * Seconds to hold the key down (maximum 30).
+   */
+  duration: number;
+
+  /**
+   * The key or chord to hold.
+   */
+  text: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserHoldKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Hold a key or key chord down for a duration, then release it. Uses the same key
+   * names and "+" chord syntax as the key action.
+   */
+  input: BrowserHoldKeyInput;
+
+  name: 'hold_key';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `hover`'s config overrides.
+ */
+export interface BrowserHoverConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Move the cursor to a coordinate or element without clicking.
+ */
+export interface BrowserHoverInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BrowserClickTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserHoverToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Move the cursor to a coordinate or element without clicking.
+   */
+  input: BrowserHoverInput;
+
+  name: 'hover';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `javascript_exec`'s config overrides.
+ */
+export interface BrowserJavascriptExecConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Execute JavaScript in the page context and return the value of the last
+ * expression. The code runs with access to the DOM, `window`, and page variables.
+ * Write the expression you want evaluated — do NOT use `return`.
+ */
+export interface BrowserJavascriptExecInput {
+  /**
+   * JavaScript to execute in the page context.
+   */
+  text: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserJavascriptExecToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Execute JavaScript in the page context and return the value of the last
+   * expression. The code runs with access to the DOM, `window`, and page variables.
+   * Write the expression you want evaluated — do NOT use `return`.
+   */
+  input: BrowserJavascriptExecInput;
+
+  name: 'javascript_exec';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `key`'s config overrides.
+ */
+export interface BrowserKeyConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Press a key or key chord. Use "+" to combine modifiers with a key (e.g.
+ * "ctrl+a", "cmd+shift+p") and space to sequence presses (e.g. "Backspace
+ * Backspace Delete"). Common names like "Return", "Tab", "Escape", "BackSpace" are
+ * supported.
+ */
+export interface BrowserKeyInput {
+  /**
+   * The key, chord, or space-separated sequence to press.
+   */
+  text: string;
+
+  /**
+   * Number of times to repeat. Default 1.
+   */
+  repeat?: number | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Press a key or key chord. Use "+" to combine modifiers with a key (e.g.
+   * "ctrl+a", "cmd+shift+p") and space to sequence presses (e.g. "Backspace
+   * Backspace Delete"). Common names like "Return", "Tab", "Escape", "BackSpace" are
+   * supported.
+   */
+  input: BrowserKeyInput;
+
+  name: 'key';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `left_click`'s config overrides.
+ */
+export interface BrowserLeftClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * `left_click_drag`'s config overrides.
+ */
+export interface BrowserLeftClickDragConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Press at `from`, drag to `target`, release. Both must be coordinate targets.
+ */
+export interface BrowserLeftClickDragInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  from: BrowserCoordinateTarget;
+
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserLeftClickDragToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Press at `from`, drag to `target`, release. Both must be coordinate targets.
+   */
+  input: BrowserLeftClickDragInput;
+
+  name: 'left_click_drag';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * Left-click at a viewport coordinate or on an element by reference.
+ */
+export interface BrowserLeftClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserLeftClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Left-click at a viewport coordinate or on an element by reference.
+   */
+  input: BrowserLeftClickInput;
+
+  name: 'left_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `left_mouse_down`'s config overrides.
+ */
+export interface BrowserLeftMouseDownConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Press and hold the left mouse button at a viewport coordinate. Pair with
+ * left_mouse_up to perform a custom drag.
+ */
+export interface BrowserLeftMouseDownInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserLeftMouseDownToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Press and hold the left mouse button at a viewport coordinate. Pair with
+   * left_mouse_up to perform a custom drag.
+   */
+  input: BrowserLeftMouseDownInput;
+
+  name: 'left_mouse_down';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `left_mouse_up`'s config overrides.
+ */
+export interface BrowserLeftMouseUpConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Release the left mouse button at a viewport coordinate.
+ */
+export interface BrowserLeftMouseUpInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserLeftMouseUpToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Release the left mouse button at a viewport coordinate.
+   */
+  input: BrowserLeftMouseUpInput;
+
+  name: 'left_mouse_up';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `list_tabs`'s config overrides.
+ */
+export interface BrowserListTabsConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * List all open tabs with each tab's tab_id, title, and URL.
+ */
+export interface BrowserListTabsInput {}
+
+export interface BrowserListTabsToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * List all open tabs with each tab's tab_id, title, and URL.
+   */
+  input: BrowserListTabsInput;
+
+  name: 'list_tabs';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * The `input` of a browser toolset member `tool_use` block: the member's own
+ * parameters.
+ */
+export type BrowserMemberInput =
+  | BrowserNavigateInput
+  | BrowserListTabsInput
+  | BrowserNewTabInput
+  | BrowserSwitchTabInput
+  | BrowserCloseTabInput
+  | BrowserReadPageInput
+  | BrowserGetPageTextInput
+  | BrowserReadConsoleInput
+  | BrowserReadNetworkInput
+  | BrowserFindInput
+  | BrowserFormInputInput
+  | BrowserFileUploadInput
+  | BrowserScrollToInput
+  | BrowserScreenshotInput
+  | BrowserZoomInput
+  | BrowserLeftClickInput
+  | BrowserRightClickInput
+  | BrowserMiddleClickInput
+  | BrowserDoubleClickInput
+  | BrowserTripleClickInput
+  | BrowserHoverInput
+  | BrowserLeftClickDragInput
+  | BrowserLeftMouseDownInput
+  | BrowserLeftMouseUpInput
+  | BrowserMouseMoveInput
+  | BrowserScrollInput
+  | BrowserTypeInput
+  | BrowserKeyInput
+  | BrowserHoldKeyInput
+  | BrowserWaitInput
+  | BrowserJavascriptExecInput;
+
+export type BrowserMemberName =
+  | 'navigate'
+  | 'list_tabs'
+  | 'new_tab'
+  | 'switch_tab'
+  | 'close_tab'
+  | 'read_page'
+  | 'get_page_text'
+  | 'read_console'
+  | 'read_network'
+  | 'find'
+  | 'form_input'
+  | 'file_upload'
+  | 'scroll_to'
+  | 'screenshot'
+  | 'zoom'
+  | 'left_click'
+  | 'right_click'
+  | 'middle_click'
+  | 'double_click'
+  | 'triple_click'
+  | 'hover'
+  | 'left_click_drag'
+  | 'left_mouse_down'
+  | 'left_mouse_up'
+  | 'mouse_move'
+  | 'scroll'
+  | 'type'
+  | 'key'
+  | 'hold_key'
+  | 'wait'
+  | 'javascript_exec';
+
+export const BROWSER_MEMBER_NAME_VALUES = [
+  'navigate',
+  'list_tabs',
+  'new_tab',
+  'switch_tab',
+  'close_tab',
+  'read_page',
+  'get_page_text',
+  'read_console',
+  'read_network',
+  'find',
+  'form_input',
+  'file_upload',
+  'scroll_to',
+  'screenshot',
+  'zoom',
+  'left_click',
+  'right_click',
+  'middle_click',
+  'double_click',
+  'triple_click',
+  'hover',
+  'left_click_drag',
+  'left_mouse_down',
+  'left_mouse_up',
+  'mouse_move',
+  'scroll',
+  'type',
+  'key',
+  'hold_key',
+  'wait',
+  'javascript_exec',
+] as const;
+
+/**
+ * `middle_click`'s config overrides.
+ */
+export interface BrowserMiddleClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Middle-click at a viewport coordinate or on an element by reference.
+ */
+export interface BrowserMiddleClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserMiddleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Middle-click at a viewport coordinate or on an element by reference.
+   */
+  input: BrowserMiddleClickInput;
+
+  name: 'middle_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `mouse_move`'s config overrides.
+ */
+export interface BrowserMouseMoveConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Move the pointer to a viewport coordinate without clicking.
+ */
+export interface BrowserMouseMoveInput {
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BrowserCoordinateTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserMouseMoveToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Move the pointer to a viewport coordinate without clicking.
+   */
+  input: BrowserMouseMoveInput;
+
+  name: 'mouse_move';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `navigate`'s config overrides.
+ */
+export interface BrowserNavigateConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Navigate to a URL, or go back/forward/reload in history. The protocol may be
+ * omitted (defaults to https://).
+ */
+export interface BrowserNavigateInput {
+  /**
+   * The URL to navigate to, or "back" / "forward" / "reload" for history navigation.
+   */
+  url: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserNavigateToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Navigate to a URL, or go back/forward/reload in history. The protocol may be
+   * omitted (defaults to https://).
+   */
+  input: BrowserNavigateInput;
+
+  name: 'navigate';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `new_tab`'s config overrides.
+ */
+export interface BrowserNewTabConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Open a new empty tab and return its tab_id.
+ */
+export interface BrowserNewTabInput {}
+
+export interface BrowserNewTabToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Open a new empty tab and return its tab_id.
+   */
+  input: BrowserNewTabInput;
+
+  name: 'new_tab';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `read_console`'s config overrides.
+ */
+export interface BrowserReadConsoleConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Return console output (log entries, errors, warnings) accumulated since the
+ * driver attached to the tab and since the last read, one line per entry. An empty
+ * result does not mean no traffic for a tab that predates attach.
+ */
+export interface BrowserReadConsoleInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserReadConsoleToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Return console output (log entries, errors, warnings) accumulated since the
+   * driver attached to the tab and since the last read, one line per entry. An empty
+   * result does not mean no traffic for a tab that predates attach.
+   */
+  input: BrowserReadConsoleInput;
+
+  name: 'read_console';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `read_network`'s config overrides.
+ */
+export interface BrowserReadNetworkConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Return the network requests (method, URL, status, MIME type, timing) recorded
+ * since the driver attached to the tab and since the last read, one line per
+ * entry. An empty result does not mean no traffic for a tab that predates attach.
+ */
+export interface BrowserReadNetworkInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserReadNetworkToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Return the network requests (method, URL, status, MIME type, timing) recorded
+   * since the driver attached to the tab and since the last read, one line per
+   * entry. An empty result does not mean no traffic for a tab that predates attach.
+   */
+  input: BrowserReadNetworkInput;
+
+  name: 'read_network';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `read_page`'s config overrides.
+ */
+export interface BrowserReadPageConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+export type BrowserReadPageFilter = 'all' | 'interactive';
+
+/**
+ * Return a structured accessibility tree of the page (or the subtree rooted at
+ * `ref`), with element references like [ref_7] that can be used as targets on
+ * later actions. Output is capped at 50,000 characters — narrow with `ref` or a
+ * smaller `depth` when exceeded.
+ */
+export interface BrowserReadPageInput {
+  /**
+   * Maximum tree depth. Default 15.
+   */
+  depth?: number | null;
+
+  /**
+   * Which elements to include. Omitted: every visible element. "interactive":
+   * interactive elements only. "all": additionally includes off-viewport elements.
+   */
+  filter?: BrowserReadPageFilter | null;
+
+  /**
+   * Element reference to read a subtree from. Omit to read from the page root.
+   */
+  ref?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserReadPageToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Return a structured accessibility tree of the page (or the subtree rooted at
+   * `ref`), with element references like [ref_7] that can be used as targets on
+   * later actions. Output is capped at 50,000 characters — narrow with `ref` or a
+   * smaller `depth` when exceeded.
+   */
+  input: BrowserReadPageInput;
+
+  name: 'read_page';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * An element on the page, identified by a reference from a prior `read_page` or
+ * `find` result. References are scoped to the tab that produced them and become
+ * stale after navigation or a major re-render.
+ */
+export interface BrowserRefTarget {
+  /**
+   * An element reference (e.g. "ref_7") returned by a prior `read_page` or `find`
+   * result.
+   */
+  ref: string;
+
+  type: 'ref';
+}
+
+/**
+ * `right_click`'s config overrides.
+ */
+export interface BrowserRightClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Right-click at a viewport coordinate or on an element by reference.
+ */
+export interface BrowserRightClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserRightClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Right-click at a viewport coordinate or on an element by reference.
+   */
+  input: BrowserRightClickInput;
+
+  name: 'right_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `screenshot`'s config overrides.
+ */
+export interface BrowserScreenshotConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Capture the current browser viewport.
+ */
+export interface BrowserScreenshotInput {
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserScreenshotToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Capture the current browser viewport.
+   */
+  input: BrowserScreenshotInput;
+
+  name: 'screenshot';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `scroll`'s config overrides.
+ */
+export interface BrowserScrollConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+export type BrowserScrollDirection = 'up' | 'down' | 'left' | 'right';
+
+/**
+ * Scroll at a viewport position. `target` must be a coordinate target.
+ */
+export interface BrowserScrollInput {
+  scroll_direction: BrowserScrollDirection;
+
+  /**
+   * A point in the browser viewport, in viewport pixels (the same frame as a
+   * full-viewport screenshot).
+   */
+  target: BrowserCoordinateTarget;
+
+  /**
+   * Scroll-wheel notches (1–10). Default 3.
+   */
+  scroll_amount?: number | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+/**
+ * `scroll_to`'s config overrides.
+ */
+export interface BrowserScrollToConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Scroll an element into view.
+ */
+export interface BrowserScrollToInput {
+  /**
+   * An element on the page, identified by a reference from a prior `read_page` or
+   * `find` result. References are scoped to the tab that produced them and become
+   * stale after navigation or a major re-render.
+   */
+  target: BrowserRefTarget;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserScrollToToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Scroll an element into view.
+   */
+  input: BrowserScrollToInput;
+
+  name: 'scroll_to';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+export interface BrowserScrollToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Scroll at a viewport position. `target` must be a coordinate target.
+   */
+  input: BrowserScrollInput;
+
+  name: 'scroll';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * The caller's browser state after a browser toolset member call — the full
+ * inventory of open tabs, which tab is active, and any side effects (tabs opened,
+ * download state changes) the call produced.
+ *
+ * At most one per `tool_result`, only on a non-error result answering a browser
+ * toolset member `tool_use`. The server renders the model-visible text from it;
+ * the model never sees the raw fields.
+ */
+export interface BrowserStateBlockParam {
+  /**
+   * All tabs open in the browser after this call — the full inventory, not a delta.
+   * May be empty. Whenever non-empty, exactly one entry carries `active: true`.
+   */
+  tabs: Array<BrowserStateTabEntry>;
+
+  type: 'browser_state';
+
+  /**
+   * Create a cache control breakpoint at this content block.
+   */
+  cache_control?: CacheControlEphemeral | null;
+
+  /**
+   * Tabs opened and download state changes during this call. "Nothing to report" is
+   * expressed by omitting the field, never by an empty list.
+   */
+  state_changes?: Array<BrowserStateChange> | null;
+}
+
+export type BrowserStateChange =
+  | BrowserStateChangeTabOpened
+  | BrowserStateChangeDownloadStarted
+  | BrowserStateChangeDownloadCompleted
+  | BrowserStateChangeDownloadFailed;
+
+/**
+ * A file download that finished during this call, reported with the same
+ * `download_id` as its `download_started` — or without a prior `download_started`,
+ * when the download finished during the call that started it (at most one state
+ * change per `download_id` per result).
+ */
+export interface BrowserStateChangeDownloadCompleted {
+  /**
+   * The caller-assigned identifier for this download, stable across the state
+   * changes reporting it.
+   */
+  download_id: string;
+
+  type: 'download_completed';
+
+  /**
+   * The final post-redirect URL the download was served from.
+   */
+  url: string;
+
+  /**
+   * Where the executor saved the file, on the executor's filesystem. Only included
+   * when another tool in the same environment can read the file at that path.
+   */
+  path?: string | null;
+
+  /**
+   * The completed download's size.
+   */
+  size_bytes?: number | null;
+}
+
+/**
+ * A file download that failed — or was cancelled — during this call.
+ */
+export interface BrowserStateChangeDownloadFailed {
+  /**
+   * The caller-assigned identifier for this download, stable across the state
+   * changes reporting it.
+   */
+  download_id: string;
+
+  type: 'download_failed';
+
+  /**
+   * The final post-redirect URL the download was served from.
+   */
+  url: string;
+
+  /**
+   * The failure or cancellation detail, when known.
+   */
+  error?: string | null;
+}
+
+/**
+ * A file download that started during this call.
+ */
+export interface BrowserStateChangeDownloadStarted {
+  /**
+   * The caller-assigned identifier for this download, stable across the state
+   * changes reporting it.
+   */
+  download_id: string;
+
+  type: 'download_started';
+
+  /**
+   * The final post-redirect URL the download was served from.
+   */
+  url: string;
+}
+
+/**
+ * A tab this call's execution opened that remains open at its end — the creation
+ * delta of the `tabs` inventory, not an event log.
+ *
+ * Carries only the `tab_id`; the tab's `title` and `url` live on its `tabs` entry,
+ * which must include the same `tab_id`. A tab opened during a failed call gets no
+ * deferred `tab_opened`; it simply appears in the next result's `tabs` inventory.
+ */
+export interface BrowserStateChangeTabOpened {
+  /**
+   * The `tab_id` of the opened tab, present in `tabs`.
+   */
+  tab_id: string;
+
+  type: 'tab_opened';
+}
+
+/**
+ * One open browser tab reported in a `browser_state` block's `tabs` inventory.
+ *
+ * `tab_id` is the caller-assigned identifier for the tab; `title` and `url`
+ * describe the page the tab is currently showing and may be empty strings (a blank
+ * tab legitimately has both empty). `active` marks the tab that is active after
+ * this call; whenever `tabs` is non-empty, exactly one entry is marked.
+ */
+export interface BrowserStateTabEntry {
+  /**
+   * The caller-assigned identifier for this tab, unique within the inventory.
+   */
+  tab_id: string;
+
+  /**
+   * The title of the page the tab is showing. May be empty.
+   */
+  title: string;
+
+  /**
+   * The URL of the page the tab is showing. May be empty.
+   */
+  url: string;
+
+  /**
+   * Whether this tab is the active tab after this call. Whenever `tabs` is
+   * non-empty, exactly one entry is marked `active: true`.
+   */
+  active?: boolean;
+}
+
+/**
+ * `switch_tab`'s config overrides.
+ */
+export interface BrowserSwitchTabConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Make the tab with the given tab_id the active tab — the tab that actions without
+ * a tab_id apply to.
+ */
+export interface BrowserSwitchTabInput {
+  /**
+   * The tab to switch to.
+   */
+  tab_id: string;
+}
+
+export interface BrowserSwitchTabToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Make the tab with the given tab_id the active tab — the tab that actions without
+   * a tab_id apply to.
+   */
+  input: BrowserSwitchTabInput;
+
+  name: 'switch_tab';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+export type BrowserToolUseBlock =
+  | BrowserNavigateToolUseBlock
+  | BrowserListTabsToolUseBlock
+  | BrowserNewTabToolUseBlock
+  | BrowserSwitchTabToolUseBlock
+  | BrowserCloseTabToolUseBlock
+  | BrowserReadPageToolUseBlock
+  | BrowserGetPageTextToolUseBlock
+  | BrowserReadConsoleToolUseBlock
+  | BrowserReadNetworkToolUseBlock
+  | BrowserFindToolUseBlock
+  | BrowserFormInputToolUseBlock
+  | BrowserFileUploadToolUseBlock
+  | BrowserScrollToToolUseBlock
+  | BrowserScreenshotToolUseBlock
+  | BrowserZoomToolUseBlock
+  | BrowserLeftClickToolUseBlock
+  | BrowserRightClickToolUseBlock
+  | BrowserMiddleClickToolUseBlock
+  | BrowserDoubleClickToolUseBlock
+  | BrowserTripleClickToolUseBlock
+  | BrowserHoverToolUseBlock
+  | BrowserLeftClickDragToolUseBlock
+  | BrowserLeftMouseDownToolUseBlock
+  | BrowserLeftMouseUpToolUseBlock
+  | BrowserMouseMoveToolUseBlock
+  | BrowserScrollToolUseBlock
+  | BrowserTypeToolUseBlock
+  | BrowserKeyToolUseBlock
+  | BrowserHoldKeyToolUseBlock
+  | BrowserWaitToolUseBlock
+  | BrowserJavascriptExecToolUseBlock;
+
+/**
+ * The browser toolset: a single `tools[]` entry (carrying no `name`) that declares
+ * the browser tool family. The model is served the family's tool with any members
+ * disabled via `configs` removed from its schema.
+ */
+export interface BrowserToolset20260801 {
+  type: 'browser_toolset_20260801';
+
+  /**
+   * Create a cache control breakpoint at this content block.
+   */
+  cache_control?: CacheControlEphemeral | null;
+
+  /**
+   * Sparse per-member overrides, keyed by member name. Absent, null, and {} are
+   * equivalent; a member's defaults apply wherever its key is absent.
+   */
+  configs?: BrowserToolsetConfigs | null;
+}
+
+/**
+ * Per-member configuration for `browser_toolset_20260801`: one optional field per
+ * member tool, keyed by the member name — the same name the member's `tool_use`
+ * blocks carry. Every member is an accepted key, and a member's defaults apply
+ * wherever its key is absent. Unknown keys are rejected: the field set is this
+ * toolset version's complete member set.
+ */
+export interface BrowserToolsetConfigs {
+  /**
+   * `close_tab`'s config overrides.
+   */
+  close_tab?: BrowserCloseTabConfig | null;
+
+  /**
+   * `double_click`'s config overrides.
+   */
+  double_click?: BrowserDoubleClickConfig | null;
+
+  /**
+   * `file_upload`'s config overrides.
+   */
+  file_upload?: BrowserFileUploadConfig | null;
+
+  /**
+   * `find`'s config overrides.
+   */
+  find?: BrowserFindConfig | null;
+
+  /**
+   * `form_input`'s config overrides.
+   */
+  form_input?: BrowserFormInputConfig | null;
+
+  /**
+   * `get_page_text`'s config overrides.
+   */
+  get_page_text?: BrowserGetPageTextConfig | null;
+
+  /**
+   * `hold_key`'s config overrides.
+   */
+  hold_key?: BrowserHoldKeyConfig | null;
+
+  /**
+   * `hover`'s config overrides.
+   */
+  hover?: BrowserHoverConfig | null;
+
+  /**
+   * `javascript_exec`'s config overrides.
+   */
+  javascript_exec?: BrowserJavascriptExecConfig | null;
+
+  /**
+   * `key`'s config overrides.
+   */
+  key?: BrowserKeyConfig | null;
+
+  /**
+   * `left_click`'s config overrides.
+   */
+  left_click?: BrowserLeftClickConfig | null;
+
+  /**
+   * `left_click_drag`'s config overrides.
+   */
+  left_click_drag?: BrowserLeftClickDragConfig | null;
+
+  /**
+   * `left_mouse_down`'s config overrides.
+   */
+  left_mouse_down?: BrowserLeftMouseDownConfig | null;
+
+  /**
+   * `left_mouse_up`'s config overrides.
+   */
+  left_mouse_up?: BrowserLeftMouseUpConfig | null;
+
+  /**
+   * `list_tabs`'s config overrides.
+   */
+  list_tabs?: BrowserListTabsConfig | null;
+
+  /**
+   * `middle_click`'s config overrides.
+   */
+  middle_click?: BrowserMiddleClickConfig | null;
+
+  /**
+   * `mouse_move`'s config overrides.
+   */
+  mouse_move?: BrowserMouseMoveConfig | null;
+
+  /**
+   * `navigate`'s config overrides.
+   */
+  navigate?: BrowserNavigateConfig | null;
+
+  /**
+   * `new_tab`'s config overrides.
+   */
+  new_tab?: BrowserNewTabConfig | null;
+
+  /**
+   * `read_console`'s config overrides.
+   */
+  read_console?: BrowserReadConsoleConfig | null;
+
+  /**
+   * `read_network`'s config overrides.
+   */
+  read_network?: BrowserReadNetworkConfig | null;
+
+  /**
+   * `read_page`'s config overrides.
+   */
+  read_page?: BrowserReadPageConfig | null;
+
+  /**
+   * `right_click`'s config overrides.
+   */
+  right_click?: BrowserRightClickConfig | null;
+
+  /**
+   * `screenshot`'s config overrides.
+   */
+  screenshot?: BrowserScreenshotConfig | null;
+
+  /**
+   * `scroll`'s config overrides.
+   */
+  scroll?: BrowserScrollConfig | null;
+
+  /**
+   * `scroll_to`'s config overrides.
+   */
+  scroll_to?: BrowserScrollToConfig | null;
+
+  /**
+   * `switch_tab`'s config overrides.
+   */
+  switch_tab?: BrowserSwitchTabConfig | null;
+
+  /**
+   * `triple_click`'s config overrides.
+   */
+  triple_click?: BrowserTripleClickConfig | null;
+
+  /**
+   * `type`'s config overrides.
+   */
+  type?: BrowserTypeConfig | null;
+
+  /**
+   * `wait`'s config overrides.
+   */
+  wait?: BrowserWaitConfig | null;
+
+  /**
+   * `zoom`'s config overrides.
+   */
+  zoom?: BrowserZoomConfig | null;
+}
+
+/**
+ * `triple_click`'s config overrides.
+ */
+export interface BrowserTripleClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Triple left-click at a viewport coordinate or on an element by reference
+ * (typically selects a line or paragraph).
+ */
+export interface BrowserTripleClickInput {
+  /**
+   * Where to act: either a viewport coordinate or an element reference.
+   */
+  target: BrowserClickTarget;
+
+  /**
+   * Optional modifier key chord to hold for the duration of this action (e.g.
+   * "shift", "ctrl+shift", "cmd+alt").
+   */
+  modifiers?: string | null;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserTripleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Triple left-click at a viewport coordinate or on an element by reference
+   * (typically selects a line or paragraph).
+   */
+  input: BrowserTripleClickInput;
+
+  name: 'triple_click';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `type`'s config overrides.
+ */
+export interface BrowserTypeConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Type a literal string at the current focus.
+ */
+export interface BrowserTypeInput {
+  /**
+   * The text to type.
+   */
+  text: string;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserTypeToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Type a literal string at the current focus.
+   */
+  input: BrowserTypeInput;
+
+  name: 'type';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `wait`'s config overrides.
+ */
+export interface BrowserWaitConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Pause for the given duration.
+ */
+export interface BrowserWaitInput {
+  /**
+   * Seconds to wait (maximum 30).
+   */
+  duration: number;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserWaitToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Pause for the given duration.
+   */
+  input: BrowserWaitInput;
+
+  name: 'wait';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
+/**
+ * `zoom`'s config overrides.
+ */
+export interface BrowserZoomConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Return a cropped screenshot of the given viewport region, scaled up for closer
+ * inspection — useful for small icons, buttons, or text. Coordinates are in the
+ * same viewport-pixel space as a full screenshot.
+ */
+export interface BrowserZoomInput {
+  /**
+   * [x0, y0, x1, y1] in viewport pixels.
+   */
+  region: Array<number>;
+
+  /**
+   * Tab to act on. Defaults to the active tab when omitted.
+   */
+  tab_id?: string | null;
+}
+
+export interface BrowserZoomToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Return a cropped screenshot of the given viewport region, scaled up for closer
+   * inspection — useful for small icons, buttons, or text. Coordinates are in the
+   * same viewport-pixel space as a full screenshot.
+   */
+  input: BrowserZoomInput;
+
+  name: 'zoom';
+
+  toolset_name: 'browser';
+
+  type: 'tool_use';
+}
+
 export interface CacheControlEphemeral {
   type: 'ephemeral';
 
@@ -318,6 +2609,62 @@ export interface CacheCreation {
    * The number of input tokens used to create the 5 minute cache entry.
    */
   ephemeral_5m_input_tokens: number;
+}
+
+export interface CacheMissMessagesChanged {
+  /**
+   * Approximate number of input tokens that would have been read from cache had the
+   * prefix matched the previous request.
+   */
+  cache_missed_input_tokens: number;
+
+  type: 'messages_changed';
+}
+
+export interface CacheMissModelChanged {
+  /**
+   * Approximate number of input tokens that would have been read from cache had the
+   * prefix matched the previous request.
+   */
+  cache_missed_input_tokens: number;
+
+  type: 'model_changed';
+}
+
+export interface CacheMissPreviousMessageNotFound {
+  type: 'previous_message_not_found';
+}
+
+export type CacheMissReason =
+  | CacheMissModelChanged
+  | CacheMissSystemChanged
+  | CacheMissToolsChanged
+  | CacheMissMessagesChanged
+  | CacheMissPreviousMessageNotFound
+  | CacheMissUnavailable;
+
+export interface CacheMissSystemChanged {
+  /**
+   * Approximate number of input tokens that would have been read from cache had the
+   * prefix matched the previous request.
+   */
+  cache_missed_input_tokens: number;
+
+  type: 'system_changed';
+}
+
+export interface CacheMissToolsChanged {
+  /**
+   * Approximate number of input tokens that would have been read from cache had the
+   * prefix matched the previous request.
+   */
+  cache_missed_input_tokens: number;
+
+  type: 'tools_changed';
+}
+
+export interface CacheMissUnavailable {
+  type: 'unavailable';
 }
 
 export interface CitationCharLocation {
@@ -573,6 +2920,20 @@ export interface CitationsWebSearchResultLocation {
   url: string;
 }
 
+/**
+ * A tool that the client executes: the caller runs each `tool_use` request for it
+ * and returns the output in a `tool_result` block.
+ */
+export type ClientToolUnion =
+  | Tool
+  | ToolBash20250124
+  | BrowserToolset20260801
+  | MemoryTool20250818
+  | ComputerToolset20260801
+  | ToolTextEditor20250124
+  | ToolTextEditor20250429
+  | ToolTextEditor20250728;
+
 export interface CodeExecutionOutputBlock {
   file_id: string;
 
@@ -741,9 +3102,6 @@ export interface CodeExecutionTool20260521 {
 }
 
 export interface CodeExecutionToolResultBlock {
-  /**
-   * Code execution result with encrypted stdout for PFC + web_search results.
-   */
   content: CodeExecutionToolResultBlockContent;
 
   tool_use_id: string;
@@ -751,18 +3109,12 @@ export interface CodeExecutionToolResultBlock {
   type: 'code_execution_tool_result';
 }
 
-/**
- * Code execution result with encrypted stdout for PFC + web_search results.
- */
 export type CodeExecutionToolResultBlockContent =
   | CodeExecutionToolResultError
   | CodeExecutionResultBlock
   | EncryptedCodeExecutionResultBlock;
 
 export interface CodeExecutionToolResultBlockParam {
-  /**
-   * Code execution result with encrypted stdout for PFC + web_search results.
-   */
   content: CodeExecutionToolResultBlockParamContent;
 
   tool_use_id: string;
@@ -775,9 +3127,6 @@ export interface CodeExecutionToolResultBlockParam {
   cache_control?: CacheControlEphemeral | null;
 }
 
-/**
- * Code execution result with encrypted stdout for PFC + web_search results.
- */
 export type CodeExecutionToolResultBlockParamContent =
   | CodeExecutionToolResultErrorParam
   | CodeExecutionResultBlockParam
@@ -802,6 +3151,1113 @@ export interface CodeExecutionToolResultErrorParam {
 }
 
 /**
+ * `cursor_position`'s config overrides.
+ */
+export interface ComputerCursorPositionConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Get the current (x, y) pixel coordinate of the cursor.
+ */
+export interface ComputerCursorPositionInput {}
+
+export interface ComputerCursorPositionToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Get the current (x, y) pixel coordinate of the cursor.
+   */
+  input: ComputerCursorPositionInput;
+
+  name: 'cursor_position';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `double_click`'s config overrides.
+ */
+export interface ComputerDoubleClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Double-click the left mouse button at the specified (x, y) pixel coordinate, or
+ * the current cursor position if `coordinate` is omitted.
+ */
+export interface ComputerDoubleClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerDoubleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Double-click the left mouse button at the specified (x, y) pixel coordinate, or
+   * the current cursor position if `coordinate` is omitted.
+   */
+  input: ComputerDoubleClickInput;
+
+  name: 'double_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `hold_key`'s config overrides.
+ */
+export interface ComputerHoldKeyConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Hold down a key or key-combination for a specified duration. Uses the same key
+ * syntax as `key`.
+ */
+export interface ComputerHoldKeyInput {
+  /**
+   * Duration to hold the key, in seconds.
+   */
+  duration: number;
+
+  /**
+   * The key or key-combination to hold.
+   */
+  text: string;
+}
+
+export interface ComputerHoldKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Hold down a key or key-combination for a specified duration. Uses the same key
+   * syntax as `key`.
+   */
+  input: ComputerHoldKeyInput;
+
+  name: 'hold_key';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `key`'s config overrides.
+ */
+export interface ComputerKeyConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Press a key or key-combination on the keyboard. Use "+" to combine modifiers
+ * with a key (e.g. "ctrl+s", "alt+Tab", "ctrl+shift+Escape"). Key names are
+ * case-insensitive; common names like "Return", "Tab", "Escape", "Up", "Down",
+ * "Left", "Right", "Home", "End", "Page_Up", "Page_Down", "Delete", "BackSpace"
+ * are supported.
+ */
+export interface ComputerKeyInput {
+  /**
+   * The key or key-combination to press.
+   */
+  text: string;
+
+  /**
+   * Number of times to repeat the key press. Default is 1.
+   */
+  repeat?: number | null;
+}
+
+export interface ComputerKeyToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Press a key or key-combination on the keyboard. Use "+" to combine modifiers
+   * with a key (e.g. "ctrl+s", "alt+Tab", "ctrl+shift+Escape"). Key names are
+   * case-insensitive; common names like "Return", "Tab", "Escape", "Up", "Down",
+   * "Left", "Right", "Home", "End", "Page_Up", "Page_Down", "Delete", "BackSpace"
+   * are supported.
+   */
+  input: ComputerKeyInput;
+
+  name: 'key';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `left_click`'s config overrides.
+ */
+export interface ComputerLeftClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * `left_click_drag`'s config overrides.
+ */
+export interface ComputerLeftClickDragConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Click and drag the cursor from `start_coordinate` to `coordinate`.
+ */
+export interface ComputerLeftClickDragInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate: Array<number>;
+
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  start_coordinate: Array<number>;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerLeftClickDragToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Click and drag the cursor from `start_coordinate` to `coordinate`.
+   */
+  input: ComputerLeftClickDragInput;
+
+  name: 'left_click_drag';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * Click the left mouse button at the specified (x, y) pixel coordinate, or the
+ * current cursor position if `coordinate` is omitted.
+ */
+export interface ComputerLeftClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerLeftClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Click the left mouse button at the specified (x, y) pixel coordinate, or the
+   * current cursor position if `coordinate` is omitted.
+   */
+  input: ComputerLeftClickInput;
+
+  name: 'left_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `left_mouse_down`'s config overrides.
+ */
+export interface ComputerLeftMouseDownConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Press and hold the left mouse button at the current cursor position.
+ */
+export interface ComputerLeftMouseDownInput {}
+
+export interface ComputerLeftMouseDownToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Press and hold the left mouse button at the current cursor position.
+   */
+  input: ComputerLeftMouseDownInput;
+
+  name: 'left_mouse_down';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `left_mouse_up`'s config overrides.
+ */
+export interface ComputerLeftMouseUpConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Release the left mouse button.
+ */
+export interface ComputerLeftMouseUpInput {}
+
+export interface ComputerLeftMouseUpToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Release the left mouse button.
+   */
+  input: ComputerLeftMouseUpInput;
+
+  name: 'left_mouse_up';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * The `input` of a computer toolset member `tool_use` block: the member's own
+ * parameters.
+ */
+export type ComputerMemberInput =
+  | ComputerKeyInput
+  | ComputerHoldKeyInput
+  | ComputerTypeInput
+  | ComputerCursorPositionInput
+  | ComputerMouseMoveInput
+  | ComputerLeftMouseDownInput
+  | ComputerLeftMouseUpInput
+  | ComputerLeftClickInput
+  | ComputerLeftClickDragInput
+  | ComputerRightClickInput
+  | ComputerMiddleClickInput
+  | ComputerDoubleClickInput
+  | ComputerTripleClickInput
+  | ComputerScrollInput
+  | ComputerWaitInput
+  | ComputerScreenshotInput
+  | ComputerZoomInput;
+
+export type ComputerMemberName =
+  | 'key'
+  | 'hold_key'
+  | 'type'
+  | 'cursor_position'
+  | 'mouse_move'
+  | 'left_mouse_down'
+  | 'left_mouse_up'
+  | 'left_click'
+  | 'left_click_drag'
+  | 'right_click'
+  | 'middle_click'
+  | 'double_click'
+  | 'triple_click'
+  | 'scroll'
+  | 'wait'
+  | 'screenshot'
+  | 'zoom';
+
+export const COMPUTER_MEMBER_NAME_VALUES = [
+  'key',
+  'hold_key',
+  'type',
+  'cursor_position',
+  'mouse_move',
+  'left_mouse_down',
+  'left_mouse_up',
+  'left_click',
+  'left_click_drag',
+  'right_click',
+  'middle_click',
+  'double_click',
+  'triple_click',
+  'scroll',
+  'wait',
+  'screenshot',
+  'zoom',
+] as const;
+
+/**
+ * `middle_click`'s config overrides.
+ */
+export interface ComputerMiddleClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Click the middle mouse button at the specified (x, y) pixel coordinate, or the
+ * current cursor position if `coordinate` is omitted.
+ */
+export interface ComputerMiddleClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerMiddleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Click the middle mouse button at the specified (x, y) pixel coordinate, or the
+   * current cursor position if `coordinate` is omitted.
+   */
+  input: ComputerMiddleClickInput;
+
+  name: 'middle_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `mouse_move`'s config overrides.
+ */
+export interface ComputerMouseMoveConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Move the cursor to a specified (x, y) pixel coordinate. Use this ONLY to hover
+ * without clicking; otherwise use a click action directly.
+ */
+export interface ComputerMouseMoveInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate: Array<number>;
+}
+
+export interface ComputerMouseMoveToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Move the cursor to a specified (x, y) pixel coordinate. Use this ONLY to hover
+   * without clicking; otherwise use a click action directly.
+   */
+  input: ComputerMouseMoveInput;
+
+  name: 'mouse_move';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `right_click`'s config overrides.
+ */
+export interface ComputerRightClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Click the right mouse button at the specified (x, y) pixel coordinate, or the
+ * current cursor position if `coordinate` is omitted.
+ */
+export interface ComputerRightClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerRightClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Click the right mouse button at the specified (x, y) pixel coordinate, or the
+   * current cursor position if `coordinate` is omitted.
+   */
+  input: ComputerRightClickInput;
+
+  name: 'right_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `screenshot`'s config overrides.
+ */
+export interface ComputerScreenshotConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Take a screenshot of the screen.
+ */
+export interface ComputerScreenshotInput {}
+
+export interface ComputerScreenshotToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Take a screenshot of the screen.
+   */
+  input: ComputerScreenshotInput;
+
+  name: 'screenshot';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `scroll`'s config overrides.
+ */
+export interface ComputerScrollConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+export type ComputerScrollDirection = 'up' | 'down' | 'left' | 'right';
+
+/**
+ * Scroll the screen at the specified (x, y) pixel coordinate, or the current
+ * cursor position if `coordinate` is omitted. Do NOT use PageUp/PageDown to
+ * scroll.
+ */
+export interface ComputerScrollInput {
+  /**
+   * Number of 'clicks' of the scroll wheel.
+   */
+  scroll_amount: number;
+
+  scroll_direction: ComputerScrollDirection;
+
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerScrollToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Scroll the screen at the specified (x, y) pixel coordinate, or the current
+   * cursor position if `coordinate` is omitted. Do NOT use PageUp/PageDown to
+   * scroll.
+   */
+  input: ComputerScrollInput;
+
+  name: 'scroll';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+export type ComputerToolUseBlock =
+  | ComputerKeyToolUseBlock
+  | ComputerHoldKeyToolUseBlock
+  | ComputerTypeToolUseBlock
+  | ComputerCursorPositionToolUseBlock
+  | ComputerMouseMoveToolUseBlock
+  | ComputerLeftMouseDownToolUseBlock
+  | ComputerLeftMouseUpToolUseBlock
+  | ComputerLeftClickToolUseBlock
+  | ComputerLeftClickDragToolUseBlock
+  | ComputerRightClickToolUseBlock
+  | ComputerMiddleClickToolUseBlock
+  | ComputerDoubleClickToolUseBlock
+  | ComputerTripleClickToolUseBlock
+  | ComputerScrollToolUseBlock
+  | ComputerWaitToolUseBlock
+  | ComputerScreenshotToolUseBlock
+  | ComputerZoomToolUseBlock;
+
+/**
+ * The computer toolset: a single `tools[]` entry (carrying no `name`) that
+ * declares the computer tool family. The model is served the family's tool with
+ * any members disabled via `configs` removed from its schema. Every member is
+ * enabled by default, zoom included. The single-tool options `display_number` and
+ * `enable_zoom` are not fields of a toolset entry — it carries only `type`,
+ * `configs`, and `cache_control`; zoom is controlled via `configs.zoom.enabled`.
+ */
+export interface ComputerToolset20260801 {
+  type: 'computer_toolset_20260801';
+
+  /**
+   * Create a cache control breakpoint at this content block.
+   */
+  cache_control?: CacheControlEphemeral | null;
+
+  /**
+   * Sparse per-member overrides, keyed by member name. Absent, null, and {} are
+   * equivalent; a member's defaults apply wherever its key is absent.
+   */
+  configs?: ComputerToolsetConfigs | null;
+}
+
+/**
+ * Per-member configuration for `computer_toolset_20260801`: one optional field per
+ * member tool, keyed by the member name — the same name the member's `tool_use`
+ * blocks carry. Every member is an accepted key, and a member's defaults apply
+ * wherever its key is absent. Unknown keys are rejected: the field set is this
+ * toolset version's complete member set.
+ */
+export interface ComputerToolsetConfigs {
+  /**
+   * `cursor_position`'s config overrides.
+   */
+  cursor_position?: ComputerCursorPositionConfig | null;
+
+  /**
+   * `double_click`'s config overrides.
+   */
+  double_click?: ComputerDoubleClickConfig | null;
+
+  /**
+   * `hold_key`'s config overrides.
+   */
+  hold_key?: ComputerHoldKeyConfig | null;
+
+  /**
+   * `key`'s config overrides.
+   */
+  key?: ComputerKeyConfig | null;
+
+  /**
+   * `left_click`'s config overrides.
+   */
+  left_click?: ComputerLeftClickConfig | null;
+
+  /**
+   * `left_click_drag`'s config overrides.
+   */
+  left_click_drag?: ComputerLeftClickDragConfig | null;
+
+  /**
+   * `left_mouse_down`'s config overrides.
+   */
+  left_mouse_down?: ComputerLeftMouseDownConfig | null;
+
+  /**
+   * `left_mouse_up`'s config overrides.
+   */
+  left_mouse_up?: ComputerLeftMouseUpConfig | null;
+
+  /**
+   * `middle_click`'s config overrides.
+   */
+  middle_click?: ComputerMiddleClickConfig | null;
+
+  /**
+   * `mouse_move`'s config overrides.
+   */
+  mouse_move?: ComputerMouseMoveConfig | null;
+
+  /**
+   * `right_click`'s config overrides.
+   */
+  right_click?: ComputerRightClickConfig | null;
+
+  /**
+   * `screenshot`'s config overrides.
+   */
+  screenshot?: ComputerScreenshotConfig | null;
+
+  /**
+   * `scroll`'s config overrides.
+   */
+  scroll?: ComputerScrollConfig | null;
+
+  /**
+   * `triple_click`'s config overrides.
+   */
+  triple_click?: ComputerTripleClickConfig | null;
+
+  /**
+   * `type`'s config overrides.
+   */
+  type?: ComputerTypeConfig | null;
+
+  /**
+   * `wait`'s config overrides.
+   */
+  wait?: ComputerWaitConfig | null;
+
+  /**
+   * `zoom`'s config overrides.
+   */
+  zoom?: ComputerZoomConfig | null;
+}
+
+/**
+ * `triple_click`'s config overrides.
+ */
+export interface ComputerTripleClickConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Triple-click the left mouse button at the specified (x, y) pixel coordinate, or
+ * the current cursor position if `coordinate` is omitted.
+ */
+export interface ComputerTripleClickInput {
+  /**
+   * (x, y): x pixels from the left edge, y pixels from the top edge.
+   */
+  coordinate?: Array<number> | null;
+
+  /**
+   * Optional key combination to hold down during this action (e.g. "ctrl", "shift",
+   * "ctrl+shift").
+   */
+  text?: string | null;
+}
+
+export interface ComputerTripleClickToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Triple-click the left mouse button at the specified (x, y) pixel coordinate, or
+   * the current cursor position if `coordinate` is omitted.
+   */
+  input: ComputerTripleClickInput;
+
+  name: 'triple_click';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `type`'s config overrides.
+ */
+export interface ComputerTypeConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Type a string of text on the keyboard.
+ */
+export interface ComputerTypeInput {
+  /**
+   * The text to type.
+   */
+  text: string;
+}
+
+export interface ComputerTypeToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Type a string of text on the keyboard.
+   */
+  input: ComputerTypeInput;
+
+  name: 'type';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `wait`'s config overrides.
+ */
+export interface ComputerWaitConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Wait for a specified duration.
+ */
+export interface ComputerWaitInput {
+  /**
+   * Duration to wait, in seconds.
+   */
+  duration: number;
+}
+
+export interface ComputerWaitToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Wait for a specified duration.
+   */
+  input: ComputerWaitInput;
+
+  name: 'wait';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
+ * `zoom`'s config overrides.
+ */
+export interface ComputerZoomConfig {
+  /**
+   * Defer loading for this member. Must resolve to the same value on every enabled
+   * member of the toolset.
+   */
+  defer_loading?: boolean | null;
+
+  /**
+   * Whether this member is offered to the model. Default is per member, per the
+   * toolset's documentation. A member whose enabled resolves false is withheld from
+   * the served schema.
+   */
+  enabled?: boolean | null;
+}
+
+/**
+ * Take a screenshot of a rectangular region. Region coordinates are in the
+ * full-screenshot space (not physical display pixels). The crop is scaled up to
+ * fill the image budget so fine details become legible.
+ */
+export interface ComputerZoomInput {
+  /**
+   * (x0, y0, x1, y1): The region to capture.
+   */
+  region: Array<number>;
+}
+
+export interface ComputerZoomToolUseBlock {
+  id: string;
+
+  /**
+   * Which party invoked the tool call: the model directly, or a server tool on its
+   * behalf.
+   */
+  caller: ToolUseCaller;
+
+  /**
+   * Take a screenshot of a rectangular region. Region coordinates are in the
+   * full-screenshot space (not physical display pixels). The crop is scaled up to
+   * fill the image budget so fine details become legible.
+   */
+  input: ComputerZoomInput;
+
+  name: 'zoom';
+
+  toolset_name: 'computer';
+
+  type: 'tool_use';
+}
+
+/**
  * Information about the container used in the request (for the code execution
  * tool)
  */
@@ -815,6 +4271,46 @@ export interface Container {
    * The time at which the container will expire.
    */
   expires_at: string;
+
+  /**
+   * Skills loaded in the container
+   */
+  skills: Array<ContainerSkill> | null;
+}
+
+/**
+ * Container parameters with skills to be loaded.
+ */
+export interface ContainerParams {
+  /**
+   * Container id
+   */
+  id?: string | null;
+
+  /**
+   * List of skills to load in the container
+   */
+  skills?: Array<SkillParams> | null;
+}
+
+/**
+ * A skill that was loaded in a container (response model).
+ */
+export interface ContainerSkill {
+  /**
+   * Skill ID
+   */
+  skill_id: string;
+
+  /**
+   * Type of skill - either 'anthropic' (built-in) or 'custom' (user-defined)
+   */
+  type: 'anthropic' | 'custom';
+
+  /**
+   * The resolved version: a skill version ID for custom skills.
+   */
+  version: string;
 }
 
 /**
@@ -841,9 +4337,6 @@ export interface ContainerUploadBlockParam {
   cache_control?: CacheControlEphemeral | null;
 }
 
-/**
- * Response model for a file uploaded to the container.
- */
 export type ContentBlock =
   | TextBlock
   | ThinkingBlock
@@ -858,9 +4351,6 @@ export type ContentBlock =
   | ToolSearchToolResultBlock
   | ContainerUploadBlock;
 
-/**
- * Regular text content.
- */
 export type ContentBlockParam =
   | TextBlockParam
   | ImageBlockParam
@@ -877,8 +4367,7 @@ export type ContentBlockParam =
   | BashCodeExecutionToolResultBlockParam
   | TextEditorCodeExecutionToolResultBlockParam
   | ToolSearchToolResultBlockParam
-  | ContainerUploadBlockParam
-  | MidConversationSystemBlockParam;
+  | ContainerUploadBlockParam;
 
 export interface ContentBlockSource {
   content: string | Array<ContentBlockSourceContent>;
@@ -887,6 +4376,35 @@ export interface ContentBlockSource {
 }
 
 export type ContentBlockSourceContent = TextBlockParam | ImageBlockParam;
+
+/**
+ * Request-level diagnostics: why the prompt cache could not fully reuse the prefix
+ * of the request named by `diagnostics.previous_message_id`.
+ */
+export interface Diagnostics {
+  /**
+   * Explains why the prompt cache could not fully reuse the prefix from the request
+   * identified by `diagnostics.previous_message_id`. `null` means diagnosis is still
+   * pending — the response was serialized before the background comparison
+   * completed.
+   */
+  cache_miss_reason: CacheMissReason | null;
+}
+
+/**
+ * Request-level diagnostics. Currently carries the previous response id for
+ * prompt-cache divergence reporting.
+ */
+export interface DiagnosticsParam {
+  /**
+   * The `id` (`msg_...`) from this client's previous /v1/messages response. The
+   * server compares that request's prompt fingerprint against this one and returns
+   * `diagnostics.cache_miss_reason` when the prompt-cache prefix could not be
+   * reused. Pass `null` on the first turn to opt in without a prior message to
+   * compare.
+   */
+  previous_message_id?: string | null;
+}
 
 /**
  * Tool invocation directly from the model.
@@ -912,7 +4430,7 @@ export interface DocumentBlock {
 }
 
 export interface DocumentBlockParam {
-  source: Base64PDFSource | PlainTextSource | ContentBlockSource | URLPDFSource;
+  source: Base64PDFSource | PlainTextSource | ContentBlockSource | URLPDFSource | FileDocumentSource;
 
   type: 'document';
 
@@ -958,8 +4476,20 @@ export interface EncryptedCodeExecutionResultBlockParam {
   type: 'encrypted_code_execution_result';
 }
 
+export interface FileDocumentSource {
+  file_id: string;
+
+  type: 'file';
+}
+
+export interface FileImageSource {
+  file_id: string;
+
+  type: 'file';
+}
+
 export interface ImageBlockParam {
-  source: Base64ImageSource | URLImageSource;
+  source: Base64ImageSource | URLImageSource | FileImageSource;
 
   type: 'image';
 
@@ -967,6 +4497,32 @@ export interface ImageBlockParam {
    * Create a cache control breakpoint at this content block.
    */
   cache_control?: CacheControlEphemeral | null;
+
+  /**
+   * Configures the transformations the server applies to this image before the model
+   * observes it. Each key names a condition the server transforms images for; its
+   * value selects the transformation applied. Omitted keys keep their default
+   * behavior, and an empty object is equivalent to omitting the field.
+   */
+  transformations?: ImageTransformationsParam | null;
+}
+
+/**
+ * Configures the transformations the server applies to this image before the model
+ * observes it. Each key names a condition the server transforms images for; its
+ * value selects the transformation applied. Omitted keys keep their default
+ * behavior, and an empty object is equivalent to omitting the field.
+ */
+export interface ImageTransformationsParam {
+  /**
+   * What the server does when this image exceeds the model's maximum image size.
+   * `"downsize"` (the default) scales the image down to fit, which changes the
+   * dimensions the model observes without telling you. `"error"` instead rejects the
+   * request with a 400 error naming the image's dimensions and the largest
+   * dimensions that fit, so you can scale the image deliberately — your image is
+   * never silently scaled down.
+   */
+  oversized_image?: 'downsize' | 'error';
 }
 
 export interface InputJSONDelta {
@@ -1026,8 +4582,9 @@ export interface Message {
   id: string;
 
   /**
-   * Information about the container used in the request (for the code execution
-   * tool)
+   * Information about the container used in this request.
+   *
+   * This will be non-null if a container tool (e.g. code execution) was used.
    */
   container: Container | null;
 
@@ -1068,6 +4625,12 @@ export interface Message {
   content: Array<ContentBlock>;
 
   /**
+   * Request-level diagnostics. `null` when the request did not supply `diagnostics`,
+   * or when it did and no prompt-cache divergence was detected.
+   */
+  diagnostics: Diagnostics | null;
+
+  /**
    * The model that will complete your prompt.
    *
    * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
@@ -1083,7 +4646,9 @@ export interface Message {
   role: 'assistant';
 
   /**
-   * Structured information about a refusal.
+   * Structured information about why model output stopped.
+   *
+   * This is `null` when the `stop_reason` has no additional detail to report.
    */
   stop_details: RefusalStopDetails | null;
 
@@ -1100,6 +4665,7 @@ export interface Message {
    *   back as-is in a subsequent request to let the model continue.
    * - `"refusal"`: when streaming classifiers intervene to handle potential policy
    *   violations
+   * - `"model_context_window_exceeded"`: we exceeded the model's context window
    *
    * In non-streaming mode this value is always non-null. In streaming mode, it is
    * null in the `message_start` event and non-null otherwise.
@@ -1141,10 +4707,6 @@ export interface Message {
   usage: Usage;
 }
 
-/**
- * Code execution tool with REPL state persistence (daemon mode + gVisor
- * checkpoint).
- */
 export type MessageCountTokensTool =
   | Tool
   | ToolBash20250124
@@ -1152,7 +4714,9 @@ export type MessageCountTokensTool =
   | CodeExecutionTool20250825
   | CodeExecutionTool20260120
   | CodeExecutionTool20260521
+  | BrowserToolset20260801
   | MemoryTool20250818
+  | ComputerToolset20260801
   | ToolTextEditor20250124
   | ToolTextEditor20250429
   | ToolTextEditor20250728
@@ -1165,6 +4729,11 @@ export type MessageCountTokensTool =
   | WebFetchTool20260318
   | ToolSearchToolBm25_20251119
   | ToolSearchToolRegex20251119;
+
+/**
+ * Container identifier for reuse across requests.
+ */
+export type MessageCreateParamsContainer = ContainerParams | string;
 
 export interface MessageDeltaUsage {
   /**
@@ -1229,36 +4798,21 @@ export interface Metadata {
 }
 
 /**
- * System instructions that appear mid-conversation.
- *
- * Use this block to provide or update system-level instructions at a specific
- * point in the conversation, rather than only via the top-level `system`
- * parameter.
- */
-export interface MidConversationSystemBlockParam {
-  /**
-   * System instruction text blocks.
-   */
-  content: Array<TextBlockParam>;
-
-  type: 'mid_conv_system';
-
-  /**
-   * Create a cache control breakpoint at this content block.
-   */
-  cache_control?: CacheControlEphemeral | null;
-}
-
-/**
  * The model that will complete your prompt.
  *
  * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
  * details and options.
  */
 export type Model =
+  | 'claude-haiku-5-5'
+  | 'claude-sonnet-5-5'
+  | 'claude-fable-5-1'
+  | 'claude-opus-5-5'
+  | 'claude-mythos-5-1'
   | 'claude-sonnet-5'
   | 'claude-fable-5'
   | 'claude-mythos-5'
+  | 'claude-opus-5'
   | 'claude-opus-4-8'
   | 'claude-opus-4-7'
   | 'claude-mythos-preview'
@@ -1270,13 +4824,14 @@ export type Model =
   | 'claude-opus-4-5-20251101'
   | 'claude-sonnet-4-5'
   | 'claude-sonnet-4-5-20250929'
-  | 'claude-opus-4-1'
-  | 'claude-opus-4-1-20250805'
   | (string & {});
 
 export interface OutputConfig {
   /**
-   * All possible effort levels.
+   * How much effort the model should put into its response. Higher effort levels may
+   * result in more thorough analysis but take longer.
+   *
+   * Valid values are `low`, `medium`, `high`, `xhigh`, or `max`.
    */
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | null;
 
@@ -1303,26 +4858,8 @@ export interface OutputTokensDetails {
 const DEPRECATED_MODELS: {
   [K in Model]?: string;
 } = {
-  'claude-1.3': 'November 6th, 2024',
-  'claude-1.3-100k': 'November 6th, 2024',
-  'claude-instant-1.1': 'November 6th, 2024',
-  'claude-instant-1.1-100k': 'November 6th, 2024',
-  'claude-instant-1.2': 'November 6th, 2024',
-  'claude-3-sonnet-20240229': 'July 21st, 2025',
-  'claude-3-opus-20240229': 'January 5th, 2026',
-  'claude-2.1': 'July 21st, 2025',
-  'claude-2.0': 'July 21st, 2025',
-  'claude-3-7-sonnet-latest': 'February 19th, 2026',
-  'claude-3-7-sonnet-20250219': 'February 19th, 2026',
-  'claude-3-5-haiku-latest': 'February 19th, 2026',
-  'claude-3-5-haiku-20241022': 'February 19th, 2026',
-  'claude-opus-4-0': 'June 15th, 2026',
-  'claude-opus-4-20250514': 'June 15th, 2026',
-  'claude-sonnet-4-0': 'June 15th, 2026',
-  'claude-sonnet-4-20250514': 'June 15th, 2026',
-  'claude-opus-4-1': 'August 5th, 2026',
-  'claude-opus-4-1-20250805': 'August 5th, 2026',
-  'claude-mythos-preview': 'June 30th, 2026',
+  'claude-sonnet-4-5': 'November 30th, 2026',
+  'claude-sonnet-4-5-20250929': 'November 30th, 2026',
 };
 
 const MODELS_TO_WARN_WITH_THINKING_ENABLED: Model[] = ['claude-mythos-preview', 'claude-opus-4-6'];
@@ -1351,9 +4888,6 @@ export interface RawContentBlockDeltaEvent {
 }
 
 export interface RawContentBlockStartEvent {
-  /**
-   * Response model for a file uploaded to the container.
-   */
   content_block:
     | TextBlock
     | ThinkingBlock
@@ -1407,13 +4941,16 @@ export interface RawMessageDeltaEvent {
 export namespace RawMessageDeltaEvent {
   export interface Delta {
     /**
-     * Information about the container used in the request (for the code execution
-     * tool)
+     * Information about the container used in this request.
+     *
+     * This will be non-null if a container tool (e.g. code execution) was used.
      */
     container: MessagesAPI.Container | null;
 
     /**
-     * Structured information about a refusal.
+     * Structured information about why model output stopped.
+     *
+     * This is `null` when the `stop_reason` has no additional detail to report.
      */
     stop_details: MessagesAPI.RefusalStopDetails | null;
 
@@ -1442,12 +4979,28 @@ export type RawMessageStreamEvent =
   | RawContentBlockStopEvent;
 
 export interface RedactedThinkingBlock {
+  /**
+   * The contents of this redacted thinking block, returned when portions of the
+   * model's thinking were safety-redacted. This field is opaque and encrypted, with
+   * no readable content.
+   *
+   * Pass `redacted_thinking` blocks back to the API unchanged when continuing a
+   * multi-turn conversation.
+   *
+   * See
+   * [extended thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking#redacted-thinking-blocks)
+   * for details.
+   */
   data: string;
 
   type: 'redacted_thinking';
 }
 
 export interface RedactedThinkingBlockParam {
+  /**
+   * The `data` value of this redacted thinking block, exactly as returned by the API
+   * in a previous response. Opaque and encrypted; pass it back unchanged.
+   */
   data: string;
 
   type: 'redacted_thinking';
@@ -1458,9 +5011,26 @@ export interface RedactedThinkingBlockParam {
  */
 export interface RefusalStopDetails {
   /**
-   * The policy category that triggered a refusal.
+   * The policy category that triggered the refusal.
+   *
+   * `null` when the refusal doesn't map to a named category.
+   *
+   * - `cyber` - The request could enable cyber harm, such as malware or exploit
+   *   development. Benign cybersecurity work can also trigger this category.
+   * - `bio` - The request could enable biological harm, such as dangerous lab
+   *   methods. Beneficial life sciences work can also trigger this category.
+   * - `frontier_llm` - The request could assist the development of competing AI
+   *   models, which is restricted under
+   *   [Anthropic's commercial terms](https://www.anthropic.com/legal/commercial-terms).
+   *   Benign machine learning work can also trigger this category.
+   * - `reasoning_extraction` - The request asks the model to reproduce its internal
+   *   reasoning in the response text. To get reasoning in a structured form instead,
+   *   use
+   *   [adaptive thinking](https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking).
+   * - `general_harms` - The request could be related to an area that was determined
+   *   as harmful. Benign work might sometimes trigger this category.
    */
-  category: 'cyber' | 'bio' | 'frontier_llm' | 'reasoning_extraction' | null;
+  category: 'cyber' | 'bio' | 'frontier_llm' | 'reasoning_extraction' | 'general_harms' | null;
 
   /**
    * Human-readable explanation of the refusal.
@@ -1520,9 +5090,6 @@ export interface ServerToolUsage {
 export interface ServerToolUseBlock {
   id: string;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 
   input: unknown;
@@ -1560,19 +5127,48 @@ export interface ServerToolUseBlockParam {
    */
   cache_control?: CacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 }
 
 export interface SignatureDelta {
+  /**
+   * The `signature` for this thinking block: an opaque value used to verify that the
+   * block was generated by Claude when it is passed back to the API. Delivered in a
+   * `signature_delta` event just before the block's `content_block_stop` event.
+   */
   signature: string;
 
   type: 'signature_delta';
 }
 
-export type StopReason = 'end_turn' | 'max_tokens' | 'stop_sequence' | 'tool_use' | 'pause_turn' | 'refusal';
+/**
+ * Specification for a skill to be loaded in a container (request model).
+ */
+export interface SkillParams {
+  /**
+   * Skill ID
+   */
+  skill_id: string;
+
+  /**
+   * Type of skill - either 'anthropic' (built-in) or 'custom' (user-defined)
+   */
+  type: 'anthropic' | 'custom';
+
+  /**
+   * Skill version or 'latest' for most recent version
+   */
+  version?: string;
+}
+
+export type StopReason =
+  | 'end_turn'
+  | 'max_tokens'
+  | 'stop_sequence'
+  | 'tool_use'
+  | 'pause_turn'
+  | 'refusal'
+  | 'model_context_window_exceeded';
 
 export interface TextBlock {
   /**
@@ -1743,16 +5339,41 @@ export interface TextEditorCodeExecutionViewResultBlockParam {
 }
 
 export interface ThinkingBlock {
+  /**
+   * A value used to verify that this thinking block was generated by Claude when it
+   * is passed back to the API.
+   *
+   * This is an opaque field and should not be interpreted or parsed. When passing
+   * thinking blocks back to the API (required when using tools with extended
+   * thinking), pass them back exactly as received, with this field intact.
+   *
+   * See
+   * [extended thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking)
+   * for details.
+   */
   signature: string;
 
+  /**
+   * The text of Claude's thinking process for this block.
+   */
   thinking: string;
 
   type: 'thinking';
 }
 
 export interface ThinkingBlockParam {
+  /**
+   * The `signature` value of this thinking block, exactly as returned by the API in
+   * a previous response. Used to verify that the block was generated by Claude.
+   *
+   * Thinking blocks must be passed back unmodified and in their original order; a
+   * modified block results in a 400 `invalid_request_error`.
+   */
   signature: string;
 
+  /**
+   * The `thinking` text of this block as returned by the API.
+   */
   thinking: string;
 
   type: 'thinking';
@@ -1768,6 +5389,10 @@ export interface ThinkingConfigAdaptive {
    * `summarized`.
    */
   display?: 'summarized' | 'omitted' | null;
+}
+
+export interface ThinkingConfigBetweenTools {
+  type: 'between_tools';
 }
 
 export interface ThinkingConfigDisabled {
@@ -1810,9 +5435,18 @@ export interface ThinkingConfigEnabled {
  * [extended thinking](https://platform.claude.com/docs/en/build-with-claude/extended-thinking)
  * for details.
  */
-export type ThinkingConfigParam = ThinkingConfigEnabled | ThinkingConfigDisabled | ThinkingConfigAdaptive;
+export type ThinkingConfigParam =
+  | ThinkingConfigEnabled
+  | ThinkingConfigDisabled
+  | ThinkingConfigBetweenTools
+  | ThinkingConfigAdaptive;
 
 export interface ThinkingDelta {
+  /**
+   * The incremental `thinking` text for this content block. Concatenate the
+   * `thinking` values of successive `thinking_delta` events to assemble the block's
+   * full `thinking` value.
+   */
   thinking: string;
 
   type: 'thinking_delta';
@@ -2030,9 +5664,15 @@ export interface ToolResultBlockParam {
         | SearchResultBlockParam
         | DocumentBlockParam
         | ToolReferenceBlockParam
+        | BrowserStateBlockParam
       >;
 
   is_error?: boolean;
+
+  /**
+   * For a toolset member tool_result, the toolset family of the paired tool_use.
+   */
+  toolset_name?: string | null;
 }
 
 export interface ToolSearchToolBm25_20251119 {
@@ -2257,10 +5897,6 @@ export interface ToolTextEditor20250728 {
   strict?: boolean;
 }
 
-/**
- * Code execution tool with REPL state persistence (daemon mode + gVisor
- * checkpoint).
- */
 export type ToolUnion =
   | Tool
   | ToolBash20250124
@@ -2268,7 +5904,9 @@ export type ToolUnion =
   | CodeExecutionTool20250825
   | CodeExecutionTool20260120
   | CodeExecutionTool20260521
+  | BrowserToolset20260801
   | MemoryTool20250818
+  | ComputerToolset20260801
   | ToolTextEditor20250124
   | ToolTextEditor20250429
   | ToolTextEditor20250728
@@ -2285,9 +5923,6 @@ export type ToolUnion =
 export interface ToolUseBlock {
   id: string;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 
   input: unknown;
@@ -2295,6 +5930,11 @@ export interface ToolUseBlock {
   name: string;
 
   type: 'tool_use';
+
+  /**
+   * For a toolset member tool_use, the toolset family.
+   */
+  toolset_name?: string | null;
 }
 
 export interface ToolUseBlockParam {
@@ -2311,11 +5951,21 @@ export interface ToolUseBlockParam {
    */
   cache_control?: CacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
+
+  /**
+   * For a toolset member tool_use, the toolset family this member belongs to.
+   */
+  toolset_name?: string | null;
 }
+
+/**
+ * Which party invoked the tool call: the model directly, or a server tool on its
+ * behalf.
+ */
+export type ToolUseCaller = DirectCaller | ServerToolCaller | ServerToolCaller20260120;
+
+export type ToolsetToolUseBlock = BrowserToolUseBlock | ComputerToolUseBlock | ToolUseBlock;
 
 export interface URLImageSource {
   type: 'url';
@@ -2495,6 +6145,12 @@ export interface WebFetchTool20250910 {
    * When true, guarantees schema validation on tool names and inputs
    */
   strict?: boolean;
+
+  /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: WebFetchURLSources | null;
 }
 
 export interface WebFetchTool20260209 {
@@ -2553,6 +6209,12 @@ export interface WebFetchTool20260209 {
    * When true, guarantees schema validation on tool names and inputs
    */
   strict?: boolean;
+
+  /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: WebFetchURLSources | null;
 }
 
 /**
@@ -2614,6 +6276,12 @@ export interface WebFetchTool20260309 {
    * When true, guarantees schema validation on tool names and inputs
    */
   strict?: boolean;
+
+  /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: WebFetchURLSources | null;
 
   /**
    * Whether to use cached content. Set to false to bypass the cache and fetch fresh
@@ -2691,6 +6359,12 @@ export interface WebFetchTool20260318 {
   strict?: boolean;
 
   /**
+   * Which sources contribute to the set of URLs the tool may fetch. Omitted means
+   * every source.
+   */
+  url_sources?: WebFetchURLSources | null;
+
+  /**
    * Whether to use cached content. Set to false to bypass the cache and fetch fresh
    * content. Only set to false when the user explicitly requests fresh content or
    * when fetching rapidly-changing sources.
@@ -2699,9 +6373,6 @@ export interface WebFetchTool20260318 {
 }
 
 export interface WebFetchToolResultBlock {
-  /**
-   * Tool invocation directly from the model.
-   */
   caller: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 
   content: WebFetchToolResultErrorBlock | WebFetchBlock;
@@ -2723,9 +6394,6 @@ export interface WebFetchToolResultBlockParam {
    */
   cache_control?: CacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 }
 
@@ -2750,7 +6418,89 @@ export type WebFetchToolResultErrorCode =
   | 'unsupported_content_type'
   | 'too_many_requests'
   | 'max_uses_exceeded'
-  | 'unavailable';
+  | 'unavailable'
+  | 'content_too_large';
+
+/**
+ * The `url_sources` variant under which a source contributes in full: every result
+ * of the tool filter's source, or all user input.
+ */
+export interface WebFetchURLSourceAll {
+  type: 'all';
+}
+
+/**
+ * The tool filter variant under which every result but the named tools'
+ * contributes.
+ */
+export interface WebFetchURLSourceExcept {
+  tools: Array<WebFetchURLSourceToolReference>;
+
+  type: 'except';
+}
+
+/**
+ * The `url_sources` variant under which a source contributes nothing: no result of
+ * the tool filter's source, or no user input.
+ */
+export interface WebFetchURLSourceNone {
+  type: 'none';
+}
+
+/**
+ * The tool filter variant under which only the named tools' results contribute.
+ */
+export interface WebFetchURLSourceOnly {
+  tools: Array<WebFetchURLSourceToolReference>;
+
+  type: 'only';
+}
+
+/**
+ * One entry of a tool filter's `tools`: it must name a tool declared in this
+ * request's `tools[]`.
+ */
+export interface WebFetchURLSourceToolReference {
+  name: string;
+
+  type: 'tool_reference';
+}
+
+/**
+ * Which sources contribute to the set of URLs web fetch may fetch.
+ *
+ * Each key is a tagged variant: `user_input` is `all` or `none`; the two tool
+ * filters are `all`, `none`, `only` (only the named tools' results) or `except`
+ * (every result but the named tools'). A named tool must be declared in this
+ * request's `tools[]`.
+ */
+export interface WebFetchURLSources {
+  /**
+   * Which client tools' results contribute fetchable URLs: "all", "none", or an only
+   * or except list of client tool names from tools[].
+   */
+  client_tool_results?:
+    | WebFetchURLSourceAll
+    | WebFetchURLSourceNone
+    | WebFetchURLSourceOnly
+    | WebFetchURLSourceExcept;
+
+  /**
+   * Which server tools' results contribute fetchable URLs: "all", "none", or an only
+   * or except list of server tool names from tools[]; only web_search and web_fetch
+   * results ever contribute.
+   */
+  server_tool_results?:
+    | WebFetchURLSourceAll
+    | WebFetchURLSourceNone
+    | WebFetchURLSourceOnly
+    | WebFetchURLSourceExcept;
+
+  /**
+   * Whether URLs in user messages are fetchable: "all" or "none".
+   */
+  user_input?: WebFetchURLSourceAll | WebFetchURLSourceNone;
+}
 
 export interface WebSearchResultBlock {
   encrypted_content: string;
@@ -2973,9 +6723,6 @@ export interface WebSearchToolRequestError {
 }
 
 export interface WebSearchToolResultBlock {
-  /**
-   * Tool invocation directly from the model.
-   */
   caller: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 
   content: WebSearchToolResultBlockContent;
@@ -2999,9 +6746,6 @@ export interface WebSearchToolResultBlockParam {
    */
   cache_control?: CacheControlEphemeral | null;
 
-  /**
-   * Tool invocation directly from the model.
-   */
   caller?: DirectCaller | ServerToolCaller | ServerToolCaller20260120;
 }
 
@@ -3022,6 +6766,261 @@ export type WebSearchToolResultErrorCode =
   | 'too_many_requests'
   | 'query_too_long'
   | 'request_too_large';
+
+/**
+ * @deprecated ResponseToolUseBlockUnion has been renamed to ToolsetToolUseBlock
+ */
+export type ResponseToolUseBlockUnion = ToolsetToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserToolUseBlock has been renamed to BrowserToolUseBlock
+ */
+export type ResponseBrowserToolUseBlock = BrowserToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserCloseTabToolUseBlock has been renamed to BrowserCloseTabToolUseBlock
+ */
+export type ResponseBrowserCloseTabToolUseBlock = BrowserCloseTabToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserDoubleClickToolUseBlock has been renamed to BrowserDoubleClickToolUseBlock
+ */
+export type ResponseBrowserDoubleClickToolUseBlock = BrowserDoubleClickToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserFileUploadToolUseBlock has been renamed to BrowserFileUploadToolUseBlock
+ */
+export type ResponseBrowserFileUploadToolUseBlock = BrowserFileUploadToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserFindToolUseBlock has been renamed to BrowserFindToolUseBlock
+ */
+export type ResponseBrowserFindToolUseBlock = BrowserFindToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserFormInputToolUseBlock has been renamed to BrowserFormInputToolUseBlock
+ */
+export type ResponseBrowserFormInputToolUseBlock = BrowserFormInputToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserGetPageTextToolUseBlock has been renamed to BrowserGetPageTextToolUseBlock
+ */
+export type ResponseBrowserGetPageTextToolUseBlock = BrowserGetPageTextToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserHoldKeyToolUseBlock has been renamed to BrowserHoldKeyToolUseBlock
+ */
+export type ResponseBrowserHoldKeyToolUseBlock = BrowserHoldKeyToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserHoverToolUseBlock has been renamed to BrowserHoverToolUseBlock
+ */
+export type ResponseBrowserHoverToolUseBlock = BrowserHoverToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserJavascriptExecToolUseBlock has been renamed to BrowserJavascriptExecToolUseBlock
+ */
+export type ResponseBrowserJavascriptExecToolUseBlock = BrowserJavascriptExecToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserKeyToolUseBlock has been renamed to BrowserKeyToolUseBlock
+ */
+export type ResponseBrowserKeyToolUseBlock = BrowserKeyToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserLeftClickDragToolUseBlock has been renamed to BrowserLeftClickDragToolUseBlock
+ */
+export type ResponseBrowserLeftClickDragToolUseBlock = BrowserLeftClickDragToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserLeftClickToolUseBlock has been renamed to BrowserLeftClickToolUseBlock
+ */
+export type ResponseBrowserLeftClickToolUseBlock = BrowserLeftClickToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserLeftMouseDownToolUseBlock has been renamed to BrowserLeftMouseDownToolUseBlock
+ */
+export type ResponseBrowserLeftMouseDownToolUseBlock = BrowserLeftMouseDownToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserLeftMouseUpToolUseBlock has been renamed to BrowserLeftMouseUpToolUseBlock
+ */
+export type ResponseBrowserLeftMouseUpToolUseBlock = BrowserLeftMouseUpToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserListTabsToolUseBlock has been renamed to BrowserListTabsToolUseBlock
+ */
+export type ResponseBrowserListTabsToolUseBlock = BrowserListTabsToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserMiddleClickToolUseBlock has been renamed to BrowserMiddleClickToolUseBlock
+ */
+export type ResponseBrowserMiddleClickToolUseBlock = BrowserMiddleClickToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserMouseMoveToolUseBlock has been renamed to BrowserMouseMoveToolUseBlock
+ */
+export type ResponseBrowserMouseMoveToolUseBlock = BrowserMouseMoveToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserNavigateToolUseBlock has been renamed to BrowserNavigateToolUseBlock
+ */
+export type ResponseBrowserNavigateToolUseBlock = BrowserNavigateToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserNewTabToolUseBlock has been renamed to BrowserNewTabToolUseBlock
+ */
+export type ResponseBrowserNewTabToolUseBlock = BrowserNewTabToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserReadConsoleToolUseBlock has been renamed to BrowserReadConsoleToolUseBlock
+ */
+export type ResponseBrowserReadConsoleToolUseBlock = BrowserReadConsoleToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserReadNetworkToolUseBlock has been renamed to BrowserReadNetworkToolUseBlock
+ */
+export type ResponseBrowserReadNetworkToolUseBlock = BrowserReadNetworkToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserReadPageToolUseBlock has been renamed to BrowserReadPageToolUseBlock
+ */
+export type ResponseBrowserReadPageToolUseBlock = BrowserReadPageToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserRightClickToolUseBlock has been renamed to BrowserRightClickToolUseBlock
+ */
+export type ResponseBrowserRightClickToolUseBlock = BrowserRightClickToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserScreenshotToolUseBlock has been renamed to BrowserScreenshotToolUseBlock
+ */
+export type ResponseBrowserScreenshotToolUseBlock = BrowserScreenshotToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserScrollToToolUseBlock has been renamed to BrowserScrollToToolUseBlock
+ */
+export type ResponseBrowserScrollToToolUseBlock = BrowserScrollToToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserScrollToolUseBlock has been renamed to BrowserScrollToolUseBlock
+ */
+export type ResponseBrowserScrollToolUseBlock = BrowserScrollToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserSwitchTabToolUseBlock has been renamed to BrowserSwitchTabToolUseBlock
+ */
+export type ResponseBrowserSwitchTabToolUseBlock = BrowserSwitchTabToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserTripleClickToolUseBlock has been renamed to BrowserTripleClickToolUseBlock
+ */
+export type ResponseBrowserTripleClickToolUseBlock = BrowserTripleClickToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserTypeToolUseBlock has been renamed to BrowserTypeToolUseBlock
+ */
+export type ResponseBrowserTypeToolUseBlock = BrowserTypeToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserWaitToolUseBlock has been renamed to BrowserWaitToolUseBlock
+ */
+export type ResponseBrowserWaitToolUseBlock = BrowserWaitToolUseBlock;
+
+/**
+ * @deprecated ResponseBrowserZoomToolUseBlock has been renamed to BrowserZoomToolUseBlock
+ */
+export type ResponseBrowserZoomToolUseBlock = BrowserZoomToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerToolUseBlock has been renamed to ComputerToolUseBlock
+ */
+export type ResponseComputerToolUseBlock = ComputerToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerCursorPositionToolUseBlock has been renamed to ComputerCursorPositionToolUseBlock
+ */
+export type ResponseComputerCursorPositionToolUseBlock = ComputerCursorPositionToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerDoubleClickToolUseBlock has been renamed to ComputerDoubleClickToolUseBlock
+ */
+export type ResponseComputerDoubleClickToolUseBlock = ComputerDoubleClickToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerHoldKeyToolUseBlock has been renamed to ComputerHoldKeyToolUseBlock
+ */
+export type ResponseComputerHoldKeyToolUseBlock = ComputerHoldKeyToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerKeyToolUseBlock has been renamed to ComputerKeyToolUseBlock
+ */
+export type ResponseComputerKeyToolUseBlock = ComputerKeyToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerLeftClickDragToolUseBlock has been renamed to ComputerLeftClickDragToolUseBlock
+ */
+export type ResponseComputerLeftClickDragToolUseBlock = ComputerLeftClickDragToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerLeftClickToolUseBlock has been renamed to ComputerLeftClickToolUseBlock
+ */
+export type ResponseComputerLeftClickToolUseBlock = ComputerLeftClickToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerLeftMouseDownToolUseBlock has been renamed to ComputerLeftMouseDownToolUseBlock
+ */
+export type ResponseComputerLeftMouseDownToolUseBlock = ComputerLeftMouseDownToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerLeftMouseUpToolUseBlock has been renamed to ComputerLeftMouseUpToolUseBlock
+ */
+export type ResponseComputerLeftMouseUpToolUseBlock = ComputerLeftMouseUpToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerMiddleClickToolUseBlock has been renamed to ComputerMiddleClickToolUseBlock
+ */
+export type ResponseComputerMiddleClickToolUseBlock = ComputerMiddleClickToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerMouseMoveToolUseBlock has been renamed to ComputerMouseMoveToolUseBlock
+ */
+export type ResponseComputerMouseMoveToolUseBlock = ComputerMouseMoveToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerRightClickToolUseBlock has been renamed to ComputerRightClickToolUseBlock
+ */
+export type ResponseComputerRightClickToolUseBlock = ComputerRightClickToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerScreenshotToolUseBlock has been renamed to ComputerScreenshotToolUseBlock
+ */
+export type ResponseComputerScreenshotToolUseBlock = ComputerScreenshotToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerScrollToolUseBlock has been renamed to ComputerScrollToolUseBlock
+ */
+export type ResponseComputerScrollToolUseBlock = ComputerScrollToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerTripleClickToolUseBlock has been renamed to ComputerTripleClickToolUseBlock
+ */
+export type ResponseComputerTripleClickToolUseBlock = ComputerTripleClickToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerTypeToolUseBlock has been renamed to ComputerTypeToolUseBlock
+ */
+export type ResponseComputerTypeToolUseBlock = ComputerTypeToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerWaitToolUseBlock has been renamed to ComputerWaitToolUseBlock
+ */
+export type ResponseComputerWaitToolUseBlock = ComputerWaitToolUseBlock;
+
+/**
+ * @deprecated ResponseComputerZoomToolUseBlock has been renamed to ComputerZoomToolUseBlock
+ */
+export type ResponseComputerZoomToolUseBlock = ComputerZoomToolUseBlock;
 
 export type MessageStreamEvent = RawMessageStreamEvent;
 
@@ -3143,7 +7142,14 @@ export interface MessageCreateParamsBase {
   /**
    * Body param: Container identifier for reuse across requests.
    */
-  container?: string | null;
+  container?: MessageCreateParamsContainer | null;
+
+  /**
+   * Body param: Request-level diagnostics. Supply `previous_message_id` to have the
+   * response include `diagnostics.cache_miss_reason` explaining any prompt-cache
+   * divergence from that prior request.
+   */
+  diagnostics?: DiagnosticsParam | null;
 
   /**
    * Body param: Specifies the geographic region for inference processing. If not
@@ -3187,10 +7193,13 @@ export interface MessageCreateParamsBase {
 
   /**
    * Body param: Whether to incrementally stream the response using server-sent
-   * events.
+   * events. When `true`, SDKs return a raw event stream.
    *
-   * See [streaming](https://platform.claude.com/docs/en/build-with-claude/streaming)
-   * for details.
+   * In the TypeScript, Python and Ruby SDKs, the recommended way to stream is
+   * `messages.stream()`. It sets `stream` for you and accumulates the events into
+   * the final message. See
+   * [Streaming with SDKs](https://platform.claude.com/docs/en/build-with-claude/streaming#streaming-with-sdks)
+   * for an example in each language.
    */
   stream?: boolean;
 
@@ -3205,7 +7214,7 @@ export interface MessageCreateParamsBase {
 
   /**
    * @deprecated Deprecated. Models released after Claude Opus 4.6 do not support
-   * setting temperature. A value of 1.0 of will be accepted for backwards
+   * setting temperature. A value of 1.0 will be accepted for backwards
    * compatibility, all other values will be rejected with a 400 error.
    */
   temperature?: number;
@@ -3329,6 +7338,16 @@ export interface MessageCreateParamsBase {
    * beta header.
    */
   user_profile_id?: string;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export namespace MessageCreateParams {
@@ -3339,10 +7358,13 @@ export namespace MessageCreateParams {
 export interface MessageCreateParamsNonStreaming extends MessageCreateParamsBase {
   /**
    * Body param: Whether to incrementally stream the response using server-sent
-   * events.
+   * events. When `true`, SDKs return a raw event stream.
    *
-   * See [streaming](https://platform.claude.com/docs/en/build-with-claude/streaming)
-   * for details.
+   * In the TypeScript, Python and Ruby SDKs, the recommended way to stream is
+   * `messages.stream()`. It sets `stream` for you and accumulates the events into
+   * the final message. See
+   * [Streaming with SDKs](https://platform.claude.com/docs/en/build-with-claude/streaming#streaming-with-sdks)
+   * for an example in each language.
    */
   stream?: false;
 }
@@ -3350,10 +7372,13 @@ export interface MessageCreateParamsNonStreaming extends MessageCreateParamsBase
 export interface MessageCreateParamsStreaming extends MessageCreateParamsBase {
   /**
    * Body param: Whether to incrementally stream the response using server-sent
-   * events.
+   * events. When `true`, SDKs return a raw event stream.
    *
-   * See [streaming](https://platform.claude.com/docs/en/build-with-claude/streaming)
-   * for details.
+   * In the TypeScript, Python and Ruby SDKs, the recommended way to stream is
+   * `messages.stream()`. It sets `stream` for you and accumulates the events into
+   * the final message. See
+   * [Streaming with SDKs](https://platform.claude.com/docs/en/build-with-claude/streaming#streaming-with-sdks)
+   * for an example in each language.
    */
   stream: true;
 }
@@ -3566,6 +7591,16 @@ export interface MessageCountTokensParams {
    * beta header.
    */
   user_profile_id?: string;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 Messages.Batches = Batches;
@@ -3583,8 +7618,126 @@ export declare namespace Messages {
     type BashCodeExecutionToolResultError as BashCodeExecutionToolResultError,
     type BashCodeExecutionToolResultErrorCode as BashCodeExecutionToolResultErrorCode,
     type BashCodeExecutionToolResultErrorParam as BashCodeExecutionToolResultErrorParam,
+    type BrowserClickTarget as BrowserClickTarget,
+    type BrowserCloseTabConfig as BrowserCloseTabConfig,
+    type BrowserCloseTabInput as BrowserCloseTabInput,
+    type BrowserCloseTabToolUseBlock as BrowserCloseTabToolUseBlock,
+    type BrowserCoordinateTarget as BrowserCoordinateTarget,
+    type BrowserDoubleClickConfig as BrowserDoubleClickConfig,
+    type BrowserDoubleClickInput as BrowserDoubleClickInput,
+    type BrowserDoubleClickToolUseBlock as BrowserDoubleClickToolUseBlock,
+    type BrowserFileUploadConfig as BrowserFileUploadConfig,
+    type BrowserFileUploadInput as BrowserFileUploadInput,
+    type BrowserFileUploadToolUseBlock as BrowserFileUploadToolUseBlock,
+    type BrowserFindConfig as BrowserFindConfig,
+    type BrowserFindInput as BrowserFindInput,
+    type BrowserFindToolUseBlock as BrowserFindToolUseBlock,
+    type BrowserFormInputConfig as BrowserFormInputConfig,
+    type BrowserFormInputInput as BrowserFormInputInput,
+    type BrowserFormInputToolUseBlock as BrowserFormInputToolUseBlock,
+    type BrowserFormInputValue as BrowserFormInputValue,
+    type BrowserGetPageTextConfig as BrowserGetPageTextConfig,
+    type BrowserGetPageTextInput as BrowserGetPageTextInput,
+    type BrowserGetPageTextToolUseBlock as BrowserGetPageTextToolUseBlock,
+    type BrowserHoldKeyConfig as BrowserHoldKeyConfig,
+    type BrowserHoldKeyInput as BrowserHoldKeyInput,
+    type BrowserHoldKeyToolUseBlock as BrowserHoldKeyToolUseBlock,
+    type BrowserHoverConfig as BrowserHoverConfig,
+    type BrowserHoverInput as BrowserHoverInput,
+    type BrowserHoverToolUseBlock as BrowserHoverToolUseBlock,
+    type BrowserJavascriptExecConfig as BrowserJavascriptExecConfig,
+    type BrowserJavascriptExecInput as BrowserJavascriptExecInput,
+    type BrowserJavascriptExecToolUseBlock as BrowserJavascriptExecToolUseBlock,
+    type BrowserKeyConfig as BrowserKeyConfig,
+    type BrowserKeyInput as BrowserKeyInput,
+    type BrowserKeyToolUseBlock as BrowserKeyToolUseBlock,
+    type BrowserLeftClickConfig as BrowserLeftClickConfig,
+    type BrowserLeftClickDragConfig as BrowserLeftClickDragConfig,
+    type BrowserLeftClickDragInput as BrowserLeftClickDragInput,
+    type BrowserLeftClickDragToolUseBlock as BrowserLeftClickDragToolUseBlock,
+    type BrowserLeftClickInput as BrowserLeftClickInput,
+    type BrowserLeftClickToolUseBlock as BrowserLeftClickToolUseBlock,
+    type BrowserLeftMouseDownConfig as BrowserLeftMouseDownConfig,
+    type BrowserLeftMouseDownInput as BrowserLeftMouseDownInput,
+    type BrowserLeftMouseDownToolUseBlock as BrowserLeftMouseDownToolUseBlock,
+    type BrowserLeftMouseUpConfig as BrowserLeftMouseUpConfig,
+    type BrowserLeftMouseUpInput as BrowserLeftMouseUpInput,
+    type BrowserLeftMouseUpToolUseBlock as BrowserLeftMouseUpToolUseBlock,
+    type BrowserListTabsConfig as BrowserListTabsConfig,
+    type BrowserListTabsInput as BrowserListTabsInput,
+    type BrowserListTabsToolUseBlock as BrowserListTabsToolUseBlock,
+    type BrowserMemberInput as BrowserMemberInput,
+    type BrowserMemberName as BrowserMemberName,
+    type BrowserMiddleClickConfig as BrowserMiddleClickConfig,
+    type BrowserMiddleClickInput as BrowserMiddleClickInput,
+    type BrowserMiddleClickToolUseBlock as BrowserMiddleClickToolUseBlock,
+    type BrowserMouseMoveConfig as BrowserMouseMoveConfig,
+    type BrowserMouseMoveInput as BrowserMouseMoveInput,
+    type BrowserMouseMoveToolUseBlock as BrowserMouseMoveToolUseBlock,
+    type BrowserNavigateConfig as BrowserNavigateConfig,
+    type BrowserNavigateInput as BrowserNavigateInput,
+    type BrowserNavigateToolUseBlock as BrowserNavigateToolUseBlock,
+    type BrowserNewTabConfig as BrowserNewTabConfig,
+    type BrowserNewTabInput as BrowserNewTabInput,
+    type BrowserNewTabToolUseBlock as BrowserNewTabToolUseBlock,
+    type BrowserReadConsoleConfig as BrowserReadConsoleConfig,
+    type BrowserReadConsoleInput as BrowserReadConsoleInput,
+    type BrowserReadConsoleToolUseBlock as BrowserReadConsoleToolUseBlock,
+    type BrowserReadNetworkConfig as BrowserReadNetworkConfig,
+    type BrowserReadNetworkInput as BrowserReadNetworkInput,
+    type BrowserReadNetworkToolUseBlock as BrowserReadNetworkToolUseBlock,
+    type BrowserReadPageConfig as BrowserReadPageConfig,
+    type BrowserReadPageFilter as BrowserReadPageFilter,
+    type BrowserReadPageInput as BrowserReadPageInput,
+    type BrowserReadPageToolUseBlock as BrowserReadPageToolUseBlock,
+    type BrowserRefTarget as BrowserRefTarget,
+    type BrowserRightClickConfig as BrowserRightClickConfig,
+    type BrowserRightClickInput as BrowserRightClickInput,
+    type BrowserRightClickToolUseBlock as BrowserRightClickToolUseBlock,
+    type BrowserScreenshotConfig as BrowserScreenshotConfig,
+    type BrowserScreenshotInput as BrowserScreenshotInput,
+    type BrowserScreenshotToolUseBlock as BrowserScreenshotToolUseBlock,
+    type BrowserScrollConfig as BrowserScrollConfig,
+    type BrowserScrollDirection as BrowserScrollDirection,
+    type BrowserScrollInput as BrowserScrollInput,
+    type BrowserScrollToConfig as BrowserScrollToConfig,
+    type BrowserScrollToInput as BrowserScrollToInput,
+    type BrowserScrollToToolUseBlock as BrowserScrollToToolUseBlock,
+    type BrowserScrollToolUseBlock as BrowserScrollToolUseBlock,
+    type BrowserStateBlockParam as BrowserStateBlockParam,
+    type BrowserStateChange as BrowserStateChange,
+    type BrowserStateChangeDownloadCompleted as BrowserStateChangeDownloadCompleted,
+    type BrowserStateChangeDownloadFailed as BrowserStateChangeDownloadFailed,
+    type BrowserStateChangeDownloadStarted as BrowserStateChangeDownloadStarted,
+    type BrowserStateChangeTabOpened as BrowserStateChangeTabOpened,
+    type BrowserStateTabEntry as BrowserStateTabEntry,
+    type BrowserSwitchTabConfig as BrowserSwitchTabConfig,
+    type BrowserSwitchTabInput as BrowserSwitchTabInput,
+    type BrowserSwitchTabToolUseBlock as BrowserSwitchTabToolUseBlock,
+    type BrowserToolUseBlock as BrowserToolUseBlock,
+    type BrowserToolset20260801 as BrowserToolset20260801,
+    type BrowserToolsetConfigs as BrowserToolsetConfigs,
+    type BrowserTripleClickConfig as BrowserTripleClickConfig,
+    type BrowserTripleClickInput as BrowserTripleClickInput,
+    type BrowserTripleClickToolUseBlock as BrowserTripleClickToolUseBlock,
+    type BrowserTypeConfig as BrowserTypeConfig,
+    type BrowserTypeInput as BrowserTypeInput,
+    type BrowserTypeToolUseBlock as BrowserTypeToolUseBlock,
+    type BrowserWaitConfig as BrowserWaitConfig,
+    type BrowserWaitInput as BrowserWaitInput,
+    type BrowserWaitToolUseBlock as BrowserWaitToolUseBlock,
+    type BrowserZoomConfig as BrowserZoomConfig,
+    type BrowserZoomInput as BrowserZoomInput,
+    type BrowserZoomToolUseBlock as BrowserZoomToolUseBlock,
     type CacheControlEphemeral as CacheControlEphemeral,
     type CacheCreation as CacheCreation,
+    type CacheMissMessagesChanged as CacheMissMessagesChanged,
+    type CacheMissModelChanged as CacheMissModelChanged,
+    type CacheMissPreviousMessageNotFound as CacheMissPreviousMessageNotFound,
+    type CacheMissReason as CacheMissReason,
+    type CacheMissSystemChanged as CacheMissSystemChanged,
+    type CacheMissToolsChanged as CacheMissToolsChanged,
+    type CacheMissUnavailable as CacheMissUnavailable,
     type CitationCharLocation as CitationCharLocation,
     type CitationCharLocationParam as CitationCharLocationParam,
     type CitationContentBlockLocation as CitationContentBlockLocation,
@@ -3598,6 +7751,7 @@ export declare namespace Messages {
     type CitationsDelta as CitationsDelta,
     type CitationsSearchResultLocation as CitationsSearchResultLocation,
     type CitationsWebSearchResultLocation as CitationsWebSearchResultLocation,
+    type ClientToolUnion as ClientToolUnion,
     type CodeExecutionOutputBlock as CodeExecutionOutputBlock,
     type CodeExecutionOutputBlockParam as CodeExecutionOutputBlockParam,
     type CodeExecutionResultBlock as CodeExecutionResultBlock,
@@ -3613,7 +7767,66 @@ export declare namespace Messages {
     type CodeExecutionToolResultError as CodeExecutionToolResultError,
     type CodeExecutionToolResultErrorCode as CodeExecutionToolResultErrorCode,
     type CodeExecutionToolResultErrorParam as CodeExecutionToolResultErrorParam,
+    type ComputerCursorPositionConfig as ComputerCursorPositionConfig,
+    type ComputerCursorPositionInput as ComputerCursorPositionInput,
+    type ComputerCursorPositionToolUseBlock as ComputerCursorPositionToolUseBlock,
+    type ComputerDoubleClickConfig as ComputerDoubleClickConfig,
+    type ComputerDoubleClickInput as ComputerDoubleClickInput,
+    type ComputerDoubleClickToolUseBlock as ComputerDoubleClickToolUseBlock,
+    type ComputerHoldKeyConfig as ComputerHoldKeyConfig,
+    type ComputerHoldKeyInput as ComputerHoldKeyInput,
+    type ComputerHoldKeyToolUseBlock as ComputerHoldKeyToolUseBlock,
+    type ComputerKeyConfig as ComputerKeyConfig,
+    type ComputerKeyInput as ComputerKeyInput,
+    type ComputerKeyToolUseBlock as ComputerKeyToolUseBlock,
+    type ComputerLeftClickConfig as ComputerLeftClickConfig,
+    type ComputerLeftClickDragConfig as ComputerLeftClickDragConfig,
+    type ComputerLeftClickDragInput as ComputerLeftClickDragInput,
+    type ComputerLeftClickDragToolUseBlock as ComputerLeftClickDragToolUseBlock,
+    type ComputerLeftClickInput as ComputerLeftClickInput,
+    type ComputerLeftClickToolUseBlock as ComputerLeftClickToolUseBlock,
+    type ComputerLeftMouseDownConfig as ComputerLeftMouseDownConfig,
+    type ComputerLeftMouseDownInput as ComputerLeftMouseDownInput,
+    type ComputerLeftMouseDownToolUseBlock as ComputerLeftMouseDownToolUseBlock,
+    type ComputerLeftMouseUpConfig as ComputerLeftMouseUpConfig,
+    type ComputerLeftMouseUpInput as ComputerLeftMouseUpInput,
+    type ComputerLeftMouseUpToolUseBlock as ComputerLeftMouseUpToolUseBlock,
+    type ComputerMemberInput as ComputerMemberInput,
+    type ComputerMemberName as ComputerMemberName,
+    type ComputerMiddleClickConfig as ComputerMiddleClickConfig,
+    type ComputerMiddleClickInput as ComputerMiddleClickInput,
+    type ComputerMiddleClickToolUseBlock as ComputerMiddleClickToolUseBlock,
+    type ComputerMouseMoveConfig as ComputerMouseMoveConfig,
+    type ComputerMouseMoveInput as ComputerMouseMoveInput,
+    type ComputerMouseMoveToolUseBlock as ComputerMouseMoveToolUseBlock,
+    type ComputerRightClickConfig as ComputerRightClickConfig,
+    type ComputerRightClickInput as ComputerRightClickInput,
+    type ComputerRightClickToolUseBlock as ComputerRightClickToolUseBlock,
+    type ComputerScreenshotConfig as ComputerScreenshotConfig,
+    type ComputerScreenshotInput as ComputerScreenshotInput,
+    type ComputerScreenshotToolUseBlock as ComputerScreenshotToolUseBlock,
+    type ComputerScrollConfig as ComputerScrollConfig,
+    type ComputerScrollDirection as ComputerScrollDirection,
+    type ComputerScrollInput as ComputerScrollInput,
+    type ComputerScrollToolUseBlock as ComputerScrollToolUseBlock,
+    type ComputerToolUseBlock as ComputerToolUseBlock,
+    type ComputerToolset20260801 as ComputerToolset20260801,
+    type ComputerToolsetConfigs as ComputerToolsetConfigs,
+    type ComputerTripleClickConfig as ComputerTripleClickConfig,
+    type ComputerTripleClickInput as ComputerTripleClickInput,
+    type ComputerTripleClickToolUseBlock as ComputerTripleClickToolUseBlock,
+    type ComputerTypeConfig as ComputerTypeConfig,
+    type ComputerTypeInput as ComputerTypeInput,
+    type ComputerTypeToolUseBlock as ComputerTypeToolUseBlock,
+    type ComputerWaitConfig as ComputerWaitConfig,
+    type ComputerWaitInput as ComputerWaitInput,
+    type ComputerWaitToolUseBlock as ComputerWaitToolUseBlock,
+    type ComputerZoomConfig as ComputerZoomConfig,
+    type ComputerZoomInput as ComputerZoomInput,
+    type ComputerZoomToolUseBlock as ComputerZoomToolUseBlock,
     type Container as Container,
+    type ContainerParams as ContainerParams,
+    type ContainerSkill as ContainerSkill,
     type ContainerUploadBlock as ContainerUploadBlock,
     type ContainerUploadBlockParam as ContainerUploadBlockParam,
     type ContentBlock as ContentBlock,
@@ -3622,23 +7835,28 @@ export declare namespace Messages {
     type ContentBlockStopEvent as ContentBlockStopEvent,
     type ContentBlockSource as ContentBlockSource,
     type ContentBlockSourceContent as ContentBlockSourceContent,
+    type Diagnostics as Diagnostics,
+    type DiagnosticsParam as DiagnosticsParam,
     type DirectCaller as DirectCaller,
     type DocumentBlock as DocumentBlock,
     type DocumentBlockParam as DocumentBlockParam,
     type EncryptedCodeExecutionResultBlock as EncryptedCodeExecutionResultBlock,
     type EncryptedCodeExecutionResultBlockParam as EncryptedCodeExecutionResultBlockParam,
+    type FileDocumentSource as FileDocumentSource,
+    type FileImageSource as FileImageSource,
     type ImageBlockParam as ImageBlockParam,
+    type ImageTransformationsParam as ImageTransformationsParam,
     type InputJSONDelta as InputJSONDelta,
     type JSONOutputFormat as JSONOutputFormat,
     type MemoryTool20250818 as MemoryTool20250818,
     type Message as Message,
     type MessageCountTokensTool as MessageCountTokensTool,
+    type MessageCreateParamsContainer as MessageCreateParamsContainer,
     type MessageDeltaEvent as MessageDeltaEvent,
     type MessageDeltaUsage as MessageDeltaUsage,
     type MessageParam as MessageParam,
     type MessageTokensCount as MessageTokensCount,
     type Metadata as Metadata,
-    type MidConversationSystemBlockParam as MidConversationSystemBlockParam,
     type Model as Model,
     type OutputConfig as OutputConfig,
     type OutputTokensDetails as OutputTokensDetails,
@@ -3661,6 +7879,7 @@ export declare namespace Messages {
     type ServerToolUseBlock as ServerToolUseBlock,
     type ServerToolUseBlockParam as ServerToolUseBlockParam,
     type SignatureDelta as SignatureDelta,
+    type SkillParams as SkillParams,
     type StopReason as StopReason,
     type TextBlock as TextBlock,
     type TextBlockParam as TextBlockParam,
@@ -3681,6 +7900,7 @@ export declare namespace Messages {
     type ThinkingBlock as ThinkingBlock,
     type ThinkingBlockParam as ThinkingBlockParam,
     type ThinkingConfigAdaptive as ThinkingConfigAdaptive,
+    type ThinkingConfigBetweenTools as ThinkingConfigBetweenTools,
     type ThinkingConfigDisabled as ThinkingConfigDisabled,
     type ThinkingConfigEnabled as ThinkingConfigEnabled,
     type ThinkingConfigParam as ThinkingConfigParam,
@@ -3710,6 +7930,8 @@ export declare namespace Messages {
     type ToolUnion as ToolUnion,
     type ToolUseBlock as ToolUseBlock,
     type ToolUseBlockParam as ToolUseBlockParam,
+    type ToolUseCaller as ToolUseCaller,
+    type ToolsetToolUseBlock as ToolsetToolUseBlock,
     type URLImageSource as URLImageSource,
     type URLPDFSource as URLPDFSource,
     type Usage as Usage,
@@ -3725,6 +7947,12 @@ export declare namespace Messages {
     type WebFetchToolResultErrorBlock as WebFetchToolResultErrorBlock,
     type WebFetchToolResultErrorBlockParam as WebFetchToolResultErrorBlockParam,
     type WebFetchToolResultErrorCode as WebFetchToolResultErrorCode,
+    type WebFetchURLSourceAll as WebFetchURLSourceAll,
+    type WebFetchURLSourceExcept as WebFetchURLSourceExcept,
+    type WebFetchURLSourceNone as WebFetchURLSourceNone,
+    type WebFetchURLSourceOnly as WebFetchURLSourceOnly,
+    type WebFetchURLSourceToolReference as WebFetchURLSourceToolReference,
+    type WebFetchURLSources as WebFetchURLSources,
     type WebSearchResultBlock as WebSearchResultBlock,
     type WebSearchResultBlockParam as WebSearchResultBlockParam,
     type WebSearchTool20250305 as WebSearchTool20250305,
@@ -3736,6 +7964,57 @@ export declare namespace Messages {
     type WebSearchToolResultBlockParam as WebSearchToolResultBlockParam,
     type WebSearchToolResultBlockParamContent as WebSearchToolResultBlockParamContent,
     type WebSearchToolResultError as WebSearchToolResultError,
+    type ResponseToolUseBlockUnion as ResponseToolUseBlockUnion,
+    type ResponseBrowserToolUseBlock as ResponseBrowserToolUseBlock,
+    type ResponseBrowserCloseTabToolUseBlock as ResponseBrowserCloseTabToolUseBlock,
+    type ResponseBrowserDoubleClickToolUseBlock as ResponseBrowserDoubleClickToolUseBlock,
+    type ResponseBrowserFileUploadToolUseBlock as ResponseBrowserFileUploadToolUseBlock,
+    type ResponseBrowserFindToolUseBlock as ResponseBrowserFindToolUseBlock,
+    type ResponseBrowserFormInputToolUseBlock as ResponseBrowserFormInputToolUseBlock,
+    type ResponseBrowserGetPageTextToolUseBlock as ResponseBrowserGetPageTextToolUseBlock,
+    type ResponseBrowserHoldKeyToolUseBlock as ResponseBrowserHoldKeyToolUseBlock,
+    type ResponseBrowserHoverToolUseBlock as ResponseBrowserHoverToolUseBlock,
+    type ResponseBrowserJavascriptExecToolUseBlock as ResponseBrowserJavascriptExecToolUseBlock,
+    type ResponseBrowserKeyToolUseBlock as ResponseBrowserKeyToolUseBlock,
+    type ResponseBrowserLeftClickDragToolUseBlock as ResponseBrowserLeftClickDragToolUseBlock,
+    type ResponseBrowserLeftClickToolUseBlock as ResponseBrowserLeftClickToolUseBlock,
+    type ResponseBrowserLeftMouseDownToolUseBlock as ResponseBrowserLeftMouseDownToolUseBlock,
+    type ResponseBrowserLeftMouseUpToolUseBlock as ResponseBrowserLeftMouseUpToolUseBlock,
+    type ResponseBrowserListTabsToolUseBlock as ResponseBrowserListTabsToolUseBlock,
+    type ResponseBrowserMiddleClickToolUseBlock as ResponseBrowserMiddleClickToolUseBlock,
+    type ResponseBrowserMouseMoveToolUseBlock as ResponseBrowserMouseMoveToolUseBlock,
+    type ResponseBrowserNavigateToolUseBlock as ResponseBrowserNavigateToolUseBlock,
+    type ResponseBrowserNewTabToolUseBlock as ResponseBrowserNewTabToolUseBlock,
+    type ResponseBrowserReadConsoleToolUseBlock as ResponseBrowserReadConsoleToolUseBlock,
+    type ResponseBrowserReadNetworkToolUseBlock as ResponseBrowserReadNetworkToolUseBlock,
+    type ResponseBrowserReadPageToolUseBlock as ResponseBrowserReadPageToolUseBlock,
+    type ResponseBrowserRightClickToolUseBlock as ResponseBrowserRightClickToolUseBlock,
+    type ResponseBrowserScreenshotToolUseBlock as ResponseBrowserScreenshotToolUseBlock,
+    type ResponseBrowserScrollToToolUseBlock as ResponseBrowserScrollToToolUseBlock,
+    type ResponseBrowserScrollToolUseBlock as ResponseBrowserScrollToolUseBlock,
+    type ResponseBrowserSwitchTabToolUseBlock as ResponseBrowserSwitchTabToolUseBlock,
+    type ResponseBrowserTripleClickToolUseBlock as ResponseBrowserTripleClickToolUseBlock,
+    type ResponseBrowserTypeToolUseBlock as ResponseBrowserTypeToolUseBlock,
+    type ResponseBrowserWaitToolUseBlock as ResponseBrowserWaitToolUseBlock,
+    type ResponseBrowserZoomToolUseBlock as ResponseBrowserZoomToolUseBlock,
+    type ResponseComputerToolUseBlock as ResponseComputerToolUseBlock,
+    type ResponseComputerCursorPositionToolUseBlock as ResponseComputerCursorPositionToolUseBlock,
+    type ResponseComputerDoubleClickToolUseBlock as ResponseComputerDoubleClickToolUseBlock,
+    type ResponseComputerHoldKeyToolUseBlock as ResponseComputerHoldKeyToolUseBlock,
+    type ResponseComputerKeyToolUseBlock as ResponseComputerKeyToolUseBlock,
+    type ResponseComputerLeftClickDragToolUseBlock as ResponseComputerLeftClickDragToolUseBlock,
+    type ResponseComputerLeftClickToolUseBlock as ResponseComputerLeftClickToolUseBlock,
+    type ResponseComputerLeftMouseDownToolUseBlock as ResponseComputerLeftMouseDownToolUseBlock,
+    type ResponseComputerLeftMouseUpToolUseBlock as ResponseComputerLeftMouseUpToolUseBlock,
+    type ResponseComputerMiddleClickToolUseBlock as ResponseComputerMiddleClickToolUseBlock,
+    type ResponseComputerMouseMoveToolUseBlock as ResponseComputerMouseMoveToolUseBlock,
+    type ResponseComputerRightClickToolUseBlock as ResponseComputerRightClickToolUseBlock,
+    type ResponseComputerScreenshotToolUseBlock as ResponseComputerScreenshotToolUseBlock,
+    type ResponseComputerScrollToolUseBlock as ResponseComputerScrollToolUseBlock,
+    type ResponseComputerTripleClickToolUseBlock as ResponseComputerTripleClickToolUseBlock,
+    type ResponseComputerTypeToolUseBlock as ResponseComputerTypeToolUseBlock,
+    type ResponseComputerWaitToolUseBlock as ResponseComputerWaitToolUseBlock,
+    type ResponseComputerZoomToolUseBlock as ResponseComputerZoomToolUseBlock,
     type MessageStreamEvent as MessageStreamEvent,
     type MessageStartEvent as MessageStartEvent,
     type MessageStopEvent as MessageStopEvent,
@@ -3760,6 +8039,10 @@ export declare namespace Messages {
     type MessageBatchSucceededResult as MessageBatchSucceededResult,
     type MessageBatchesPage as MessageBatchesPage,
     type BatchCreateParams as BatchCreateParams,
+    type BatchRetrieveParams as BatchRetrieveParams,
     type BatchListParams as BatchListParams,
+    type BatchDeleteParams as BatchDeleteParams,
+    type BatchCancelParams as BatchCancelParams,
+    type BatchResultsParams as BatchResultsParams,
   };
 }

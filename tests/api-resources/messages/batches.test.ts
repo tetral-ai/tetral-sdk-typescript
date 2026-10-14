@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import { mockFetch } from '../../lib/mock-fetch';
 
 const client = new Anthropic({
@@ -17,7 +15,7 @@ describe('resource batches', () => {
           params: {
             max_tokens: 1024,
             messages: [{ content: 'Hello, world', role: 'user' }],
-            model: 'claude-opus-4-6',
+            model: 'claude-opus-5',
           },
         },
       ],
@@ -39,9 +37,19 @@ describe('resource batches', () => {
           params: {
             max_tokens: 1024,
             messages: [{ content: 'Hello, world', role: 'user' }],
-            model: 'claude-opus-4-6',
+            model: 'claude-opus-5',
             cache_control: { type: 'ephemeral', ttl: '5m' },
-            container: 'container',
+            container: {
+              id: 'id',
+              skills: [
+                {
+                  skill_id: 'pdf',
+                  type: 'anthropic',
+                  version: 'latest',
+                },
+              ],
+            },
+            diagnostics: { previous_message_id: 'previous_message_id' },
             inference_geo: 'inference_geo',
             metadata: { user_id: '13803d75-b4b5-4c3e-b2a2-6f21399b021b' },
             output_config: {
@@ -61,7 +69,7 @@ describe('resource batches', () => {
                 cache_control: { type: 'ephemeral', ttl: '5m' },
                 citations: [
                   {
-                    cited_text: 'cited_text',
+                    cited_text: 'The grass is green. The sky is blue.',
                     document_index: 0,
                     document_title: 'x',
                     end_char_index: 0,
@@ -98,6 +106,7 @@ describe('resource batches', () => {
         },
       ],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -110,6 +119,17 @@ describe('resource batches', () => {
     const dataAndResponse = await responsePromise.withResponse();
     expect(dataAndResponse.data).toBe(response);
     expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('retrieve: request options and params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      client.messages.batches.retrieve(
+        'message_batch_id',
+        { workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
+        { path: '/_stainless_unknown_path' },
+      ),
+    ).rejects.toThrow(Anthropic.NotFoundError);
   });
 
   test('list', async () => {
@@ -131,6 +151,7 @@ describe('resource batches', () => {
           after_id: 'after_id',
           before_id: 'before_id',
           limit: 1,
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -148,6 +169,17 @@ describe('resource batches', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
+  test('delete: request options and params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      client.messages.batches.delete(
+        'message_batch_id',
+        { workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
+        { path: '/_stainless_unknown_path' },
+      ),
+    ).rejects.toThrow(Anthropic.NotFoundError);
+  });
+
   test('cancel', async () => {
     const responsePromise = client.messages.batches.cancel('message_batch_id');
     const rawResponse = await responsePromise.asResponse();
@@ -157,6 +189,17 @@ describe('resource batches', () => {
     const dataAndResponse = await responsePromise.withResponse();
     expect(dataAndResponse.data).toBe(response);
     expect(dataAndResponse.response).toBe(rawResponse);
+  });
+
+  test('cancel: request options and params are passed correctly', async () => {
+    // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
+    await expect(
+      client.messages.batches.cancel(
+        'message_batch_id',
+        { workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
+        { path: '/_stainless_unknown_path' },
+      ),
+    ).rejects.toThrow(Anthropic.NotFoundError);
   });
 
   test('results', async () => {
@@ -191,10 +234,14 @@ describe('resource batches', () => {
     expect(response).not.toBeInstanceOf(Response);
   });
 
-  test('cancel: request options instead of params are passed correctly', async () => {
+  test('results: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
-      client.messages.batches.cancel('message_batch_id', { path: '/_stainless_unknown_path' }),
+      client.messages.batches.results(
+        'message_batch_id',
+        { workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
+        { path: '/_stainless_unknown_path' },
+      ),
     ).rejects.toThrow(Anthropic.NotFoundError);
   });
 });

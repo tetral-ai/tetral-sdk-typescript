@@ -5,7 +5,7 @@ import type {
   BetaEnvironment,
   BetaEnvironmentDeleteResponse,
 } from '@tetral-ai/sdk/resources/beta/environments';
-import type { FileMetadata } from '@tetral-ai/sdk/resources/beta/files';
+import type { BetaFileMetadata } from '@tetral-ai/sdk/resources/beta/files';
 import type {
   BetaManagedAgentsMemory,
   BetaManagedAgentsMemoryListItem,
@@ -29,8 +29,8 @@ import type {
 } from '@tetral-ai/sdk/resources/beta/sessions/events';
 import type { BetaManagedAgentsStreamSessionThreadEvents } from '@tetral-ai/sdk/resources/beta/sessions/threads';
 import type { BetaManagedAgentsSessionThread } from '@tetral-ai/sdk/resources/beta/sessions/threads';
-import type { SkillCreateResponse } from '@tetral-ai/sdk/resources/beta/skills';
-import type { VersionCreateResponse } from '@tetral-ai/sdk/resources/beta/skills/versions';
+import type { BetaSkill } from '@tetral-ai/sdk/resources/beta/skills';
+import type { BetaSkillVersion } from '@tetral-ai/sdk/resources/beta/skills/versions';
 import type {
   BetaManagedAgentsCredential,
   BetaManagedAgentsVault,
@@ -182,7 +182,7 @@ function assertThread(thread: BetaManagedAgentsSessionThread): void {
   expectField(thread.usage, 'usage');
 }
 
-function assertFile(file: FileMetadata): void {
+function assertFile(file: BetaFileMetadata): void {
   expectField(file.id, 'id');
   expectField(file.created_at, 'created_at');
   expectField(file.filename, 'filename');
@@ -234,25 +234,23 @@ function assertDeletedEnvironment(deleted: BetaEnvironmentDeleteResponse): void 
   expect(deleted.type).toBe('environment_deleted');
 }
 
-function assertSkill(skill: SkillCreateResponse): void {
+function assertSkill(skill: BetaSkill): void {
   expectField(skill.id, 'id');
   expectField(skill.created_at, 'created_at');
-  expectField(skill.display_title, 'display_title');
-  expectField(skill.latest_version, 'latest_version');
-  expectField(skill.source, 'source');
+  expectField(skill.display_name, 'display_name');
+  expectField(skill.latest_version_id, 'latest_version_id');
+  expect(skill.source.type).toBe('custom');
   expectField(skill.type, 'type');
   expectField(skill.updated_at, 'updated_at');
 }
 
-function assertSkillVersion(version: VersionCreateResponse): void {
+function assertSkillVersion(version: BetaSkillVersion): void {
   expectField(version.id, 'id');
   expectField(version.created_at, 'created_at');
   expectField(version.description, 'description');
-  expectField(version.directory, 'directory');
   expectField(version.name, 'name');
   expectField(version.skill_id, 'skill_id');
   expectField(version.type, 'type');
-  expectField(version.version, 'version');
 }
 
 function assertMemoryStore(store: BetaManagedAgentsMemoryStore): void {
@@ -301,10 +299,11 @@ function assertMemoryVersion(version: BetaManagedAgentsMemoryVersion): void {
   expectField(version.redacted_by, 'redacted_by');
 }
 
-async function expectInvalidRequest(promise: Promise<unknown>): Promise<void> {
+async function expectInvalidRequest(promise: Promise<unknown>, reason?: string): Promise<void> {
   await expect(promise).rejects.toMatchObject({
     status: 400,
     type: 'invalid_request_error',
+    ...(reason ? { message: expect.stringContaining(reason) } : {}),
   } satisfies Partial<APIError>);
 }
 
@@ -329,9 +328,7 @@ async function createEnvironmentAndAgent(client: Anthropic): Promise<{
   return { environment, agent };
 }
 
-describeIntegration('Tetral live integration suite', () => {
-  jest.setTimeout(120_000);
-
+describeIntegration('Tetral live integration suite', { timeout: 120_000 }, () => {
   test('vaults and all supported credential auth variants', async () => {
     const client = integrationClient();
     const vault = await client.beta.vaults.create({ display_name: `integration-vault-${Date.now()}` });
@@ -509,7 +506,16 @@ describeIntegration('Tetral live integration suite', () => {
     });
     assertFile(file);
     assertFile(await client.beta.files.retrieveMetadata(file.id));
-    assertFile(await firstPageItem(client.beta.files.list({ limit: 1 })));
+    const secondFile = await client.beta.files.upload({
+      file: await toFile(Buffer.from('city,revenue\nNYC,7\n'), 'integration-page.csv'),
+    });
+    const listedFileIDs: string[] = [];
+    for await (const listed of client.beta.files.list({ limit: 1 })) {
+      assertFile(listed);
+      listedFileIDs.push(listed.id);
+    }
+    expect(new Set(listedFileIDs).size).toBe(listedFileIDs.length);
+    expect(listedFileIDs).toEqual(expect.arrayContaining([file.id, secondFile.id]));
     const resource = await client.beta.sessions.resources.add(lifecycleSession.id, {
       type: 'file',
       file_id: file.id,
@@ -581,7 +587,7 @@ describeIntegration('Tetral live integration suite', () => {
       'integration/SKILL.md',
     );
     const skill = await client.beta.skills.create({
-      display_title: `integration-skill-${Date.now()}`,
+      display_name: `integration-skill-${Date.now()}`,
       files: [skillFile],
     });
     assertSkill(skill);
@@ -598,8 +604,21 @@ describeIntegration('Tetral live integration suite', () => {
       files: [versionFile],
     });
     assertSkillVersion(version);
-    assertSkillVersion(await client.beta.skills.versions.retrieve(version.version, { skill_id: skill.id }));
+    assertSkillVersion(await client.beta.skills.versions.retrieve(version.id, { skill_id: skill.id }));
     assertSkillVersion(await firstPageItem(client.beta.skills.versions.list(skill.id, { limit: 1 })));
+    expect((await client.beta.skills.versions.retrieve('latest', { skill_id: skill.id })).id).toBe(
+      version.id,
+    );
+    await client.beta.skills.versions.delete(version.id, { skill_id: skill.id });
+    expect((await client.beta.skills.retrieve(skill.id)).latest_version_id).toBe(skill.latest_version_id);
+    await expectInvalidRequest(
+      client.beta.skills.versions.delete(skill.latest_version_id, { skill_id: skill.id }),
+      'last version',
+    );
+    expect((await client.beta.skills.delete(skill.id)).type).toBe('skill_deleted');
+    await expect(
+      client.beta.skills.versions.retrieve(skill.latest_version_id, { skill_id: skill.id }),
+    ).rejects.toMatchObject({ status: 404 });
   });
 
   test('memory stores, memories, and memory versions', async () => {
@@ -809,19 +828,26 @@ describeIntegration('Tetral live integration suite', () => {
       }),
     );
 
+    const validAgentRequest = {
+      name: 'admission baseline',
+      model: 'anthropic/claude-opus-4-8',
+      tools: [{ type: 'tetral_agent_toolset' as const, family: 'claude' as const }],
+    };
+    assertAgent(await client.beta.agents.create(validAgentRequest));
+
     await expectInvalidRequest(
       client.beta.agents.create({
-        name: 'legacy toolset reject case',
-        model: 'anthropic/claude-opus-4-8',
-        tools: [{ type: 'agent_toolset_20260401' }],
+        ...validAgentRequest,
+        tools: [...validAgentRequest.tools, { type: 'agent_toolset_20260401' }],
       }),
+      'tools[1].type is unsupported',
     );
 
     await expectInvalidRequest(
       client.beta.agents.create({
-        name: 'custom tool reject case',
-        model: 'anthropic/claude-opus-4-8',
+        ...validAgentRequest,
         tools: [
+          ...validAgentRequest.tools,
           {
             type: 'custom',
             name: 'lookup',
@@ -830,14 +856,15 @@ describeIntegration('Tetral live integration suite', () => {
           },
         ],
       }),
+      'tools[1].type custom tools are not supported',
     );
 
     await expectInvalidRequest(
       client.beta.agents.create({
-        name: 'multiagent reject case',
-        model: 'anthropic/claude-opus-4-8',
+        ...validAgentRequest,
         multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
       }),
+      'multiagent must be null when provided',
     );
   });
 });

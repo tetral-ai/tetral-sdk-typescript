@@ -11,38 +11,143 @@ import {
   betaGlobTool,
   betaGrepTool,
   BashSession,
+  BashTimeoutError,
   type AgentToolContext,
-} from '@tetral-ai/sdk/tools/agent-toolset/node';
-import type { BetaRunnableTool } from '@tetral-ai/sdk/lib/tools/BetaRunnableTool';
+} from '@anthropic-ai/sdk/tools/agent-toolset/node';
+import { AnthropicError } from '@anthropic-ai/sdk';
+import type { BetaRunnableTool } from '@anthropic-ai/sdk/lib/tools/BetaRunnableTool';
+import { ToolError } from '@anthropic-ai/sdk/lib/tools/ToolError';
 
 function tmpdir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'runner-test-'));
 }
 
 const testPosix = process.platform === 'win32' ? test.skip : test;
+const describePosix = process.platform === 'win32' ? describe.skip : describe;
 
-// F1 / PATH-13: a cycle of dangling symlinks (which `realpath` cannot resolve)
-// must terminate at the canonicalize hop cap, not spin forever.
-(process.platform === 'win32' ? describe.skip : describe)('canonicalize symlink-loop bound', () => {
+// F1 / PATH-13: a cycle of symlinks (which `realpath` cannot resolve) must be
+// rejected at resolve time — never spin, never fall back to the unresolved
+// path, and never let a lexical `..` after the loop reach an outside file.
+describePosix('canonicalize symlink-loop bound', () => {
   let dir: string;
+  let outside: string;
+  const FIXTURE = ['L', 'evil_link', 'loop_a', 'loop_b', 'self'];
   beforeEach(() => {
     dir = tmpdir();
+    outside = tmpdir();
+    fs.writeFileSync(path.join(outside, 'secret.txt'), 'SECRET');
     fs.symlinkSync(path.join(dir, 'loop_b'), path.join(dir, 'loop_a'));
     fs.symlinkSync(path.join(dir, 'loop_a'), path.join(dir, 'loop_b'));
+    fs.symlinkSync('self', path.join(dir, 'self'));
+    fs.symlinkSync(path.join(outside, 'secret.txt'), path.join(dir, 'evil_link'));
+    fs.symlinkSync('loop_a/../evil_link', path.join(dir, 'L'));
   });
-  afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
+  });
 
-  test('resolvePath on a symlink loop throws instead of spinning', async () => {
-    await expect(resolvePath({ workdir: dir }, 'loop_a')).rejects.toThrow(
-      /too many levels of symbolic links/,
-    );
-  }, 2000);
+  for (const p of ['loop_a', 'loop_a/child.txt', 'self', 'self/x']) {
+    test(`resolvePath(${JSON.stringify(p)}) rejects with the loop error and no host path`, async () => {
+      const err = await resolvePath({ workdir: dir }, p).catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(ToolError);
+      expect((err as Error).message).toBe(`path ${JSON.stringify(p)}: too many levels of symbolic links`);
+      expect((err as Error).message).not.toContain(dir);
+    }, 2000);
+  }
 
-  test('resolvePath on a path under a symlink loop also throws', async () => {
-    await expect(resolvePath({ workdir: dir }, 'loop_a/child.txt')).rejects.toThrow(
-      /too many levels of symbolic links/,
+  test('a lexical .. after a looping component is collapsed first, so the escape is still caught', async () => {
+    await expect(resolvePath({ workdir: dir }, 'loop_a/../evil_link')).rejects.toThrow(
+      /is outside the session's working directory/,
     );
-  }, 2000);
+    await expect(resolvePath({ workdir: dir }, 'self/../evil_link')).rejects.toThrow(
+      /is outside the session's working directory/,
+    );
+    await expect(resolvePath({ workdir: dir }, 'L')).rejects.toThrow(
+      /too many levels of symbolic links|is outside the session's working directory/,
+    );
+  });
+
+  test('read of a looping path reports the loop and never returns outside content', async () => {
+    const read = betaReadTool({ workdir: dir });
+    await expect(read.run({ file_path: 'loop_a' })).rejects.toThrow(
+      new ToolError('path "loop_a": too many levels of symbolic links'),
+    );
+    for (const p of ['loop_a/../evil_link', 'L']) {
+      const err = await Promise.resolve(read.run({ file_path: p })).then(
+        (out) => new Error(`unexpectedly read ${String(out).length} bytes`),
+        (e: unknown) => e,
+      );
+      expect(err).toBeInstanceOf(ToolError);
+      expect((err as Error).message).not.toContain('SECRET');
+    }
+  });
+
+  test('write under a looping path is rejected before anything is created', async () => {
+    await expect(
+      betaWriteTool({ workdir: dir }).run({ file_path: 'loop_a/child.txt', content: 'x' }),
+    ).rejects.toThrow(/too many levels of symbolic links/);
+    expect(fs.readdirSync(dir).sort()).toEqual(FIXTURE);
+  });
+
+  test('glob silently drops looping entries and still lists regular files', async () => {
+    fs.writeFileSync(path.join(dir, 'ok.txt'), 'ok');
+    const out = await betaGlobTool({ workdir: dir }).run({ pattern: '*' });
+    expect(String(out).split('\n')).toEqual([path.join(dir, 'ok.txt')]);
+  });
+});
+
+describePosix('resolvePath symlink regressions', () => {
+  let dir: string;
+  let outside: string;
+  beforeEach(() => {
+    dir = tmpdir();
+    outside = tmpdir();
+    fs.writeFileSync(path.join(outside, 'secret.txt'), 'SECRET');
+  });
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(outside, { recursive: true, force: true });
+  });
+
+  test('write through a dangling in-workdir symlink creates the target and its missing parents', async () => {
+    fs.symlinkSync(path.join(dir, 'newdir', 'f.txt'), path.join(dir, 'd'));
+    await betaWriteTool({ workdir: dir }).run({ file_path: 'd', content: 'via-link' });
+    expect(fs.readFileSync(path.join(dir, 'newdir', 'f.txt'), 'utf8')).toBe('via-link');
+  });
+
+  test('read follows a short in-workdir symlink chain to its final target', async () => {
+    fs.writeFileSync(path.join(dir, 'real.txt'), 'chained');
+    fs.symlinkSync('real.txt', path.join(dir, 'c2'));
+    fs.symlinkSync('c2', path.join(dir, 'c1'));
+    fs.symlinkSync('c1', path.join(dir, 'c0'));
+    expect(await betaReadTool({ workdir: dir }).run({ file_path: 'c0' })).toBe('chained');
+  });
+
+  test('live and dangling symlinks pointing outside the workdir are both rejected', async () => {
+    fs.symlinkSync(path.join(outside, 'secret.txt'), path.join(dir, 'out'));
+    fs.symlinkSync(path.join(outside, 'nope'), path.join(dir, 'dangle_out'));
+    await expect(resolvePath({ workdir: dir }, 'out')).rejects.toThrow(
+      /is outside the session's working directory/,
+    );
+    await expect(resolvePath({ workdir: dir }, 'dangle_out')).rejects.toThrow(
+      /is outside the session's working directory/,
+    );
+  });
+
+  test('an unreadable directory is reported as permission denied without the host path', async () => {
+    if (process.getuid?.() === 0) return;
+    fs.mkdirSync(path.join(dir, 'noperm'), { mode: 0o000 });
+    try {
+      const err = await Promise.resolve(betaReadTool({ workdir: dir }).run({ file_path: 'noperm/x' })).catch(
+        (e: unknown) => e,
+      );
+      expect(err).toBeInstanceOf(ToolError);
+      expect((err as Error).message).toBe('path "noperm/x": permission denied');
+    } finally {
+      fs.chmodSync(path.join(dir, 'noperm'), 0o755);
+    }
+  });
 });
 
 describe('betaAgentToolset20260401', () => {
@@ -68,17 +173,16 @@ describe('resolvePath', () => {
         want: path.resolve(root, 'a/b.txt'),
       },
       {
-        description: 'dot-dot that escapes the workdir is rejected when unrestrictedPaths is false',
+        description: 'dot-dot that escapes the workdir is rejected',
         env: { workdir: root },
         p: '../etc/passwd',
-        wantErr: /escapes workdir/,
+        wantErr: /is outside the session's working directory/,
       },
       {
-        description:
-          'absolute path outside workdir is rejected by default so the jail is the explicit opt-out',
+        description: 'absolute path outside workdir is rejected',
         env: { workdir: root },
         p: '/etc/passwd',
-        wantErr: /escapes workdir/,
+        wantErr: /is outside the session's working directory/,
       },
       {
         description: 'absolute path inside workdir is permitted by default',
@@ -93,16 +197,10 @@ describe('resolvePath', () => {
         want: root,
       },
       {
-        description: 'absolute path is allowed when unrestrictedPaths is set',
-        env: { workdir: root, unrestrictedPaths: true },
-        p: '/etc/passwd',
-        want: '/etc/passwd',
-      },
-      {
         description: 'sibling directory with a shared prefix (work vs workdir2) is correctly rejected',
         env: { workdir: '/tmp/work' },
         p: '../work2/file',
-        wantErr: /escapes workdir/,
+        wantErr: /is outside the session's working directory/,
       },
       {
         description: 'dot-dot that stays inside the workdir after normalisation is permitted',
@@ -123,6 +221,113 @@ describe('resolvePath', () => {
   }
 });
 
+describe('resolvePath with allowedRoots', () => {
+  let tmp: string;
+  let work: string;
+  let mount: string;
+  const OUTSIDE_ALL = /outside the session's working directory and its other permitted directories/;
+
+  beforeEach(() => {
+    tmp = fs.realpathSync(tmpdir());
+    work = path.join(tmp, 'work');
+    mount = path.join(tmp, 'mount');
+    fs.mkdirSync(work);
+    fs.mkdirSync(mount);
+  });
+  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  test('a path under an allowed root is accepted, by absolute path', async () => {
+    const ctx: AgentToolContext = { workdir: work, allowedRoots: [mount] };
+    await expect(resolvePath(ctx, path.join(mount, 'note.md'))).resolves.toBe(path.join(mount, 'note.md'));
+    await expect(resolvePath(ctx, 'inside.txt')).resolves.toBe(path.join(work, 'inside.txt'));
+  });
+
+  test('a path outside the workdir and every allowed root is rejected with the long message', async () => {
+    const ctx: AgentToolContext = { workdir: work, allowedRoots: [mount] };
+    await expect(resolvePath(ctx, path.join(tmp, 'elsewhere', 'x'))).rejects.toThrow(OUTSIDE_ALL);
+    await expect(resolvePath(ctx, '../elsewhere/x')).rejects.toThrow(OUTSIDE_ALL);
+  });
+
+  test('without allowedRoots the message names only the working directory', async () => {
+    const err = await resolvePath({ workdir: work }, path.join(mount, 'note.md')).catch((e: Error) => e);
+    expect(String(err)).toMatch(/is outside the session's working directory/);
+    expect(String(err)).not.toMatch(/other permitted directories/);
+  });
+
+  testPosix('a symlink out of an allowed root is rejected', async () => {
+    fs.symlinkSync('/etc/passwd', path.join(mount, 'leak'));
+    const ctx: AgentToolContext = { workdir: work, allowedRoots: [mount] };
+    await expect(resolvePath(ctx, path.join(mount, 'leak'))).rejects.toThrow(OUTSIDE_ALL);
+  });
+
+  testPosix('an allowed root under a symlinked ancestor is reachable, existing or not', async () => {
+    const real = path.join(tmp, 'real');
+    const via = path.join(tmp, 'via');
+    fs.mkdirSync(path.join(real, 'store'), { recursive: true });
+    fs.symlinkSync(real, via, 'dir');
+    const ctx: AgentToolContext = {
+      workdir: work,
+      allowedRoots: [path.join(via, 'store'), path.join(via, 'newstore')],
+    };
+    await expect(resolvePath(ctx, path.join(via, 'store', 'a.md'))).resolves.toBe(
+      path.join(real, 'store', 'a.md'),
+    );
+    await expect(resolvePath(ctx, path.join(via, 'newstore', 'b.md'))).resolves.toBe(
+      path.join(real, 'newstore', 'b.md'),
+    );
+  });
+});
+
+describe('unrestrictedPaths deprecation', () => {
+  const factories = {
+    betaAgentToolset20260401,
+    betaBashTool,
+    betaReadTool,
+    betaWriteTool,
+    betaEditTool,
+    betaGlobTool,
+    betaGrepTool,
+  };
+  const GUIDANCE = /unrestrictedPaths[\s\S]*is no longer supported[\s\S]*allowedRoots/;
+  const cases = Object.entries(factories).flatMap(([name, factory]) =>
+    [true, false].map((value) => [name, value, factory] as const),
+  );
+
+  test.each(cases)('%s rejects unrestrictedPaths=%s with guidance', (_name, value, factory) => {
+    const construct = () => factory({ workdir: '/tmp/work', unrestrictedPaths: value });
+    expect(construct).toThrow(AnthropicError);
+    expect(construct).toThrow(GUIDANCE);
+  });
+
+  test('resolvePath rejects a context still carrying unrestrictedPaths, including one mutated after construction', async () => {
+    await expect(resolvePath({ workdir: '/tmp/work', unrestrictedPaths: true }, 'a')).rejects.toThrow(
+      GUIDANCE,
+    );
+    const ctx: AgentToolContext = { workdir: '/tmp/work' };
+    const read = betaReadTool(ctx);
+    ctx.unrestrictedPaths = false;
+    await expect(read.run({ file_path: 'a.txt' })).rejects.toThrow(GUIDANCE);
+  });
+
+  test('nothing reads unrestrictedPaths except the deprecation guard', () => {
+    const repo = path.resolve(__dirname, '..', '..');
+    for (const rel of [
+      'src/tools/agent-toolset/node.ts',
+      'src/tools/agent-toolset/fs-util.ts',
+      'src/lib/environments/worker.ts',
+      'src/resources/beta/environments/work.ts',
+    ]) {
+      const source = fs.readFileSync(path.join(repo, rel), 'utf8');
+      const reads = source.match(/\b[a-z_$][\w$]*\.unrestrictedPaths\b/g) ?? [];
+      const guarded =
+        source.match(
+          /rejectUnrestrictedPaths\(\s*[a-z_$][\w$]*\.unrestrictedPaths\s*\)|[a-z_$][\w$]*\.unrestrictedPaths !== undefined\b/g,
+        ) ?? [];
+      expect({ rel, reads: reads.length }).toEqual({ rel, reads: guarded.length });
+    }
+  });
+});
+
 describe('fs tools (read/write/edit)', () => {
   let dir: string;
   let env: AgentToolContext;
@@ -139,14 +344,119 @@ describe('fs tools (read/write/edit)', () => {
     expect(out).toBe('hello');
   });
 
+  test('write under many not-yet-existing directories succeeds because only symlink hops are capped', async () => {
+    const rel = path.join(...Array.from({ length: 50 }, (_, i) => `d${i}`), 'f.txt');
+    await betaWriteTool(env).run({ file_path: rel, content: 'deep' });
+    expect(fs.readFileSync(path.join(dir, rel), 'utf8')).toBe('deep');
+  });
+
   test('read with view_range returns the 1-indexed inclusive line slice', async () => {
     fs.writeFileSync(path.join(dir, 'f.txt'), 'a\nb\nc\nd\n');
     const out = await betaReadTool(env).run({ file_path: 'f.txt', view_range: [2, 3] });
     expect(out).toBe('b\nc');
   });
 
+  const viewRangeCases: { description: string; view_range: number[]; want: string }[] = [
+    { description: 'an inverted range yields an empty result, not an error', view_range: [3, 1], want: '' },
+    { description: 'an empty range reads the whole file', view_range: [], want: 'line1\nline2\nline3' },
+    { description: 'a single-line range', view_range: [2, 2], want: 'line2' },
+    { description: 'a non-positive end line reads to EOF', view_range: [2, 0], want: 'line2\nline3' },
+    { description: 'a start line past EOF yields an empty result', view_range: [10, 12], want: '' },
+  ];
+  for (const tc of viewRangeCases) {
+    test(`read view_range ${JSON.stringify(tc.view_range)}: ${tc.description}`, async () => {
+      fs.writeFileSync(path.join(dir, 'a.txt'), 'line1\nline2\nline3');
+      expect(await betaReadTool(env).run({ file_path: 'a.txt', view_range: tc.view_range })).toBe(tc.want);
+    });
+  }
+
+  test('read view_range with the wrong arity is rejected', async () => {
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'line1\nline2\nline3');
+    await expect(betaReadTool(env).run({ file_path: 'a.txt', view_range: [2] })).rejects.toThrow(
+      'read: view_range must be [start_line, end_line]',
+    );
+  });
+
+  // 18 bytes against a 16-byte cap: the whole file is over the cap, so a
+  // view_range read streams it and caps only the selected lines.
+  const viewRangeOverCapCases: { description: string; view_range: number[]; want: string }[] = [
+    { description: 'a single-line range', view_range: [2, 2], want: 'line2' },
+    {
+      description: 'a non-positive end line reads to EOF and keeps the trailing newline',
+      view_range: [2, 0],
+      want: 'line2\nline3\n',
+    },
+    { description: 'an inverted range yields an empty result, not an error', view_range: [3, 1], want: '' },
+    { description: 'a start line past EOF yields an empty result', view_range: [10, 12], want: '' },
+  ];
+  for (const tc of viewRangeOverCapCases) {
+    test(`read view_range ${JSON.stringify(tc.view_range)} of a file over the size cap: ${
+      tc.description
+    }`, async () => {
+      fs.writeFileSync(path.join(dir, 'a.txt'), 'line1\nline2\nline3\n');
+      expect(
+        await betaReadTool({ workdir: dir, maxFileBytes: 16 }).run({
+          file_path: 'a.txt',
+          view_range: tc.view_range,
+        }),
+      ).toBe(tc.want);
+    });
+  }
+
+  test('read view_range of a file over the size cap refuses a slice that itself exceeds the cap', async () => {
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'line1\nline2\nline3\n');
+    const err = await Promise.resolve(
+      betaReadTool({ workdir: dir, maxFileBytes: 16 }).run({ file_path: 'a.txt', view_range: [1, 3] }),
+    ).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ToolError);
+    expect((err as Error).message).toMatch(/exceeds .*limit/);
+    expect((err as Error).message).toContain('Narrow the view_range');
+    expect((err as Error).message).not.toContain('bash');
+  });
+
+  test('read view_range of a file over the size cap explains when a single line alone exceeds the cap', async () => {
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'x'.repeat(100) + '\nok\n');
+    const read = betaReadTool({ workdir: dir, maxFileBytes: 16 });
+    const err = await Promise.resolve(read.run({ file_path: 'a.txt', view_range: [1, 1] })).catch(
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(ToolError);
+    expect((err as Error).message).toContain('cannot return part of a line');
+    expect((err as Error).message).not.toContain('bash');
+    expect(await read.run({ file_path: 'a.txt', view_range: [2, 2] })).toBe('ok');
+  });
+
+  test('read view_range of a file over the size cap returns exact lines across stream chunk boundaries', async () => {
+    const rows = Array.from({ length: 5000 }, (_, i) => `row${String(i).padStart(4, '0')}` + '-'.repeat(90));
+    fs.writeFileSync(path.join(dir, 'big.txt'), rows.join('\n') + '\n');
+    const out = await betaReadTool(env).run({ file_path: 'big.txt', view_range: [1000, 1002] });
+    expect(out).toBe(rows.slice(999, 1002).join('\n'));
+  });
+
+  test('read view_range with the wrong arity is rejected before the size cap is considered', async () => {
+    fs.writeFileSync(path.join(dir, 'a.txt'), 'line1\nline2\nline3\n');
+    await expect(
+      betaReadTool({ workdir: dir, maxFileBytes: 16 }).run({ file_path: 'a.txt', view_range: [2] }),
+    ).rejects.toThrow('read: view_range must be [start_line, end_line]');
+  });
+
   test('read of a missing file throws ToolError so the dispatcher reports is_error', async () => {
     await expect(betaReadTool(env).run({ file_path: 'nope.txt' })).rejects.toThrow(/ENOENT|no such file/);
+  });
+
+  test('read preserves CRLF line endings', async () => {
+    fs.writeFileSync(path.join(dir, 'crlf.txt'), Buffer.from('line1\r\nline2\r\nline3\r\n'));
+    expect(await betaReadTool(env).run({ file_path: 'crlf.txt' })).toBe('line1\r\nline2\r\nline3\r\n');
+    expect(await betaReadTool(env).run({ file_path: 'crlf.txt', view_range: [1, 2] })).toBe(
+      'line1\r\nline2\r',
+    );
+  });
+
+  test('read preserves lone CR', async () => {
+    fs.writeFileSync(path.join(dir, 'cr.txt'), Buffer.from('a\rb\rc\r'));
+    expect(await betaReadTool(env).run({ file_path: 'cr.txt' })).toBe('a\rb\rc\r');
+    // A lone CR is not a line separator, so the file is a single line and line 2 is empty.
+    expect(await betaReadTool(env).run({ file_path: 'cr.txt', view_range: [2, 2] })).toBe('');
   });
 
   test('edit with a unique old_string performs exactly one replacement', async () => {
@@ -180,9 +490,21 @@ describe('fs tools (read/write/edit)', () => {
     expect(fs.readFileSync(path.join(dir, 'f.txt'), 'utf8')).toBe('$` $`');
   });
 
+  test('edit preserves CRLF line endings', async () => {
+    fs.writeFileSync(path.join(dir, 'crlf.txt'), Buffer.from('line1\r\nline2\r\nline3\r\n'));
+    await betaEditTool(env).run({ file_path: 'crlf.txt', old_string: 'line2', new_string: 'LINE2' });
+    expect(fs.readFileSync(path.join(dir, 'crlf.txt'))).toEqual(Buffer.from('line1\r\nLINE2\r\nline3\r\n'));
+  });
+
   test('read refuses a file over the size cap so a huge file cannot OOM the runner', async () => {
     fs.writeFileSync(path.join(dir, 'big.txt'), Buffer.alloc(257 * 1024, 'a'));
-    await expect(betaReadTool(env).run({ file_path: 'big.txt' })).rejects.toThrow(/exceeds .*limit/);
+    const err = await Promise.resolve(betaReadTool(env).run({ file_path: 'big.txt' })).catch(
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(ToolError);
+    expect((err as Error).message).toMatch(/exceeds .*limit/);
+    expect((err as Error).message).toContain('view_range');
+    expect((err as Error).message).not.toContain('bash');
   });
 
   test('read refuses a directory so it cannot dump a Dirent listing as bytes', async () => {
@@ -192,9 +514,12 @@ describe('fs tools (read/write/edit)', () => {
 
   test('edit refuses a file over the size cap so a huge file cannot OOM the runner', async () => {
     fs.writeFileSync(path.join(dir, 'big.txt'), Buffer.alloc(257 * 1024, 'a'));
-    await expect(
+    const err = await Promise.resolve(
       betaEditTool(env).run({ file_path: 'big.txt', old_string: 'a', new_string: 'b' }),
-    ).rejects.toThrow(/exceeds .*limit/);
+    ).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ToolError);
+    expect((err as Error).message).toMatch(/exceeds .*limit/);
+    expect((err as Error).message).not.toContain('bash');
   });
 
   test('edit refuses a directory so a non-regular path cannot hang or be misread', async () => {
@@ -212,13 +537,16 @@ describe('fs tools (read/write/edit)', () => {
 
   test('edit honours a custom maxFileBytes below the file size', async () => {
     fs.writeFileSync(path.join(dir, 'f.txt'), 'OLD' + 'a'.repeat(2000));
-    await expect(
+    const err = await Promise.resolve(
       betaEditTool({ workdir: dir, maxFileBytes: 1024 }).run({
         file_path: 'f.txt',
         old_string: 'OLD',
         new_string: 'NEW',
       }),
-    ).rejects.toThrow(/exceeds .*limit/);
+    ).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ToolError);
+    expect((err as Error).message).toMatch(/exceeds .*limit/);
+    expect((err as Error).message).not.toContain('bash');
   });
 
   test('edit allows a file over the default cap when maxFileBytes is raised', async () => {
@@ -254,9 +582,13 @@ describe('fs tools (read/write/edit)', () => {
 
   test('read honours a custom maxFileBytes below the file size', async () => {
     fs.writeFileSync(path.join(dir, 'f.txt'), Buffer.alloc(2000, 'a'));
-    await expect(
+    const err = await Promise.resolve(
       betaReadTool({ workdir: dir, maxFileBytes: 1024 }).run({ file_path: 'f.txt' }),
-    ).rejects.toThrow(/exceeds .*limit/);
+    ).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(ToolError);
+    expect((err as Error).message).toMatch(/exceeds .*limit/);
+    expect((err as Error).message).toContain('view_range');
+    expect((err as Error).message).not.toContain('bash');
   });
 
   test('read allows an oversized file when maxFileBytes is null (uncapped)', async () => {
@@ -275,8 +607,114 @@ describe('fs tools (read/write/edit)', () => {
 
   test('write outside workdir via dot-dot is rejected by the path jail', async () => {
     await expect(betaWriteTool(env).run({ file_path: '../escape.txt', content: 'x' })).rejects.toThrow(
-      /escapes workdir/,
+      /is outside the session's working directory/,
     );
+  });
+
+  test('file tools confinement matrix: workdir + allowedRoots reachable, readOnlyRoots refuse writes, everything else rejected', async () => {
+    const work = path.join(dir, 'work');
+    const notes = path.join(dir, 'mnt', 'notes');
+    const facts = path.join(dir, 'mnt', 'facts');
+    const outside = path.join(dir, 'outside');
+    for (const d of [work, notes, facts, outside]) fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(facts, 'facts.md'), 'immutable');
+    fs.writeFileSync(path.join(outside, 'secret.txt'), 'secret');
+    const ctx: AgentToolContext = { workdir: work, allowedRoots: [notes, facts], readOnlyRoots: [facts] };
+    const OUTSIDE_ALL = /outside the session's working directory and its other permitted directories/;
+
+    await betaWriteTool(ctx).run({ file_path: 'w.txt', content: 'in workdir' });
+    expect(fs.readFileSync(path.join(work, 'w.txt'), 'utf8')).toBe('in workdir');
+
+    const note = path.join(notes, 'note.md');
+    await betaWriteTool(ctx).run({ file_path: note, content: 'remembered fact' });
+    expect(await betaReadTool(ctx).run({ file_path: note })).toBe('remembered fact');
+    await betaEditTool(ctx).run({ file_path: note, old_string: 'fact', new_string: 'thing' });
+    expect(fs.readFileSync(note, 'utf8')).toBe('remembered thing');
+
+    const fact = path.join(facts, 'facts.md');
+    expect(await betaReadTool(ctx).run({ file_path: fact })).toBe('immutable');
+    await expect(betaWriteTool(ctx).run({ file_path: fact, content: 'x' })).rejects.toThrow(/read-only/);
+    await expect(
+      betaEditTool(ctx).run({ file_path: fact, old_string: 'immutable', new_string: 'x' }),
+    ).rejects.toThrow(/read-only/);
+    expect(fs.readFileSync(fact, 'utf8')).toBe('immutable');
+
+    await expect(betaReadTool(ctx).run({ file_path: path.join(outside, 'secret.txt') })).rejects.toThrow(
+      OUTSIDE_ALL,
+    );
+    await expect(
+      betaWriteTool(ctx).run({ file_path: path.join(outside, 'new.txt'), content: 'x' }),
+    ).rejects.toThrow(OUTSIDE_ALL);
+    expect(fs.existsSync(path.join(outside, 'new.txt'))).toBe(false);
+  });
+
+  testPosix('a symlinked read-only root that is also an allowed root still refuses writes', async () => {
+    const work = path.join(dir, 'work');
+    const realStore = path.join(dir, 'real-store');
+    const linkStore = path.join(dir, 'link-store');
+    fs.mkdirSync(work);
+    fs.mkdirSync(realStore);
+    fs.symlinkSync(realStore, linkStore, 'dir');
+    const leaf: AgentToolContext = { workdir: work, allowedRoots: [linkStore], readOnlyRoots: [linkStore] };
+    await expect(resolvePath(leaf, path.join(linkStore, 'note.md'))).resolves.toBe(
+      path.join(fs.realpathSync(realStore), 'note.md'),
+    );
+    await expect(
+      betaWriteTool(leaf).run({ file_path: path.join(linkStore, 'note.md'), content: 'x' }),
+    ).rejects.toThrow(/read-only/);
+
+    // Same through a symlinked ancestor, for a store that exists and one not yet created.
+    const real = path.join(dir, 'real');
+    const via = path.join(dir, 'via');
+    fs.mkdirSync(path.join(real, 'store'), { recursive: true });
+    fs.symlinkSync(real, via, 'dir');
+    for (const store of [path.join(via, 'store'), path.join(via, 'newstore')]) {
+      const ancestor: AgentToolContext = { workdir: work, allowedRoots: [store], readOnlyRoots: [store] };
+      await expect(
+        betaWriteTool(ancestor).run({ file_path: path.join(store, 'note.md'), content: 'x' }),
+      ).rejects.toThrow(/read-only/);
+    }
+    expect(fs.existsSync(path.join(real, 'store', 'note.md'))).toBe(false);
+    expect(fs.existsSync(path.join(real, 'newstore'))).toBe(false);
+  });
+
+  testPosix('a symlink inside the workdir into a read-only root is refused for writes', async () => {
+    const work = path.join(dir, 'work');
+    const ro = path.join(dir, 'ro');
+    fs.mkdirSync(work);
+    fs.mkdirSync(ro);
+    fs.writeFileSync(path.join(ro, 'f'), 'immutable');
+    fs.symlinkSync(path.join(ro, 'f'), path.join(work, 'ln'));
+    const ctx: AgentToolContext = { workdir: work, allowedRoots: [ro], readOnlyRoots: [ro] };
+    await expect(betaWriteTool(ctx).run({ file_path: 'ln', content: 'x' })).rejects.toThrow(/read-only/);
+    expect(fs.readFileSync(path.join(ro, 'f'), 'utf8')).toBe('immutable');
+  });
+
+  // Files and directories the tools create must be owner-only regardless of
+  // umask, so other local users can't read what an agent wrote; a file that
+  // already exists keeps whatever mode its owner gave it.
+  const mode = (...segments: string[]) => fs.statSync(path.join(dir, ...segments)).mode & 0o777;
+
+  testPosix('write creates new files and their missing parent directories owner-only', async () => {
+    await betaWriteTool(env).run({ file_path: 'a/b/new.txt', content: 'secret' });
+    expect(mode('a', 'b', 'new.txt') & 0o077).toBe(0);
+    expect(mode('a', 'b') & 0o077).toBe(0);
+    expect(mode('a') & 0o077).toBe(0);
+  });
+
+  testPosix('edit keeps the existing mode so an executable script stays executable', async () => {
+    fs.writeFileSync(path.join(dir, 'run.sh'), '#!/bin/sh\necho old\n');
+    fs.chmodSync(path.join(dir, 'run.sh'), 0o755);
+    await betaEditTool(env).run({ file_path: 'run.sh', old_string: 'old', new_string: 'new' });
+    expect(mode('run.sh')).toBe(0o755);
+  });
+
+  testPosix('write over an existing file keeps its mode instead of resetting it', async () => {
+    fs.writeFileSync(path.join(dir, 'shared.txt'), 'v1');
+    fs.chmodSync(path.join(dir, 'shared.txt'), 0o640);
+    await betaWriteTool(env).run({ file_path: 'shared.txt', content: 'v2' });
+    expect(mode('shared.txt')).toBe(0o640);
+    expect(fs.readFileSync(path.join(dir, 'shared.txt'), 'utf8')).toBe('v2');
   });
 });
 
@@ -310,11 +748,46 @@ describe('search tools (glob/grep)', () => {
     expect(out).not.toContain('a.txt');
   });
 
-  test('glob rejects a ".." pattern that would walk fs.glob out of the workdir', async () => {
-    await expect(betaGlobTool(env).run({ pattern: '../*' })).rejects.toThrow(/not permitted in the pattern/);
-    await expect(betaGlobTool(env).run({ pattern: '../../**/*.ts' })).rejects.toThrow(
-      /not permitted in the pattern/,
+  test('glob rejects an absolute pattern', async () => {
+    await expect(betaGlobTool(env).run({ pattern: path.join(dir, '*.txt') })).rejects.toThrow(
+      /absolute pattern not permitted/,
     );
+  });
+
+  test('glob rejects a ".." pattern that would walk fs.glob out of the workdir, literal or brace-expanded', async () => {
+    for (const pattern of ['../*', '../../**/*.ts', '{..,x}/*', '{a,../outside}/*']) {
+      await expect(betaGlobTool(env).run({ pattern })).rejects.toThrow(/not permitted in the pattern/);
+    }
+  });
+
+  testPosix(
+    'glob never returns entries outside the search root for patterns that spell ".." indirectly',
+    async () => {
+      const outside = tmpdir();
+      try {
+        fs.writeFileSync(path.join(outside, 'secret.txt'), 'leaked\n');
+        expect(await betaGlobTool(env).run({ pattern: '[.][.]/*/secret.txt' })).toBe('no matches');
+        expect(await betaGlobTool(env).run({ pattern: `[.][.]/${path.basename(outside)}/*` })).toBe(
+          'no matches',
+        );
+      } finally {
+        fs.rmSync(outside, { recursive: true, force: true });
+      }
+    },
+  );
+
+  test('glob and grep reach an allowed root', async () => {
+    const mnt = tmpdir();
+    try {
+      const notes = path.join(mnt, 'notes');
+      fs.mkdirSync(notes);
+      fs.writeFileSync(path.join(notes, 'note.md'), 'remembered fact\n');
+      const ctx: AgentToolContext = { workdir: dir, allowedRoots: [notes] };
+      expect(await betaGlobTool(ctx).run({ pattern: '*.md', path: notes })).toContain('note.md');
+      expect(await betaGrepTool(ctx).run({ pattern: 'remembered', path: notes })).toContain('note.md');
+    } finally {
+      fs.rmSync(mnt, { recursive: true, force: true });
+    }
   });
 
   // F2 / GLOB-07: a pattern that *names* a symlinked directory makes fs.glob
@@ -464,8 +937,41 @@ describeBash('BashSession (direct)', () => {
     expect(r.exitCode).toBe(7);
   });
 
-  test('exec rejects when the command exceeds the timeout budget', async () => {
-    await expect(session.exec('sleep 2', { timeoutMs: 200 })).rejects.toThrow(/timed out/);
+  test('exec rejects with a BashTimeoutError carrying the budget when the command exceeds it', async () => {
+    const err = await session.exec('sleep 2', { timeoutMs: 200 }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(BashTimeoutError);
+    expect((err as BashTimeoutError).timeoutMs).toBe(200);
+    expect((err as BashTimeoutError).message).toBe('bash command timed out after 200ms');
+  });
+
+  test("an aborted exec rejects with the signal's own reason", async () => {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 100);
+    const err = await session
+      .exec('sleep 2', { signal: ctrl.signal, timeoutMs: 5000 })
+      .catch((e: unknown) => e);
+    expect(err).toBe(ctrl.signal.reason);
+    expect((err as Error).name).toBe('AbortError');
+  });
+
+  test('exec against an already-aborted signal rejects with its reason before running', async () => {
+    const ctrl = new AbortController();
+    ctrl.abort();
+    const err = await session.exec('echo unreachable', { signal: ctrl.signal }).catch((e: unknown) => e);
+    expect(err).toBe(ctrl.signal.reason);
+  });
+
+  test("a caller's own abort reason survives, so a timeout signal is not mistaken for a cancel", async () => {
+    // `AbortSignal.timeout()` aborts with a 'TimeoutError' reason; matching by
+    // reason keeps the distinction that a fixed 'AbortError' name would erase.
+    const reason = Object.assign(new Error('deadline'), { name: 'TimeoutError' });
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(reason), 100);
+    const err = await session
+      .exec('sleep 2', { signal: ctrl.signal, timeoutMs: 5000 })
+      .catch((e: unknown) => e);
+    expect(err).toBe(reason);
+    expect((err as Error).name).toBe('TimeoutError');
   });
 
   test('a command that prints a hardcoded sentinel-like marker cannot truncate its own output or spoof the exit code', async () => {
@@ -492,7 +998,7 @@ describeBash('BashSession (direct)', () => {
 
 describe('confineToRoot at a filesystem root workdir', () => {
   test('in-root absolute paths are allowed when the workdir is the filesystem root', async () => {
-    const { confineToRoot } = await import('@tetral-ai/sdk/tools/agent-toolset/fs-util');
+    const { confineToRoot } = await import('@anthropic-ai/sdk/tools/agent-toolset/fs-util');
     // A root workdir already ends with the separator; containment must not
     // double-append it and reject every in-root path.
     await expect(confineToRoot('/', '/etc/hosts')).resolves.toBe('/etc/hosts');

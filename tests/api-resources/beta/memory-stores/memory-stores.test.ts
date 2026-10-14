@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -25,6 +23,7 @@ describe('resource memoryStores', () => {
       description: 'description',
       metadata: { foo: 'string' },
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -44,7 +43,7 @@ describe('resource memoryStores', () => {
     await expect(
       client.beta.memoryStores.retrieve(
         'memory_store_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -61,8 +60,7 @@ describe('resource memoryStores', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list', async () => {
+  test('list', async () => {
     const responsePromise = client.beta.memoryStores.list();
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -73,8 +71,7 @@ describe('resource memoryStores', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list: request options and params are passed correctly', async () => {
+  test('list: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       client.beta.memoryStores.list(
@@ -85,6 +82,7 @@ describe('resource memoryStores', () => {
           limit: 0,
           page: 'page',
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -107,7 +105,7 @@ describe('resource memoryStores', () => {
     await expect(
       client.beta.memoryStores.delete(
         'memory_store_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -129,7 +127,7 @@ describe('resource memoryStores', () => {
     await expect(
       client.beta.memoryStores.archive(
         'memory_store_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);

@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import type { Anthropic } from '../../../client';
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
@@ -17,11 +15,6 @@ import {
   type EnvironmentWorkerOptions as RunnerEnvironmentWorkerOptions,
 } from '../../../lib/environments/worker';
 
-/**
- * Retained self-hosted Environment work surface. Tetral Cloud Environments do
- * not implement these APIs in this stage; calls are kept as normal generated
- * request paths and Tetral backend admission rejects them fail-closed.
- */
 export class Work extends APIResource {
   /**
    * Note: these endpoints are called automatically by the pre-built environment
@@ -44,11 +37,14 @@ export class Work extends APIResource {
     params: WorkRetrieveParams,
     options?: RequestOptions,
   ): APIPromise<BetaSelfHostedWork> {
-    const { environment_id, betas } = params;
+    const { environment_id, betas, workspace_id } = params;
     return this._client.get(path`/v1/environments/${environment_id}/work/${workID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -72,12 +68,15 @@ export class Work extends APIResource {
    * ```
    */
   update(workID: string, params: WorkUpdateParams, options?: RequestOptions): APIPromise<BetaSelfHostedWork> {
-    const { environment_id, betas, ...body } = params;
+    const { environment_id, betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/environments/${environment_id}/work/${workID}?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -232,11 +231,14 @@ export class Work extends APIResource {
     params: WorkStatsParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaSelfHostedWorkQueueStats> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.get(path`/v1/environments/${environmentID}/work/stats?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -259,22 +261,24 @@ export class Work extends APIResource {
    * ```
    */
   stop(workID: string, params: WorkStopParams, options?: RequestOptions): APIPromise<BetaSelfHostedWork> {
-    const { environment_id, betas, ...body } = params;
+    const { environment_id, betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/environments/${environment_id}/work/${workID}/stop?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
   }
 
   /**
-   * Retained self-hosted helper. Tetral Cloud-hosted Environments do not use the
-   * work queue in this stage. Continuously claim work from a self-hosted
-   * environment, ack each item, and yield it. Posts `stop` automatically when the
-   * consumer's loop body returns or when iteration ends.
+   * Continuously claim work from a self-hosted environment, ack each item,
+   * and yield it. Posts `stop` automatically when the consumer's loop body
+   * returns or when iteration ends.
    *
    * @example
    * ```ts
@@ -292,10 +296,9 @@ export class Work extends APIResource {
   }
 
   /**
-   * Retained self-hosted helper. Tetral Cloud-hosted Environments do not use the
-   * work queue in this stage. The self-hosted environment runner polls for work,
-   * and for each claimed session sets up the workdir, downloads the agent's
-   * skills, runs the tools while heartbeating the lease, and force-stops on exit.
+   * The self-hosted environment runner: poll for work, and for each claimed
+   * session set up the workdir, download the agent's skills, run the tools while
+   * heartbeating the lease, and force-stop on exit.
    *
    * @example
    * ```ts
@@ -309,6 +312,13 @@ export class Work extends APIResource {
    * await client.beta.environments.work.worker({ workdir: '/workspace' }).handleItem();
    * ```
    */
+  worker(opts: Omit<RunnerEnvironmentWorkerOptions, 'client' | 'unrestrictedPaths'>): EnvironmentWorker;
+  /** @deprecated `unrestrictedPaths` is no longer accepted — see {@link RunnerEnvironmentWorkerOptions.unrestrictedPaths}. */
+  worker(
+    opts: Omit<RunnerEnvironmentWorkerOptions, 'client' | 'unrestrictedPaths'> & {
+      unrestrictedPaths: boolean;
+    },
+  ): EnvironmentWorker; // help language servers see deprecation
   worker(opts: Omit<RunnerEnvironmentWorkerOptions, 'client'>): EnvironmentWorker {
     return new EnvironmentWorker({ ...opts, client: this._client as Anthropic });
   }
@@ -377,6 +387,12 @@ export interface BetaSelfHostedWork {
    * User-provided metadata key-value pairs associated with this work item
    */
   metadata: { [key: string]: string };
+
+  /**
+   * Credential payload used by the environment worker to execute this work item. May
+   * be populated when polling for work; null on all other retrieval paths.
+   */
+  secret: string | null;
 
   /**
    * RFC 3339 timestamp when work execution started
@@ -531,7 +547,7 @@ export interface BetaSessionWorkData {
 export interface BetaWorkSecret {
   /**
    * Bearer credential the runner uses for all per-session downstream calls
-   * (heartbeat, ack, event stream, send, stop).
+   * (heartbeat, ack, event stream, send, stop). Format: `sk-ant-req-...`.
    */
   sessions_token: string;
 
@@ -552,6 +568,16 @@ export interface WorkRetrieveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface WorkUpdateParams {
@@ -570,6 +596,16 @@ export interface WorkUpdateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface WorkListParams extends PageCursorParams {
@@ -648,6 +684,16 @@ export interface WorkStatsParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface WorkStopParams {
@@ -665,6 +711,16 @@ export interface WorkStopParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export { WorkPoller, type WorkPollerOptions } from '../../../lib/environments/poller';

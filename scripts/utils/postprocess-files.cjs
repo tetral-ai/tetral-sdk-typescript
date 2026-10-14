@@ -51,10 +51,18 @@ async function postprocess() {
       types: './index.d.mts',
       default: './index.mjs',
     },
+    // private like the top-level `internal`; a `null` target wins over the broader `./lib/*` patterns
+    './lib/internal/*': null,
   };
 
   for (const entry of await fs.promises.readdir(distDir, { withFileTypes: true })) {
-    if (entry.isDirectory() && entry.name !== 'src' && entry.name !== 'internal' && entry.name !== 'bin') {
+    if (
+      entry.isDirectory() &&
+      !entry.name.startsWith('.') &&
+      entry.name !== 'src' &&
+      entry.name !== 'internal' &&
+      entry.name !== 'bin'
+    ) {
       const subpath = './' + entry.name;
       newExports[subpath + '/*.mjs'] = {
         default: subpath + '/*.mjs',

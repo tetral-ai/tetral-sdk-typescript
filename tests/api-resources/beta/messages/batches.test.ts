@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import { mockFetch } from '../../../lib/mock-fetch';
 
 const client = new Anthropic({
@@ -17,7 +15,7 @@ describe('resource batches', () => {
           params: {
             max_tokens: 1024,
             messages: [{ content: 'Hello, world', role: 'user' }],
-            model: 'claude-opus-4-6',
+            model: 'claude-opus-5',
           },
         },
       ],
@@ -38,9 +36,17 @@ describe('resource batches', () => {
           custom_id: 'my-custom-id-1',
           params: {
             max_tokens: 1024,
-            messages: [{ content: 'Hello, world', role: 'user' }],
-            model: 'claude-opus-4-6',
+            messages: [
+              {
+                content: 'Hello, world',
+                role: 'user',
+                clear_at: 'next_user_message',
+                output_config: { effort: 'low' },
+              },
+            ],
+            model: 'claude-opus-5',
             cache_control: { type: 'ephemeral', ttl: '5m' },
+            compaction: { type: 'summarize', instructions: 'instructions' },
             container: {
               id: 'id',
               skills: [
@@ -65,30 +71,7 @@ describe('resource batches', () => {
             },
             diagnostics: { previous_message_id: 'previous_message_id' },
             fallback_credit_token: 'x',
-            fallbacks: [
-              {
-                model: 'claude-sonnet-5',
-                max_tokens: 0,
-                output_config: {
-                  effort: 'low',
-                  format: {
-                    schema: { foo: 'bar' },
-                    type: 'json_schema',
-                  },
-                  task_budget: {
-                    total: 1024,
-                    type: 'tokens',
-                    remaining: 0,
-                  },
-                },
-                speed: 'standard',
-                thinking: {
-                  budget_tokens: 1024,
-                  type: 'enabled',
-                  display: 'summarized',
-                },
-              },
-            ],
+            fallbacks: 'default',
             inference_geo: 'inference_geo',
             mcp_servers: [
               {
@@ -127,7 +110,7 @@ describe('resource batches', () => {
                 cache_control: { type: 'ephemeral', ttl: '5m' },
                 citations: [
                   {
-                    cited_text: 'cited_text',
+                    cited_text: 'The grass is green. The sky is blue.',
                     document_index: 0,
                     document_title: 'x',
                     end_char_index: 0,
@@ -138,7 +121,11 @@ describe('resource batches', () => {
               },
             ],
             temperature: 1,
-            thinking: { type: 'adaptive', display: 'summarized' },
+            thinking: {
+              type: 'adaptive',
+              block_binding: { prefix_mismatch_behavior: 'error' },
+              display: 'summarized',
+            },
             tool_choice: { type: 'auto', disable_parallel_tool_use: true },
             tools: [
               {
@@ -165,6 +152,7 @@ describe('resource batches', () => {
       ],
       betas: ['message-batches-2024-09-24'],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -184,7 +172,7 @@ describe('resource batches', () => {
     await expect(
       client.beta.messages.batches.retrieve(
         'message_batch_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -210,6 +198,7 @@ describe('resource batches', () => {
           before_id: 'before_id',
           limit: 1,
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -232,7 +221,7 @@ describe('resource batches', () => {
     await expect(
       client.beta.messages.batches.delete(
         'message_batch_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -254,7 +243,7 @@ describe('resource batches', () => {
     await expect(
       client.beta.messages.batches.cancel(
         'message_batch_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -297,7 +286,7 @@ describe('resource batches', () => {
     await expect(
       client.beta.messages.batches.results(
         'message_batch_id',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);

@@ -7,7 +7,7 @@ import {
   STAINLESS_HELPER_HEADER,
 } from '../../src/internal/stainless-helper-header';
 import { APPEND_HEADERS } from '../../src/internal/headers';
-import type { BetaMessageParam, BetaToolUnion } from '@tetral-ai/sdk/resources/beta';
+import type { BetaMessageParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta';
 
 type WithHelper<T> = T & { [SDK_HELPER_SYMBOL]: string };
 
@@ -71,6 +71,26 @@ describe('stainless-helpers', () => {
       expect(result).toHaveLength(2);
       expect(result).toContain('mcpMessage');
       expect(result).toContain('mcpContent');
+    });
+
+    it('returns helper name for a marked tool defined by value in a tool_addition block', () => {
+      const tool: WithHelper<BetaToolUnion> = {
+        name: 'test',
+        input_schema: { type: 'object' },
+        [SDK_HELPER_SYMBOL]: 'mcpTool',
+      };
+      const messages: BetaMessageParam[] = [
+        { role: 'user', content: 'hi' },
+        {
+          role: 'system',
+          content: [
+            { type: 'tool_removal', tool: { type: 'tool_reference', name: 'old' } },
+            { type: 'tool_addition', tool: { type: 'tool_reference', name: 'other' } },
+            { type: 'tool_addition', tool: { type: 'tool_definition', definition: tool } },
+          ],
+        },
+      ];
+      expect(collectStainlessHelpers(undefined, messages)).toEqual(['mcpTool']);
     });
 
     it('collects helpers from both tools and messages', () => {

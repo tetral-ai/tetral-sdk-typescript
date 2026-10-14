@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 export {
   Memories,
   type BetaManagedAgentsConflictError,
@@ -38,8 +36,8 @@ export {
   type BetaManagedAgentsAPIActor,
   type BetaManagedAgentsMemoryVersion,
   type BetaManagedAgentsMemoryVersionOperation,
+  type BetaManagedAgentsServiceAccountActor,
   type BetaManagedAgentsSessionActor,
-  type BetaManagedAgentsServiceActor,
   type BetaManagedAgentsUserActor,
   type MemoryVersionRetrieveParams,
   type MemoryVersionListParams,

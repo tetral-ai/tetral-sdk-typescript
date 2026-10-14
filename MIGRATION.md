@@ -15,7 +15,7 @@ To preview the changes without writing them to disk, run the tool with `--dry`.
 The minimum supported runtime and tooling versions are now:
 
 - Node.js 20 LTS (Most recent non-EOL Node version)
-- TypeScript 4.9
+- TypeScript 5.0
 - Jest 28
 
 ## Breaking changes
@@ -81,6 +81,8 @@ client.parents.children.retrieve('c_456', { parent_id: 'p_123' });
 - `client.beta.skills.versions.retrieve()`
 - `client.beta.skills.versions.delete()`
 - `client.beta.skills.versions.download()`
+- `client.beta.tunnels.certificates.retrieve()`
+- `client.beta.tunnels.certificates.archive()`
 
 </details>
 
@@ -174,6 +176,15 @@ client.example.list(undefined, { headers: { ... } });
 - `client.beta.userProfiles.retrieve()`
 - `client.beta.userProfiles.list()`
 - `client.beta.userProfiles.createEnrollmentURL()`
+- `client.beta.dreams.retrieve()`
+- `client.beta.dreams.list()`
+- `client.beta.dreams.archive()`
+- `client.beta.dreams.cancel()`
+- `client.beta.tunnels.retrieve()`
+- `client.beta.tunnels.list()`
+- `client.beta.tunnels.archive()`
+- `client.beta.tunnels.revealToken()`
+- `client.beta.tunnels.certificates.list()`
 
 </details>
 

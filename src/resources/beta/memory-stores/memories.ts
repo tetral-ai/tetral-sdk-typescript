@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
 import { APIPromise } from '../../../core/api-promise';
@@ -11,10 +9,6 @@ import { path } from '../../../internal/utils/path';
 export class Memories extends APIResource {
   /**
    * Create a memory
-   *
-   * Creates a memory inside the explicit `{memory_store_id}` path. This public
-   * HTTP API is separate from the Runtime Memory Tool, which writes through the
-   * session/runtime path.
    *
    * @example
    * ```ts
@@ -30,13 +24,16 @@ export class Memories extends APIResource {
     params: MemoryCreateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsMemory> {
-    const { view, betas, ...body } = params;
+    const { view, betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/memory_stores/${memoryStoreID}/memories?beta=true`, {
       query: { view },
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -59,12 +56,15 @@ export class Memories extends APIResource {
     params: MemoryRetrieveParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsMemory> {
-    const { memory_store_id, betas, ...query } = params;
+    const { memory_store_id, betas, workspace_id, ...query } = params;
     return this._client.get(path`/v1/memory_stores/${memory_store_id}/memories/${memoryID}?beta=true`, {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -87,13 +87,16 @@ export class Memories extends APIResource {
     params: MemoryUpdateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsMemory> {
-    const { memory_store_id, view, betas, ...body } = params;
+    const { memory_store_id, view, betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/memory_stores/${memory_store_id}/memories/${memoryID}?beta=true`, {
       query: { view },
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -117,7 +120,7 @@ export class Memories extends APIResource {
     params: MemoryListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsMemoryListItemsPageCursor, BetaManagedAgentsMemoryListItem> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList(
       path`/v1/memory_stores/${memoryStoreID}/memories?beta=true`,
       PageCursor<BetaManagedAgentsMemoryListItem>,
@@ -125,7 +128,10 @@ export class Memories extends APIResource {
         query,
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -149,12 +155,15 @@ export class Memories extends APIResource {
     params: MemoryDeleteParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsDeletedMemory> {
-    const { memory_store_id, expected_content_sha256, betas } = params;
+    const { memory_store_id, expected_content_sha256, betas, workspace_id } = params;
     return this._client.delete(path`/v1/memory_stores/${memory_store_id}/memories/${memoryID}?beta=true`, {
       query: { expected_content_sha256 },
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'agent-memory-2026-07-22'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -171,9 +180,11 @@ export interface BetaManagedAgentsConflictError {
 
 /**
  * Optimistic-concurrency precondition: the update applies only if the memory's
- * stored `content_sha256` equals the supplied value. On Tetral mismatch, the
- * backend returns the shared SDK-compatible `409 invalid_request_error`; re-read
- * the memory and retry against the fresh state.
+ * stored `content_sha256` equals the supplied value. On mismatch, the request
+ * returns `memory_precondition_failed_error` (HTTP 409); re-read the memory and
+ * retry against the fresh state. If the precondition fails but the stored state
+ * already exactly matches the requested `content` and `path`, the server returns
+ * 200 instead of 409.
  */
 export interface BetaManagedAgentsContentSha256Precondition {
   type: 'content_sha256';
@@ -189,10 +200,11 @@ export interface BetaManagedAgentsContentSha256Precondition {
 
 /**
  * Tombstone returned by
- * [Delete a memory](/en/api/beta/memory_stores/memories/delete). The memory's
- * version history persists and remains listable via
- * [List memory versions](/en/api/beta/memory_stores/memory_versions/list) until
- * the store itself is deleted.
+ * [Delete a memory](/en/api/beta/memory_stores/memories/delete). Deleting a memory
+ * does not erase its version history: its versions remain listable via
+ * [List memory versions](/en/api/beta/memory_stores/memory_versions/list) while
+ * they are retained (each version is kept for at least the version retention
+ * period after it was written, unless the store itself is deleted).
  */
 export interface BetaManagedAgentsDeletedMemory {
   /**
@@ -203,11 +215,6 @@ export interface BetaManagedAgentsDeletedMemory {
   type: 'memory_deleted';
 }
 
-/**
- * Retained upstream compatibility error union. Tetral uses the shared SDK error
- * envelope in this stage; memory write conflicts and precondition failures are
- * surfaced as `409 invalid_request_error`.
- */
 export type BetaManagedAgentsError =
   | BetaAPI.BetaInvalidRequestError
   | BetaAPI.BetaAuthenticationError
@@ -252,7 +259,7 @@ export interface BetaManagedAgentsMemory {
   content_size_bytes: number;
 
   /**
-   * A timestamp in RFC 3339 format
+   * When this memory was created, in RFC 3339 format.
    */
   created_at: string;
 
@@ -265,7 +272,7 @@ export interface BetaManagedAgentsMemory {
    * ID of the `memory_version` representing this memory's current content (a
    * `memver_...` value). This is the authoritative head pointer; `memory_version`
    * objects do not carry an `is_latest` flag, so compare against this field instead.
-   * Enumerate the full history via
+   * Enumerate the history via
    * [List memory versions](/en/api/beta/memory_stores/memory_versions/list).
    */
   memory_version_id: string;
@@ -280,7 +287,10 @@ export interface BetaManagedAgentsMemory {
   type: 'memory';
 
   /**
-   * A timestamp in RFC 3339 format
+   * When this memory was last modified, in RFC 3339 format. Use this as a cheap
+   * freshness signal; for who made the change, look up the head version's
+   * `created_by` via
+   * [List memory versions](/en/api/beta/memory_stores/memory_versions/list).
    */
   updated_at: string;
 
@@ -298,27 +308,57 @@ export interface BetaManagedAgentsMemory {
  */
 export type BetaManagedAgentsMemoryListItem = BetaManagedAgentsMemory | BetaManagedAgentsMemoryPrefix;
 
+/**
+ * The error returned with HTTP status 409 when a create or rename targets a path
+ * that another memory uses, or a path that overlaps another memory's path.
+ *
+ * Two paths overlap when one is an ancestor of the other, such as `/notes` and
+ * `/notes/todo.md`. To free the path, rename or delete the memory that
+ * `conflicting_memory_id` references, then retry. To change that memory instead of
+ * creating a new one, update it.
+ */
 export interface BetaManagedAgentsMemoryPathConflictError {
-  /**
-   * Retained upstream compatibility marker. Tetral path conflicts use the shared
-   * `409 invalid_request_error` envelope in this stage.
-   */
   type: 'memory_path_conflict_error';
 
+  /**
+   * The ID of the memory that blocked the write (`mem_...`), or an empty string if
+   * that memory can't be identified.
+   *
+   * Retry the request when it is empty.
+   */
   conflicting_memory_id?: string;
 
+  /**
+   * The path that blocked the write: the requested path, or the path of a memory
+   * that is an ancestor or descendant of it.
+   */
   conflicting_path?: string;
 
+  /**
+   * A human-readable explanation of the conflict. To handle the error in code, use
+   * `conflicting_path` and `conflicting_memory_id` instead.
+   */
   message?: string;
 }
 
+/**
+ * The error returned with HTTP status 409 when a request's precondition doesn't
+ * hold for the memory's current state, such as `precondition` on an update or
+ * `expected_content_sha256` on a delete.
+ *
+ * The error doesn't include the memory's current state. Retrieve the memory to see
+ * its current content and `content_sha256` before you retry.
+ *
+ * See the
+ * [memory guide](https://platform.claude.com/docs/en/managed-agents/memory#safe-content-edits-optimistic-concurrency)
+ * to learn more about safe content edits with content hash preconditions.
+ */
 export interface BetaManagedAgentsMemoryPreconditionFailedError {
-  /**
-   * Retained upstream compatibility marker. Tetral precondition failures use the
-   * shared `409 invalid_request_error` envelope in this stage.
-   */
   type: 'memory_precondition_failed_error';
 
+  /**
+   * A human-readable explanation of why the precondition failed.
+   */
   message?: string;
 }
 
@@ -347,14 +387,21 @@ export interface BetaManagedAgentsMemoryPrefix {
  * `content`. When omitted, the default is endpoint-specific: retrieve operations
  * default to `full`; list, create, and update operations default to `basic`.
  * Listing with `view=full` caps `limit` at 20.
+ *
+ * - `basic` - Return the object with `content` set to `null`. The
+ *   `content_size_bytes` and `content_sha256` fields remain populated, so sync
+ *   clients can diff without fetching content.
+ * - `full` - Return the object with `content` populated. On list endpoints,
+ *   `view=full` caps `limit` at 20.
  */
 export type BetaManagedAgentsMemoryView = 'basic' | 'full';
 
 /**
- * Optimistic-concurrency precondition: the update applies only if the memory's
- * stored `content_sha256` equals the supplied value. On Tetral mismatch, the
- * backend returns the shared SDK-compatible `409 invalid_request_error`; re-read
- * the memory and retry against the fresh state.
+ * Optional condition that must hold for an update to apply. When omitted, the
+ * update is unconditional. Asserts the current state of the memory being updated.
+ * When an update changes `path`, the precondition still refers to the memory's
+ * current content, not the destination path. Currently the only supported variant
+ * is `content_sha256`.
  */
 export interface BetaManagedAgentsPrecondition {
   type: 'content_sha256';
@@ -379,12 +426,17 @@ export interface MemoryCreateParams {
    * Body param: Hierarchical path for the new memory, e.g. `/projects/foo/notes.md`.
    * Must start with `/`, contain at least one non-empty segment, and be at most
    * 1,024 bytes. Must not contain empty segments, `.` or `..` segments, control or
-   * format characters, and must be NFC-normalized. Paths are case-sensitive.
+   * format characters, or the Unicode line and paragraph separators (U+2028,
+   * U+2029), and must be NFC-normalized. Paths are case-sensitive.
    */
   path: string;
 
   /**
-   * Query param: Query parameter for view
+   * Query param: Selects which projection of a `memory` or `memory_version` the
+   * server returns. `basic` returns the object with `content` set to `null`; `full`
+   * populates `content`. When omitted, the default is endpoint-specific: retrieve
+   * operations default to `full`; list, create, and update operations default to
+   * `basic`. Listing with `view=full` caps `limit` at 20.
    */
   view?: BetaManagedAgentsMemoryView;
 
@@ -392,17 +444,30 @@ export interface MemoryCreateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface MemoryRetrieveParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: The ID of the memory store that holds the memory (`memstore_...`).
    */
   memory_store_id: string;
 
   /**
-   * Query param: Query parameter for view
+   * Query param: Selects which projection of a `memory` or `memory_version` the
+   * server returns. `basic` returns the object with `content` set to `null`; `full`
+   * populates `content`. When omitted, the default is endpoint-specific: retrieve
+   * operations default to `full`; list, create, and update operations default to
+   * `basic`. Listing with `view=full` caps `limit` at 20.
    */
   view?: BetaManagedAgentsMemoryView;
 
@@ -410,17 +475,30 @@ export interface MemoryRetrieveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface MemoryUpdateParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: The ID of the memory store that holds the memory (`memstore_...`).
    */
   memory_store_id: string;
 
   /**
-   * Query param: Query parameter for view
+   * Query param: Selects which projection of a `memory` or `memory_version` the
+   * server returns. `basic` returns the object with `content` set to `null`; `full`
+   * populates `content`. When omitted, the default is endpoint-specific: retrieve
+   * operations default to `full`; list, create, and update operations default to
+   * `basic`. Listing with `view=full` caps `limit` at 20.
    */
   view?: BetaManagedAgentsMemoryView;
 
@@ -433,18 +511,18 @@ export interface MemoryUpdateParams {
   /**
    * Body param: New path for the memory (a rename). Must start with `/`, contain at
    * least one non-empty segment, and be at most 1,024 bytes. Must not contain empty
-   * segments, `.` or `..` segments, control or format characters, and must be
-   * NFC-normalized. Paths are case-sensitive. The memory's `id` is preserved across
-   * renames. Omit to leave the path unchanged.
+   * segments, `.` or `..` segments, control or format characters, or the Unicode
+   * line and paragraph separators (U+2028, U+2029), and must be NFC-normalized.
+   * Paths are case-sensitive. The memory's `id` is preserved across renames. Omit to
+   * leave the path unchanged.
    */
   path?: string | null;
 
   /**
-   * Body param: Optimistic-concurrency precondition: the update applies only if the
-   * memory's stored `content_sha256` equals the supplied value. On Tetral
-   * mismatch, the backend returns the shared SDK-compatible
-   * `409 invalid_request_error`; re-read the memory and retry against the fresh
-   * state.
+   * Body param: Optional optimistic-concurrency precondition. When supplied, the
+   * update applies only if the memory's current state matches; on mismatch the
+   * request returns `memory_precondition_failed_error` (HTTP 409). When omitted, the
+   * update is unconditional.
    */
   precondition?: BetaManagedAgentsPrecondition;
 
@@ -452,6 +530,16 @@ export interface MemoryUpdateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface MemoryListParams extends PageCursorParams {
@@ -470,15 +558,8 @@ export interface MemoryListParams extends PageCursorParams {
    */
   path_prefix?: string;
 
-  /**
-   * Query param: Sort field for the listing. Tetral supports ordering by `path`,
-   * `created_at`, or `updated_at`.
-   */
   order_by?: 'path' | 'created_at' | 'updated_at';
 
-  /**
-   * Query param: Sort direction.
-   */
   order?: 'asc' | 'desc';
 
   /**
@@ -492,17 +573,31 @@ export interface MemoryListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface MemoryDeleteParams {
   /**
-   * Path param: Explicit Memory Store selector. The SDK does not infer a
-   * workspace default Memory Store.
+   * Path param: The ID of the memory store that holds the memory (`memstore_...`).
    */
   memory_store_id: string;
 
   /**
-   * Query param: Query parameter for expected_content_sha256
+   * Query param: Delete the memory only if its current `content_sha256` equals this
+   * value, given as 64 lowercase hexadecimal characters. Omit it to delete
+   * unconditionally.
+   *
+   * If the hashes differ, the request fails with HTTP status 409 and nothing is
+   * deleted.
    */
   expected_content_sha256?: string;
 
@@ -510,6 +605,16 @@ export interface MemoryDeleteParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export declare namespace Memories {

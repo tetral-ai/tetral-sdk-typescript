@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
 import * as WorkAPI from './work';
@@ -43,12 +41,15 @@ export class Environments extends APIResource {
    * ```
    */
   create(params: EnvironmentCreateParams, options?: RequestOptions): APIPromise<BetaEnvironment> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post('/v1/environments?beta=true', {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -70,11 +71,14 @@ export class Environments extends APIResource {
     params: EnvironmentRetrieveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaEnvironment> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.get(path`/v1/environments/${environmentID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -96,12 +100,15 @@ export class Environments extends APIResource {
     params: EnvironmentUpdateParams,
     options?: RequestOptions,
   ): APIPromise<BetaEnvironment> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/environments/${environmentID}?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -122,12 +129,15 @@ export class Environments extends APIResource {
     params: EnvironmentListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaEnvironmentsPageCursor, BetaEnvironment> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList('/v1/environments?beta=true', PageCursor<BetaEnvironment>, {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -149,11 +159,14 @@ export class Environments extends APIResource {
     params: EnvironmentDeleteParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaEnvironmentDeleteResponse> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.delete(path`/v1/environments/${environmentID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -176,11 +189,14 @@ export class Environments extends APIResource {
     params: EnvironmentArchiveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaEnvironment> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.post(path`/v1/environments/${environmentID}/archive?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -189,19 +205,13 @@ export class Environments extends APIResource {
 
 export type BetaEnvironmentsPageCursor = PageCursor<BetaEnvironment>;
 
-/**
- * Tetral-supported Cloud Environment networking policy.
- */
 export type BetaEnvironmentNetworking =
   | BetaUnrestrictedNetwork
   | BetaBlockedNetwork
   | BetaCIDRAllowListNetwork;
 
 /**
- * `cloud` environment configuration. Tetral supports Cloud Environments with
- * `unrestricted`, `blocked`, or `cidr_allow_list` networking. The generated
- * `limited` networking shape is retained for upstream compatibility and Tetral
- * rejects it in this stage.
+ * `cloud` environment configuration.
  */
 export interface BetaCloudConfig {
   /**
@@ -233,25 +243,19 @@ export interface BetaCloudConfigParams {
 
   /**
    * Network configuration policy. Omit on update to preserve the existing value.
-   * Tetral supports `unrestricted`, `blocked`, and `cidr_allow_list`; `limited`
-   * is retained as an unsupported/deferred compatibility shape.
    */
   networking?: BetaEnvironmentNetworking | BetaLimitedNetworkParams | null;
 
   /**
-   * Specify packages (and optionally their versions) available in this environment.
-   *
-   * When versioning, use the version semantics relevant for the package manager,
-   * e.g. for `pip` use `package==1.0.0`. You are responsible for validating the
-   * package and version exist. Unversioned installs the latest.
+   * Package manager configuration. Under `limited` networking, requires
+   * `networking.allow_package_managers` to be `true`. Omit on update to preserve the
+   * existing value.
    */
   packages?: BetaPackagesParams | null;
 }
 
 /**
- * Tetral Environment resource. Tetral returns Cloud Environment config in this
- * stage; self-hosted config types remain exported as unsupported/deferred
- * compatibility shapes.
+ * Unified Environment resource for both cloud and self-hosted environments.
  */
 export interface BetaEnvironment {
   /**
@@ -265,7 +269,7 @@ export interface BetaEnvironment {
   archived_at: string | null;
 
   /**
-   * Environment configuration.
+   * Environment configuration (either Anthropic Cloud or self-hosted)
    */
   config: BetaCloudConfig;
 
@@ -275,9 +279,9 @@ export interface BetaEnvironment {
   created_at: string;
 
   /**
-   * User-provided description for the environment
+   * User-provided description for the environment; null when unset
    */
-  description: string;
+  description: string | null;
 
   /**
    * User-provided metadata key-value pairs
@@ -300,9 +304,8 @@ export interface BetaEnvironment {
   updated_at: string;
 
   /**
-   * Retained unsupported/deferred compatibility field. Tetral resource boundaries
-   * are workspace-scoped and do not implement Anthropic account/organization
-   * Environment visibility in this stage.
+   * The visibility scope for this environment. 'organization' means visible to all
+   * accounts. 'account' means visible only to the owning account.
    */
   scope?: 'organization' | 'account';
 }
@@ -322,29 +325,18 @@ export interface BetaEnvironmentDeleteResponse {
   type: 'environment_deleted';
 }
 
-/**
- * Block all outbound network access.
- */
 export interface BetaBlockedNetwork {
   type: 'blocked';
 }
 
-/**
- * Allow outbound network access only to the supplied comma-separated CIDR list.
- * The SDK does not translate hostnames to CIDRs.
- */
 export interface BetaCIDRAllowListNetwork {
-  /**
-   * Comma-separated CIDR allow list, for example `10.0.0.0/24,192.168.1.10/32`.
-   */
   network_allow_list: string;
 
   type: 'cidr_allow_list';
 }
 
 /**
- * Retained unsupported/deferred host allowlist networking shape. Tetral rejects
- * this shape in this stage; use `cidr_allow_list` with CIDR values instead.
+ * Limited network access.
  */
 export interface BetaLimitedNetwork {
   /**
@@ -371,9 +363,7 @@ export interface BetaLimitedNetwork {
 }
 
 /**
- * Retained unsupported/deferred host allowlist networking request params. Tetral
- * rejects this shape in this stage; use `cidr_allow_list` with CIDR values
- * instead.
+ * Limited network request params.
  *
  * Fields default to null; on update, omitted fields preserve the existing value.
  */
@@ -391,7 +381,8 @@ export interface BetaLimitedNetworkParams {
 
   /**
    * Permits outbound access to public package registries (PyPI, npm, etc.) beyond
-   * those listed in the `allowed_hosts` array. Defaults to `false`.
+   * those listed in the `allowed_hosts` array. Defaults to `false` on creation. Must
+   * be `true` when `packages` are specified.
    */
   allow_package_managers?: boolean | null;
 
@@ -447,6 +438,9 @@ export interface BetaPackages {
  * When versioning, use the version semantics relevant for the package manager,
  * e.g. for `pip` use `package==1.0.0`. You are responsible for validating the
  * package and version exist. Unversioned installs the latest.
+ *
+ * Under `limited` networking, requires `networking.allow_package_managers` to be
+ * `true`.
  */
 export interface BetaPackagesParams {
   /**
@@ -486,8 +480,7 @@ export interface BetaPackagesParams {
 }
 
 /**
- * Retained unsupported/deferred self-hosted environment config. Tetral supports
- * Cloud Environments only in this stage.
+ * Configuration for self-hosted environments.
  */
 export interface BetaSelfHostedConfig {
   /**
@@ -497,9 +490,7 @@ export interface BetaSelfHostedConfig {
 }
 
 /**
- * Retained unsupported/deferred request params for `self_hosted` environment
- * configuration. The SDK sends this normal generated request shape; Tetral
- * backend admission rejects it fail-closed.
+ * Request params for `self_hosted` environment configuration.
  */
 export interface BetaSelfHostedConfigParams {
   /**
@@ -525,9 +516,7 @@ export interface EnvironmentCreateParams {
   name: string;
 
   /**
-   * Body param: Environment configuration. Tetral supports `cloud` config only;
-   * `self_hosted` is retained for upstream compatibility and rejected by Tetral
-   * backend admission in this stage.
+   * Body param: Environment configuration
    */
   config?: BetaCloudConfigParams | BetaSelfHostedConfigParams | null;
 
@@ -542,9 +531,10 @@ export interface EnvironmentCreateParams {
   metadata?: { [key: string]: string };
 
   /**
-   * Body param: Retained unsupported/deferred compatibility field. Tetral resource
-   * boundaries are workspace-scoped and Tetral backend admission rejects explicit
-   * account/organization Environment scope in this stage.
+   * Body param: The visibility scope for this environment. 'organization' makes the
+   * environment visible to all accounts. 'account' restricts visibility to the
+   * owning account only. API organizations support only 'organization'; 'account' is
+   * rejected. If not specified, defaults based on organization type.
    */
   scope?: 'organization' | 'account' | null;
 
@@ -552,6 +542,16 @@ export interface EnvironmentCreateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EnvironmentRetrieveParams {
@@ -559,18 +559,27 @@ export interface EnvironmentRetrieveParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EnvironmentUpdateParams {
   /**
-   * Body param: Updated environment configuration. Tetral supports `cloud` config
-   * only; `self_hosted` is retained for upstream compatibility and rejected by
-   * Tetral backend admission in this stage.
+   * Body param: Updated environment configuration
    */
   config?: BetaCloudConfigParams | BetaSelfHostedConfigParams | null;
 
   /**
-   * Body param: Updated description of the environment
+   * Body param: Updated description of the environment. Omit to preserve; null
+   * clears to null; an empty string is stored as an empty string.
    */
   description?: string | null;
 
@@ -586,9 +595,9 @@ export interface EnvironmentUpdateParams {
   name?: string | null;
 
   /**
-   * Body param: Retained unsupported/deferred compatibility field. Tetral resource
-   * boundaries are workspace-scoped and Tetral backend admission rejects explicit
-   * account/organization Environment scope in this stage.
+   * Body param: The visibility scope for this environment. 'organization' makes the
+   * environment visible to all accounts. 'account' restricts visibility to the
+   * owning account only.
    */
   scope?: 'organization' | 'account' | null;
 
@@ -596,6 +605,16 @@ export interface EnvironmentUpdateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EnvironmentListParams extends PageCursorParams {
@@ -608,6 +627,16 @@ export interface EnvironmentListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EnvironmentDeleteParams {
@@ -615,6 +644,16 @@ export interface EnvironmentDeleteParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface EnvironmentArchiveParams {
@@ -622,6 +661,16 @@ export interface EnvironmentArchiveParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 Environments.Work = Work;

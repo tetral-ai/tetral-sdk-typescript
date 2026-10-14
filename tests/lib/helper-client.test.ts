@@ -5,9 +5,9 @@
 // parent not mutated — without re-exercising `withOptions`'s own inheritance
 // contract (which is the SDK's job to keep working).
 
-import Anthropic from '@tetral-ai/sdk';
-import { copyClientForHelper } from '@tetral-ai/sdk/lib/helper-client';
-import { AnthropicError } from '@tetral-ai/sdk/core/error';
+import Anthropic from '@anthropic-ai/sdk';
+import { copyClientForHelper } from '@anthropic-ai/sdk/lib/helper-client';
+import { AnthropicError } from '@anthropic-ai/sdk/core/error';
 
 const VALID_MSG_RESPONSE = {
   id: 'msg_1',

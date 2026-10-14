@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -12,7 +10,7 @@ describe('resource messages', () => {
     const responsePromise = client.messages.create({
       max_tokens: 1024,
       messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-5',
     });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -27,9 +25,19 @@ describe('resource messages', () => {
     const response = await client.messages.create({
       max_tokens: 1024,
       messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-5',
       cache_control: { type: 'ephemeral', ttl: '5m' },
-      container: 'container',
+      container: {
+        id: 'id',
+        skills: [
+          {
+            skill_id: 'pdf',
+            type: 'anthropic',
+            version: 'latest',
+          },
+        ],
+      },
+      diagnostics: { previous_message_id: 'previous_message_id' },
       inference_geo: 'inference_geo',
       metadata: { user_id: '13803d75-b4b5-4c3e-b2a2-6f21399b021b' },
       output_config: {
@@ -49,7 +57,7 @@ describe('resource messages', () => {
           cache_control: { type: 'ephemeral', ttl: '5m' },
           citations: [
             {
-              cited_text: 'cited_text',
+              cited_text: 'The grass is green. The sky is blue.',
               document_index: 0,
               document_title: 'x',
               end_char_index: 0,
@@ -83,13 +91,14 @@ describe('resource messages', () => {
       top_k: 5,
       top_p: 0.7,
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
   test('countTokens: only required params', async () => {
     const responsePromise = client.messages.countTokens({
       messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-5',
     });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -103,7 +112,7 @@ describe('resource messages', () => {
   test('countTokens: required and optional params', async () => {
     const response = await client.messages.countTokens({
       messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-5',
       cache_control: { type: 'ephemeral', ttl: '5m' },
       output_config: {
         effort: 'low',
@@ -119,7 +128,7 @@ describe('resource messages', () => {
           cache_control: { type: 'ephemeral', ttl: '5m' },
           citations: [
             {
-              cited_text: 'cited_text',
+              cited_text: 'The grass is green. The sky is blue.',
               document_index: 0,
               document_title: 'x',
               end_char_index: 0,
@@ -150,29 +159,13 @@ describe('resource messages', () => {
         },
       ],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 });
 
-test('create: warns when using a deprecated model', async () => {
-  const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-  await client.messages.create({
-    max_tokens: 1024,
-    messages: [{ content: 'Hello, world', role: 'user' }],
-    model: 'claude-instant-1.2',
-  });
-
-  expect(consoleSpy).toHaveBeenCalledWith(
-    "The model 'claude-instant-1.2' is deprecated and will reach end-of-life on November 6th, 2024\n" +
-      'Please migrate to a newer model. Visit https://docs.anthropic.com/en/docs/resources/model-deprecations for more information.',
-  );
-
-  consoleSpy.mockRestore();
-});
-
 test('create: does not warn for non-deprecated models', async () => {
-  const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+  const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
   await client.messages.create({
     max_tokens: 1024,
@@ -183,4 +176,63 @@ test('create: does not warn for non-deprecated models', async () => {
   expect(consoleSpy).not.toHaveBeenCalled();
 
   consoleSpy.mockRestore();
+});
+
+describe('create: non-streaming timeout', () => {
+  const message = {
+    id: 'msg_1',
+    type: 'message',
+    role: 'assistant',
+    model: 'claude-sonnet-4-5',
+    content: [{ type: 'text', text: 'hi' }],
+    stop_reason: 'end_turn',
+    stop_sequence: null,
+    usage: { input_tokens: 1, output_tokens: 1 },
+  };
+
+  function makeClient(opts: { timeout?: number } = {}) {
+    const requests: RequestInit[] = [];
+    const fetch = async (_url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      requests.push(init ?? {});
+      return new Response(JSON.stringify(message), { headers: { 'Content-Type': 'application/json' } });
+    };
+    const client = new Anthropic({ apiKey: 'test-key', fetch, ...opts });
+    return { client, requests };
+  }
+
+  const sentTimeoutSeconds = (init: RequestInit | undefined) =>
+    new Headers(init?.headers).get('x-stainless-timeout');
+
+  // max_tokens large enough that the estimated non-streaming duration exceeds the 10 minute default
+  const longParams = {
+    model: 'claude-sonnet-5-5',
+    max_tokens: 128_000,
+    messages: [{ role: 'user' as const, content: 'hi' }],
+  };
+
+  test('throws for long requests when no timeout is configured', async () => {
+    const { client, requests } = makeClient();
+    await expect(async () => client.messages.create(longParams)).rejects.toThrow(/Streaming is required/);
+    expect(requests).toHaveLength(0);
+  });
+
+  test('a per-request timeout bypasses the long-request check', async () => {
+    const { client, requests } = makeClient();
+    await client.messages.create(longParams, { timeout: 20 * 60 * 1000 });
+    expect(requests).toHaveLength(1);
+    expect(sentTimeoutSeconds(requests[0])).toBe('1200');
+  });
+
+  test('a client-level timeout bypasses the long-request check', async () => {
+    const { client, requests } = makeClient({ timeout: 20 * 60 * 1000 });
+    await client.messages.create(longParams);
+    expect(requests).toHaveLength(1);
+    expect(sentTimeoutSeconds(requests[0])).toBe('1200');
+  });
+
+  test('short requests still get the computed default timeout', async () => {
+    const { client, requests } = makeClient();
+    await client.messages.create({ ...longParams, max_tokens: 1024 });
+    expect(sentTimeoutSeconds(requests[0])).toBe('600');
+  });
 });

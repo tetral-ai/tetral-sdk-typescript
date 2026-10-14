@@ -1,25 +1,28 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../core/resource';
 import { Webhook } from 'standardwebhooks';
 
-/**
- * Retained webhook payload compatibility helpers. Tetral webhook delivery and
- * management behavior is deferred in this stage; `unwrap` remains a local
- * verifier/parser for compatible payloads.
- */
 export class Webhooks extends APIResource {
-  unwrap(
-    body: string,
-    { headers, key }: { headers: Record<string, string>; key?: string },
-  ): UnwrapWebhookEvent {
-    if (headers !== undefined) {
-      const keyStr: string | null = key === undefined ? this._client.webhookKey : key;
-      if (keyStr === null) throw new Error('Webhook key must not be null in order to unwrap');
-      const wh = new Webhook(keyStr);
-      wh.verify(body, headers);
-    }
-    return JSON.parse(body) as UnwrapWebhookEvent;
+  /**
+   * Parses a webhook payload into an event without verifying its signature. Prefer
+   * `unwrap()` unless you have already verified the signature yourself.
+   */
+  parseUnverified(body: string): BetaWebhookEvent {
+    return JSON.parse(body) as BetaWebhookEvent;
+  }
+
+  /**
+   * Verifies the webhook signature from the `webhook-id`, `webhook-timestamp` and
+   * `webhook-signature` headers using your webhook signing key, then parses the
+   * payload into an event. Fails if the signature is missing or invalid.
+   */
+  unwrap(body: string, options: { headers: Record<string, string>; key?: string }): BetaWebhookEvent {
+    const headers = options?.headers;
+    if (headers == null) throw new Error('Webhook headers are required in order to verify the signature');
+    const keyStr: string | null = options.key === undefined ? this._client.webhookKey : options.key;
+    if (!keyStr) throw new Error('Webhook key must not be null or empty in order to unwrap');
+    const wh = new Webhook(keyStr);
+    wh.verify(body, headers);
+    return JSON.parse(body) as BetaWebhookEvent;
   }
 }
 
@@ -192,6 +195,58 @@ export interface BetaWebhookDeploymentUpdatedEventData {
   workspace_id: string;
 }
 
+export interface BetaWebhookEnvironmentArchivedEventData {
+  /**
+   * ID of the environment that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'environment.archived';
+
+  workspace_id: string;
+}
+
+export interface BetaWebhookEnvironmentCreatedEventData {
+  /**
+   * ID of the environment that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'environment.created';
+
+  workspace_id: string;
+}
+
+export interface BetaWebhookEnvironmentDeletedEventData {
+  /**
+   * ID of the environment that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'environment.deleted';
+
+  workspace_id: string;
+}
+
+export interface BetaWebhookEnvironmentUpdatedEventData {
+  /**
+   * ID of the environment that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'environment.updated';
+
+  workspace_id: string;
+}
+
 export interface BetaWebhookEvent {
   /**
    * Unique event identifier for idempotency.
@@ -247,7 +302,54 @@ export type BetaWebhookEventData =
   | BetaWebhookDeploymentArchivedEventData
   | BetaWebhookDeploymentRunStartedEventData
   | BetaWebhookDeploymentDeletedEventData
-  | BetaWebhookDeploymentRunSucceededEventData;
+  | BetaWebhookDeploymentRunSucceededEventData
+  | BetaWebhookEnvironmentCreatedEventData
+  | BetaWebhookEnvironmentUpdatedEventData
+  | BetaWebhookEnvironmentArchivedEventData
+  | BetaWebhookEnvironmentDeletedEventData
+  | BetaWebhookMemoryStoreCreatedEventData
+  | BetaWebhookMemoryStoreArchivedEventData
+  | BetaWebhookMemoryStoreDeletedEventData
+  | BetaWebhookSessionBudgetReachedEventData;
+
+export interface BetaWebhookMemoryStoreArchivedEventData {
+  /**
+   * ID of the memory store that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'memory_store.archived';
+
+  workspace_id: string;
+}
+
+export interface BetaWebhookMemoryStoreCreatedEventData {
+  /**
+   * ID of the memory store that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'memory_store.created';
+
+  workspace_id: string;
+}
+
+export interface BetaWebhookMemoryStoreDeletedEventData {
+  /**
+   * ID of the memory store that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'memory_store.deleted';
+
+  workspace_id: string;
+}
 
 export interface BetaWebhookSessionArchivedEventData {
   /**
@@ -258,6 +360,19 @@ export interface BetaWebhookSessionArchivedEventData {
   organization_id: string;
 
   type: 'session.archived';
+
+  workspace_id: string;
+}
+
+export interface BetaWebhookSessionBudgetReachedEventData {
+  /**
+   * ID of the session that triggered the event.
+   */
+  id: string;
+
+  organization_id: string;
+
+  type: 'session.budget_reached';
 
   workspace_id: string;
 }
@@ -583,24 +698,10 @@ export interface BetaWebhookVaultDeletedEventData {
   workspace_id: string;
 }
 
-export interface UnwrapWebhookEvent {
-  /**
-   * Unique event identifier for idempotency.
-   */
-  id: string;
-
-  /**
-   * RFC 3339 timestamp when the event occurred.
-   */
-  created_at: string;
-
-  data: BetaWebhookEventData;
-
-  /**
-   * Object type. Always `event` for webhook payloads.
-   */
-  type: 'event';
-}
+/**
+ * @deprecated UnwrapWebhookEvent has been renamed to BetaWebhookEvent
+ */
+export type UnwrapWebhookEvent = BetaWebhookEvent;
 
 export declare namespace Webhooks {
   export {
@@ -617,9 +718,17 @@ export declare namespace Webhooks {
     type BetaWebhookDeploymentRunSucceededEventData as BetaWebhookDeploymentRunSucceededEventData,
     type BetaWebhookDeploymentUnpausedEventData as BetaWebhookDeploymentUnpausedEventData,
     type BetaWebhookDeploymentUpdatedEventData as BetaWebhookDeploymentUpdatedEventData,
+    type BetaWebhookEnvironmentArchivedEventData as BetaWebhookEnvironmentArchivedEventData,
+    type BetaWebhookEnvironmentCreatedEventData as BetaWebhookEnvironmentCreatedEventData,
+    type BetaWebhookEnvironmentDeletedEventData as BetaWebhookEnvironmentDeletedEventData,
+    type BetaWebhookEnvironmentUpdatedEventData as BetaWebhookEnvironmentUpdatedEventData,
     type BetaWebhookEvent as BetaWebhookEvent,
     type BetaWebhookEventData as BetaWebhookEventData,
+    type BetaWebhookMemoryStoreArchivedEventData as BetaWebhookMemoryStoreArchivedEventData,
+    type BetaWebhookMemoryStoreCreatedEventData as BetaWebhookMemoryStoreCreatedEventData,
+    type BetaWebhookMemoryStoreDeletedEventData as BetaWebhookMemoryStoreDeletedEventData,
     type BetaWebhookSessionArchivedEventData as BetaWebhookSessionArchivedEventData,
+    type BetaWebhookSessionBudgetReachedEventData as BetaWebhookSessionBudgetReachedEventData,
     type BetaWebhookSessionCreatedEventData as BetaWebhookSessionCreatedEventData,
     type BetaWebhookSessionDeletedEventData as BetaWebhookSessionDeletedEventData,
     type BetaWebhookSessionIdledEventData as BetaWebhookSessionIdledEventData,

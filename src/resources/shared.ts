@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 export interface APIErrorObject {
   message: string;
 
@@ -18,7 +16,6 @@ export interface BillingError {
   type: 'billing_error';
 }
 
-/** A Tetral Engine write cannot proceed because durable state has changed. */
 export interface ConflictError {
   message: string;
 
@@ -79,7 +76,6 @@ export interface NotFoundError {
   type: 'not_found_error';
 }
 
-/** A Tetral Engine route is recognized but is not implemented by this deployment. */
 export interface NotImplementedError {
   message: string;
 
@@ -104,7 +100,6 @@ export interface RateLimitError {
   type: 'rate_limit_error';
 }
 
-/** A Tetral Engine request exceeded the route's admitted body or item limit. */
 export interface RequestTooLargeError {
   message: string;
 

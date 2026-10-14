@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { castToError } from '../internal/errors';
 import type { ErrorType } from '../resources/shared';
 
@@ -18,6 +16,7 @@ export class APIError<
   readonly error: TError;
 
   readonly requestID: string | null | undefined;
+  readonly workspaceID: string | null | undefined;
 
   /** The `error.type` from the API response body, e.g. `"rate_limit_error"` */
   readonly type: ErrorType | null;
@@ -33,6 +32,7 @@ export class APIError<
     this.status = status;
     this.headers = headers;
     this.requestID = headers?.get('request-id');
+    this.workspaceID = headers?.get('anthropic-workspace-id');
     this.error = error;
     this.type = type ?? null;
   }

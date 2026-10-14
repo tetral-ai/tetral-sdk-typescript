@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
 import * as CredentialsAPI from './credentials';
@@ -76,12 +74,15 @@ export class Vaults extends APIResource {
    * ```
    */
   create(params: VaultCreateParams, options?: RequestOptions): APIPromise<BetaManagedAgentsVault> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post('/v1/vaults?beta=true', {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -103,11 +104,14 @@ export class Vaults extends APIResource {
     params: VaultRetrieveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsVault> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.get(path`/v1/vaults/${vaultID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -129,12 +133,15 @@ export class Vaults extends APIResource {
     params: VaultUpdateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsVault> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/vaults/${vaultID}?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -155,12 +162,15 @@ export class Vaults extends APIResource {
     params: VaultListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsVaultsPageCursor, BetaManagedAgentsVault> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList('/v1/vaults?beta=true', PageCursor<BetaManagedAgentsVault>, {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -182,11 +192,14 @@ export class Vaults extends APIResource {
     params: VaultDeleteParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsDeletedVault> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.delete(path`/v1/vaults/${vaultID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -208,11 +221,14 @@ export class Vaults extends APIResource {
     params: VaultArchiveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsVault> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.post(path`/v1/vaults/${vaultID}/archive?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -243,7 +259,7 @@ export interface BetaManagedAgentsVault {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the vault was archived. Null if not archived.
    */
   archived_at: string | null;
 
@@ -286,6 +302,16 @@ export interface VaultCreateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface VaultRetrieveParams {
@@ -293,6 +319,16 @@ export interface VaultRetrieveParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface VaultUpdateParams {
@@ -311,6 +347,16 @@ export interface VaultUpdateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface VaultListParams extends PageCursorParams {
@@ -323,6 +369,16 @@ export interface VaultListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface VaultDeleteParams {
@@ -330,6 +386,16 @@ export interface VaultDeleteParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface VaultArchiveParams {
@@ -337,6 +403,16 @@ export interface VaultArchiveParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 Vaults.Credentials = Credentials;

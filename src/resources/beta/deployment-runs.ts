@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../core/resource';
 import * as BetaAPI from './beta';
 import * as AgentsAPI from './agents/agents';
@@ -9,11 +7,6 @@ import { buildHeaders } from '../../internal/headers';
 import { RequestOptions } from '../../internal/request-options';
 import { path } from '../../internal/utils/path';
 
-/**
- * Retained upstream Deployment Runs compatibility resource. Tetral defers this
- * route family in this stage; calls keep normal generated request paths and
- * backend admission returns SDK-compatible errors.
- */
 export class DeploymentRuns extends APIResource {
   /**
    * Get Deployment Run
@@ -31,11 +24,14 @@ export class DeploymentRuns extends APIResource {
     params: DeploymentRunRetrieveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsDeploymentRun> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.get(path`/v1/deployment_runs/${deploymentRunID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -56,7 +52,7 @@ export class DeploymentRuns extends APIResource {
     params: DeploymentRunListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsDeploymentRunsPageCursor, BetaManagedAgentsDeploymentRun> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList(
       '/v1/deployment_runs?beta=true',
       PageCursor<BetaManagedAgentsDeploymentRun>,
@@ -64,7 +60,10 @@ export class DeploymentRuns extends APIResource {
         query,
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -97,12 +96,13 @@ export interface BetaManagedAgentsDeploymentRun {
   id: string;
 
   /**
-   * A resolved agent reference with a concrete version.
+   * Snapshot of the agent at fire time. Always fully resolved — deployments pin
+   * agent + version.
    */
   agent: AgentsAPI.BetaManagedAgentsAgentReference;
 
   /**
-   * A timestamp in RFC 3339 format
+   * Time this run record was persisted.
    */
   created_at: string;
 
@@ -112,8 +112,8 @@ export interface BetaManagedAgentsDeploymentRun {
   deployment_id: string;
 
   /**
-   * Why the run failed to create a session. The type identifies the failure; message
-   * is human-readable detail.
+   * Populated on creation failure. Null on success. Exactly one of `session_id` or
+   * `error` is non-null.
    */
   error:
     | BetaManagedAgentsEnvironmentArchivedRunError
@@ -135,13 +135,13 @@ export interface BetaManagedAgentsDeploymentRun {
     | null;
 
   /**
-   * Populated on success. Null on creation failure. Exactly one of session_id or
-   * error is non-null.
+   * Populated on success. Null on creation failure. Exactly one of `session_id` or
+   * `error` is non-null.
    */
   session_id: string | null;
 
   /**
-   * Describes what triggered a deployment run, with trigger-specific metadata.
+   * What triggered this run and trigger-specific metadata.
    */
   trigger_context: BetaManagedAgentsTriggerContext;
 
@@ -234,7 +234,9 @@ export interface BetaManagedAgentsOrganizationDisabledRunError {
  */
 export interface BetaManagedAgentsScheduleTriggerContext {
   /**
-   * A timestamp in RFC 3339 format
+   * The UTC instant at which the cron expression matched in the configured timezone,
+   * before jitter is applied. At most one run is recorded per (`deployment_id`,
+   * `scheduled_at`) pair.
    */
   scheduled_at: string;
 
@@ -312,6 +314,10 @@ export type BetaManagedAgentsTriggerContext =
 
 /**
  * What triggered a deployment run.
+ *
+ * - `schedule` - The run was fired by the deployment's cron schedule.
+ * - `manual` - The run was started manually by creating a session directly against
+ *   the deployment.
  */
 export type BetaManagedAgentsTriggerType = 'schedule' | 'manual';
 
@@ -369,6 +375,16 @@ export interface DeploymentRunRetrieveParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface DeploymentRunListParams extends PageCursorParams {
@@ -394,14 +410,14 @@ export interface DeploymentRunListParams extends PageCursorParams {
 
   /**
    * Query param: Filter to a specific deployment. Omit to list across all
-   * deployments in the workspace. Filtering by a non-existent deployment_id returns
-   * 200 with empty data.
+   * deployments in the workspace. Filtering by a non-existent `deployment_id`
+   * returns 200 with empty data.
    */
   deployment_id?: string;
 
   /**
-   * Query param: Filter: true for runs with non-null error, false for runs with
-   * non-null session_id. Omit for all.
+   * Query param: Filter: true for runs with non-null `error`, false for runs with
+   * non-null `session_id`. Omit for all.
    */
   has_error?: boolean;
 
@@ -414,6 +430,16 @@ export interface DeploymentRunListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export declare namespace DeploymentRuns {

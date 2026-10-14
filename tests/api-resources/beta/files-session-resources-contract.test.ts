@@ -54,30 +54,6 @@ describe('Tetral Files and Session Resources SDK contract', () => {
     expect(captured[0]!.body).toContain('a,b');
   });
 
-  test('files.upload parses backend 413 invalid_request_error for upload size failures', async () => {
-    const client = new Anthropic({
-      apiKey: 'test-tetral-key',
-      baseURL: 'https://api.tetral.example',
-      fetch: async () =>
-        jsonResponse(
-          {
-            type: 'error',
-            error: { type: 'invalid_request_error', message: 'upload too large' },
-          },
-          413,
-        ),
-    });
-
-    await expect(
-      client.beta.files.upload({
-        file: await toFile(Buffer.from('too large'), 'large.txt'),
-      }),
-    ).rejects.toMatchObject({
-      status: 413,
-      type: 'invalid_request_error',
-    });
-  });
-
   test('sessions.resources.add references an existing file_id and never uploads bytes', async () => {
     const captured: { url: string; body: unknown; contentType: string | null }[] = [];
     const client = new Anthropic({

@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { NullableHeaders } from './headers';
 
 import type { BodyInit } from './builtin-types';
@@ -35,7 +33,7 @@ export class BetaFallbackState {
  * to thread custom per-request context through to {@link Middleware}:
  *
  * ```ts
- * declare module '@tetral-ai/sdk/internal/request-options' {
+ * declare module '@anthropic-ai/sdk/internal/request-options' {
  *   interface RequestOptions {
  *     myContext?: string;
  *   }
@@ -120,7 +118,7 @@ export interface RequestOptions {
   fallbackState?: BetaFallbackState;
 
   /**
-   * A unique key for this request to enable idempotency.
+   * @deprecated This option has no effect and will be removed in a future major version.
    */
   idempotencyKey?: string;
 

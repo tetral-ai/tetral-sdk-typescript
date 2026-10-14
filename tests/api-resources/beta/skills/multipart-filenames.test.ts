@@ -8,7 +8,7 @@
 // "SKILL.md must be exactly in the top-level folder", so each endpoint passes
 // `stripFilenames=false`. This test guards against that flag being dropped.
 
-import Anthropic, { toFile } from '@tetral-ai/sdk';
+import Anthropic, { toFile } from '@anthropic-ai/sdk';
 
 /** Run `call`, intercepting the outgoing request, and return every
  *  `filename="..."` value present in the serialized multipart body. */
@@ -47,6 +47,24 @@ describe('skills uploads preserve directory-qualified filenames', () => {
   test('skills.create sends `my-skill/SKILL.md`, not `SKILL.md`', async () => {
     const names = await uploadedFilenames(async (client) =>
       client.beta.skills.create({
+        files: [await toFile(Buffer.from('# Skill\n'), 'my-skill/SKILL.md')],
+      }),
+    );
+    expect(names).toEqual(['my-skill/SKILL.md']);
+  });
+
+  test('GA skills.versions.create sends `my-skill/SKILL.md`, not `SKILL.md`', async () => {
+    const names = await uploadedFilenames(async (client) =>
+      client.skills.versions.create('skill_id', {
+        files: [await toFile(Buffer.from('# Skill\n'), 'my-skill/SKILL.md')],
+      }),
+    );
+    expect(names).toEqual(['my-skill/SKILL.md']);
+  });
+
+  test('GA skills.create sends `my-skill/SKILL.md`, not `SKILL.md`', async () => {
+    const names = await uploadedFilenames(async (client) =>
+      client.skills.create({
         files: [await toFile(Buffer.from('# Skill\n'), 'my-skill/SKILL.md')],
       }),
     );

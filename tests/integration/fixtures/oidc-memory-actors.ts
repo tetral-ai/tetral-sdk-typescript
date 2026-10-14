@@ -9,8 +9,8 @@ import type {
 
 function actorIdentity(actor: BetaManagedAgentsActor): string {
   switch (actor.type) {
-    case 'service_actor':
-      return actor.service_id;
+    case 'service_account_actor':
+      return actor.service_account_id;
     case 'user_actor':
       return actor.user_id;
     case 'api_actor':

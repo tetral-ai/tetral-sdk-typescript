@@ -1,8 +1,6 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { Webhook } from 'standardwebhooks';
 
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -13,7 +11,7 @@ describe('resource webhooks', () => {
   test('unwrap', () => {
     const key = 'whsec_c2VjcmV0Cg==';
     const payload =
-      '{"id":"wevt_011CZkZYZd9rLmz3ujAcsqEw","created_at":"2026-03-15T10:00:00Z","data":{"id":"sesn_011CZkZAtmR3yMPDzynEDxu7","organization_id":"org_011CZkZZAe0sMna4vkBdtrfx","type":"session.status_idled","workspace_id":"wrkspc_011CZkZaBF1tNoB5wlCeusgy"},"type":"event"}';
+      '{"id":"whe_0f1e2d3c4b5a69788796a5b4c3d2e1f0","created_at":"2026-03-15T10:00:00Z","data":{"id":"sesn_011CZkZAtmR3yMPDzynEDxu7","organization_id":"org_011CZkZZAe0sMna4vkBdtrfx","type":"session.status_idled","workspace_id":"wrkspc_011CZkZaBF1tNoB5wlCeusgy"},"type":"event"}';
     const msgID = '1';
     const timestamp = new Date();
     const wh = new Webhook('whsec_c2VjcmV0Cg==');
@@ -60,5 +58,21 @@ describe('resource webhooks', () => {
         .withOptions({ webhookKey: key })
         .beta.webhooks.unwrap(payload, { headers: { ...headers, 'webhook-id': 'wrong' } });
     }).toThrow('No matching signature found');
+    expect(() => {
+      // @ts-expect-error headers is required by the type; omitting it at runtime must still throw, never skip verification
+      client.beta.webhooks.unwrap(payload, { key });
+    }).toThrow('Webhook headers are required in order to verify the signature');
+    expect(() => {
+      // @ts-expect-error same for a caller that passes no options at all, or the headers in their place
+      client.beta.webhooks.unwrap(payload);
+    }).toThrow('Webhook headers are required in order to verify the signature');
+    expect(() => {
+      // @ts-expect-error
+      client.beta.webhooks.unwrap(payload, headers);
+    }).toThrow('Webhook headers are required in order to verify the signature');
+    expect(() => {
+      // An empty key is an HMAC key anyone can sign with, so it must be rejected rather than used
+      client.beta.webhooks.unwrap(payload, { headers, key: '' });
+    }).toThrow('Webhook key must not be null or empty in order to unwrap');
   });
 });

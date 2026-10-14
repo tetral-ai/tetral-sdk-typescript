@@ -1,4 +1,4 @@
-#!/usr/bin/env -S npm run tsn -T
+#!/usr/bin/env node
 
 import Anthropic from '@tetral-ai/sdk';
 
@@ -9,7 +9,7 @@ const client = new Anthropic({
 
 async function main(): Promise<void> {
   const sessionID = process.argv[2];
-  if (!sessionID) throw new Error('Usage: yarn tsn examples/session-streaming.ts <session_id> [prompt]');
+  if (!sessionID) throw new Error('Usage: node examples/session-streaming.ts <session_id> [prompt]');
   // Subscribe before starting a new request: previews are never replayed.
   const stream = await client.beta.sessions.events.stream(sessionID, {
     event_deltas: ['agent.message', 'agent.thinking'],

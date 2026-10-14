@@ -1,7 +1,7 @@
 import assert from 'assert';
-import { Stream, _iterSSEMessages } from '@tetral-ai/sdk/core/streaming';
-import { APIError } from '@tetral-ai/sdk/core/error';
-import { ReadableStreamFrom } from '@tetral-ai/sdk/internal/shims';
+import { Stream, _iterSSEMessages } from '@anthropic-ai/sdk/core/streaming';
+import { APIError } from '@anthropic-ai/sdk/core/error';
+import { ReadableStreamFrom } from '@anthropic-ai/sdk/internal/shims';
 
 describe('streaming decoding', () => {
   test('basic', async () => {
@@ -110,6 +110,35 @@ describe('streaming decoding', () => {
     assert(event.value);
     expect(event.value.event).toEqual('ping');
     expect(JSON.parse(event.value.data)).toEqual({ bar: false });
+
+    event = await stream.next();
+    expect(event.done).toBeTruthy();
+  });
+
+  test('multiple events in one chunk', async () => {
+    async function* body(): AsyncGenerator<Buffer> {
+      yield Buffer.from('event: a\ndata: {"i":1}\n\nevent: b\ndata: {"i":2}\n\nevent: c\n');
+      yield Buffer.from('data: {"i":3}\n\n');
+    }
+
+    const stream = _iterSSEMessages(new Response(ReadableStreamFrom(body())), new AbortController())[
+      Symbol.asyncIterator
+    ]();
+
+    let event = await stream.next();
+    assert(event.value);
+    expect(event.value.event).toEqual('a');
+    expect(JSON.parse(event.value.data)).toEqual({ i: 1 });
+
+    event = await stream.next();
+    assert(event.value);
+    expect(event.value.event).toEqual('b');
+    expect(JSON.parse(event.value.data)).toEqual({ i: 2 });
+
+    event = await stream.next();
+    assert(event.value);
+    expect(event.value.event).toEqual('c');
+    expect(JSON.parse(event.value.data)).toEqual({ i: 3 });
 
     event = await stream.next();
     expect(event.done).toBeTruthy();

@@ -1,8 +1,8 @@
-import * as realToolset from '@tetral-ai/sdk/tools/agent-toolset/node';
-import * as stubToolset from '@tetral-ai/sdk/tools/agent-toolset/node.browser';
-import * as realMemory from '@tetral-ai/sdk/tools/memory/node';
-import * as stubMemory from '@tetral-ai/sdk/tools/memory/node.browser';
-import { AnthropicError } from '@tetral-ai/sdk/core/error';
+import * as realToolset from '@anthropic-ai/sdk/tools/agent-toolset/node';
+import * as stubToolset from '@anthropic-ai/sdk/tools/agent-toolset/node.browser';
+import * as realMemory from '@anthropic-ai/sdk/tools/memory/node';
+import * as stubMemory from '@anthropic-ai/sdk/tools/memory/node.browser';
+import { AnthropicError } from '@anthropic-ai/sdk/core/error';
 
 // The browser stubs are substituted for the Node-only modules via the
 // `browser` field in package.json. They must export the same value surface as
@@ -46,6 +46,18 @@ describe('tools/agent-toolset/node.browser', () => {
     expect(() => stubToolset.setupSkills(ctx)).toThrow('setupSkills requires Node.js');
     expect(() => stubToolset.betaBashTool(ctx)).toThrow('betaBashTool requires Node.js');
     expect(() => new stubToolset.BashSession('/tmp')).toThrow('BashSession requires Node.js');
+    expect(() => new stubToolset.SessionMemoryStores(null as never, { workdir: '/tmp' })).toThrow(
+      'SessionMemoryStores requires Node.js or a Node-compatible runtime',
+    );
+  });
+
+  it('duplicates the memory sync interval literal exactly', () => {
+    // The stub cannot re-export the value (that would pull Node built-ins into
+    // browser bundles), so it duplicates the literal — pin them together.
+    expect(stubToolset.DEFAULT_MEMORY_SYNC_INTERVAL_MS).toBe(realToolset.DEFAULT_MEMORY_SYNC_INTERVAL_MS);
+    expect(stubToolset.MIN_MEMORY_SYNC_INTERVAL_MS).toBe(realToolset.MIN_MEMORY_SYNC_INTERVAL_MS);
+    expect(stubToolset.MARKER_PATH).toBe(realToolset.MARKER_PATH);
+    expect(stubToolset.MEMORY_FLUSH_TIMEOUT_MS).toBe(realToolset.MEMORY_FLUSH_TIMEOUT_MS);
   });
 });
 

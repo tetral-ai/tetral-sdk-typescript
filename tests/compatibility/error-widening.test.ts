@@ -10,7 +10,18 @@ function acceptsErrorType(_value: ErrorType): void {}
 function acceptsErrorObject(_value: ErrorObject): void {}
 
 describe('Tetral Engine shared error widening', () => {
-  test('includes every Engine-only envelope type and body', () => {
+  test('includes standard and Engine-only envelope types and bodies', () => {
+    for (const type of [
+      'invalid_request_error',
+      'authentication_error',
+      'permission_error',
+      'not_found_error',
+      'api_error',
+    ] as const) {
+      acceptsErrorType(type);
+      acceptsErrorObject({ type, message: 'error' });
+    }
+
     const conflict: ConflictError = { type: 'conflict_error', message: 'conflict' };
     const requestTooLarge: RequestTooLargeError = {
       type: 'request_too_large',

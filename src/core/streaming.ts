@@ -1,7 +1,7 @@
 import { AnthropicError } from './error';
 import { type ReadableStream } from '../internal/shim-types';
 import { makeReadableStream } from '../internal/shims';
-import { findDoubleNewlineIndex, LineDecoder } from '../internal/decoders/line';
+import { LineDecoder } from '../internal/decoders/line';
 import { ReadableStreamToAsyncIterable } from '../internal/shims';
 import { isAbortError } from '../internal/errors';
 import { safeJSON } from '../internal/utils/values';
@@ -11,6 +11,7 @@ import type { BaseAnthropic } from '../client';
 
 import { APIError } from './error';
 import type { ErrorType } from '../resources/shared';
+import { releaseRequestSignal } from '../internal/request-signal';
 
 type Bytes = string | ArrayBuffer | Uint8Array | null | undefined;
 
@@ -120,7 +121,14 @@ export class Stream<Item> implements AsyncIterable<Item> {
             sse.event === 'session.thread_status_terminated' ||
             sse.event === 'event_start' ||
             sse.event === 'event_delta' ||
-            sse.event === 'system.message'
+            sse.event === 'system.message' ||
+            sse.event === 'workflow_run.created' ||
+            sse.event === 'workflow_run.status_running' ||
+            sse.event === 'workflow_run.status_idle' ||
+            sse.event === 'workflow_run.status_ended' ||
+            sse.event === 'workflow_run.error' ||
+            sse.event === 'workflow_run.phase_started' ||
+            sse.event === 'workflow_run.phase_ended'
           ) {
             try {
               yield JSON.parse(sse.data) as Item;
@@ -149,6 +157,7 @@ export class Stream<Item> implements AsyncIterable<Item> {
       } finally {
         // If the user `break`s, abort the ongoing request.
         if (!done) controller.abort();
+        releaseRequestSignal(controller);
       }
     }
 
@@ -200,6 +209,7 @@ export class Stream<Item> implements AsyncIterable<Item> {
       } finally {
         // If the user `break`s, abort the ongoing request.
         if (!done) controller.abort();
+        releaseRequestSignal(controller);
       }
     }
 
@@ -291,8 +301,8 @@ export async function* _iterSSEMessages(
   const lineDecoder = new LineDecoder();
 
   const iter = ReadableStreamToAsyncIterable<Bytes>(response.body);
-  for await (const sseChunk of iterSSEChunks(iter)) {
-    for (const line of lineDecoder.decode(sseChunk)) {
+  for await (const chunk of iter) {
+    for (const line of lineDecoder.decode(chunk)) {
       const sse = sseDecoder.decode(line);
       if (sse) yield sse;
     }
@@ -301,40 +311,6 @@ export async function* _iterSSEMessages(
   for (const line of lineDecoder.flush()) {
     const sse = sseDecoder.decode(line);
     if (sse) yield sse;
-  }
-}
-
-/**
- * Given an async iterable iterator, iterates over it and yields full
- * SSE chunks, i.e. yields when a double new-line is encountered.
- */
-async function* iterSSEChunks(iterator: AsyncIterableIterator<Bytes>): AsyncGenerator<Uint8Array> {
-  let data = new Uint8Array();
-
-  for await (const chunk of iterator) {
-    if (chunk == null) {
-      continue;
-    }
-
-    const binaryChunk =
-      chunk instanceof ArrayBuffer ? new Uint8Array(chunk)
-      : typeof chunk === 'string' ? encodeUTF8(chunk)
-      : chunk;
-
-    let newData = new Uint8Array(data.length + binaryChunk.length);
-    newData.set(data);
-    newData.set(binaryChunk, data.length);
-    data = newData;
-
-    let patternIndex;
-    while ((patternIndex = findDoubleNewlineIndex(data)) !== -1) {
-      yield data.slice(0, patternIndex);
-      data = data.slice(patternIndex);
-    }
-  }
-
-  if (data.length > 0) {
-    yield data;
   }
 }
 

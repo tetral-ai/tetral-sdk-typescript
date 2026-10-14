@@ -3,7 +3,7 @@
  * `write`, `edit`, `glob`, `grep` — plus the workdir/skills
  * {@link AgentToolContext}.
  *
- * This mirrors `@tetral-ai/sdk/tools/memory/node`: it is the explicit,
+ * This mirrors `@anthropic-ai/sdk/tools/memory/node`: it is the explicit,
  * Node-only entry point for these implementations. Importing it pulls in
  * `node:child_process`, `node:fs`, etc., so it is kept separate from the rest of
  * the SDK — depending on it is an opt-in.
@@ -18,15 +18,15 @@
  * for a managed-agents session:
  *
  * ```ts
- * import { betaAgentToolset20260401 } from '@tetral-ai/sdk/tools/agent-toolset/node';
+ * import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
  *
  * const tools = betaAgentToolset20260401({ workdir: '/work' });
  * const tools2 = betaAgentToolset20260401({ workdir: '/work' }).filter((t) => t.name !== 'bash');
  * ```
  *
- * Trust model: the file tools confine to `workdir` (symlink-aware) and are safe
- * without a sandbox; `bash` is unrestricted and should run inside one. See
- * {@link AgentToolContext}.
+ * Trust model: the file tools confine to `workdir` plus any `allowedRoots`
+ * (symlink-aware) and are safe without a sandbox; `bash` is unrestricted and
+ * should run inside one. See {@link AgentToolContext}.
  */
 
 import * as fs from 'node:fs/promises';
@@ -36,14 +36,33 @@ import * as cp from 'node:child_process';
 import * as crypto from 'node:crypto';
 import * as readline from 'node:readline';
 import type { Anthropic } from '../../client';
+import type { BetaManagedAgentsSession } from '../../resources/beta/sessions/sessions';
 import { AnthropicError } from '../../core/error';
 import type { BetaRunnableTool } from '../../lib/tools/BetaRunnableTool';
 import { ToolError } from '../../lib/tools/ToolError';
 import { betaTool } from '../../helpers/beta/json-schema';
 import { promiseWithResolvers } from '../../internal/utils/promise';
-import { atomicWriteFile, confineToRoot, DIR_CREATE_MODE, fsErrorMessage } from './fs-util';
+import {
+  atomicWriteFile,
+  canonicalize,
+  confineToRoot,
+  containingRoot,
+  DIR_CREATE_MODE,
+  fsErrorMessage,
+  isWithin,
+} from './fs-util';
 
-export { setupSkills, resolveSkillVersion, extractSkillArchive } from './skills';
+export { setupSkills, extractSkillArchive } from './skills';
+export {
+  SessionMemoryStores,
+  SessionMemoryError,
+  DEFAULT_MEMORY_SYNC_INTERVAL_MS,
+  MIN_MEMORY_SYNC_INTERVAL_MS,
+  MEMORY_FLUSH_TIMEOUT_MS,
+  MARKER_PATH,
+  type MemoryDeleteMode,
+  type SessionMemoryStoresOptions,
+} from './memories';
 
 const BASH_OUTPUT_LIMIT = 100 * 1024;
 const BASH_DEFAULT_TIMEOUT_MS = 120_000;
@@ -51,9 +70,25 @@ const BASH_DEFAULT_TIMEOUT_MS = 120_000;
 // memory) when AgentToolContext.maxFileBytes is unset. The reject-vs-truncate
 // behaviour remains a separate question pending CMA validation.
 const DEFAULT_MAX_FILE_BYTES = 256 * 1024;
+const READ_STREAM_CHUNK_BYTES = 64 * 1024;
+const NEWLINE = Buffer.from('\n');
 const GREP_OUTPUT_LIMIT = 100 * 1024;
 const GREP_MAX_LINE_LENGTH = 2000;
 const GLOB_RESULT_LIMIT = 200;
+
+/**
+ * A bash command exceeded its `timeoutMs`. Carries the timeout so a caller can
+ * tell it apart from an abort without matching on the message text.
+ */
+export class BashTimeoutError extends AnthropicError {
+  readonly timeoutMs: number;
+
+  constructor(timeoutMs: number) {
+    super(`bash command timed out after ${timeoutMs}ms`);
+    this.name = 'BashTimeoutError';
+    this.timeoutMs = timeoutMs;
+  }
+}
 
 const ANSI_RE = /\x1b\[[0-9;?]*[ -/]*[@-~]/g;
 
@@ -75,18 +110,32 @@ function resolveMaxBytes(configured: number | null | undefined): number | null {
 }
 
 /**
+ * Throw when the deprecated {@link AgentToolContext.unrestrictedPaths} was
+ * passed at all. Nothing else reads that property.
+ */
+function rejectUnrestrictedPaths(value: boolean | undefined): void {
+  if (value === undefined) return;
+  throw new AnthropicError(
+    'The `unrestrictedPaths` option you passed to the agent toolset (AgentToolContext) is no longer ' +
+      "supported. The toolset's file tools (read, write, edit, glob, grep) are now always confined to " +
+      'the working directory plus the directories listed in `allowedRoots`. Remove `unrestrictedPaths` ' +
+      'from your context; to let the file tools reach any other directory, add it to `allowedRoots`.',
+  );
+}
+
+/**
  * Workdir + path-policy for the agent toolset.
  *
  * Trust model — two tiers:
  *
  * - The file tools ({@link betaReadTool}, {@link betaWriteTool},
  *   {@link betaEditTool}, {@link betaGlobTool}, {@link betaGrepTool}) confine to
- *   `workdir` unless `unrestrictedPaths` is set. {@link resolvePath}
- *   canonicalizes the target (resolving every symlink, including the leaf)
- *   before the check *and* returns that canonical path for the operation, so a
- *   symlink inside the workdir that points outside it neither passes the check
- *   nor gets followed afterwards — this is a real boundary, not a lexical hint
- *   (modulo the residual TOCTOU noted on {@link resolvePath}).
+ *   `workdir` plus any `allowedRoots`. {@link resolvePath} canonicalizes the
+ *   target (resolving every symlink, including the leaf) before the check
+ *   *and* returns that canonical path for the operation, so a symlink inside
+ *   the workdir that points outside it neither passes the check nor gets
+ *   followed afterwards — this is a real boundary, not a lexical hint (modulo
+ *   the residual TOCTOU noted on {@link resolvePath}).
  * - {@link betaBashTool} runs an unrestricted `/bin/bash` and cannot be
  *   confined. Run it — and, for defense in depth, the whole toolset — inside a
  *   sandbox the host controls (e.g. a self-hosted environment runner).
@@ -95,19 +144,48 @@ export interface AgentToolContext {
   /** Base directory for resolving relative tool paths. */
   workdir: string;
   /**
-   * When `false` (default), the file tools reject paths that resolve outside
-   * `workdir` (symlinks resolved). Does **not** constrain {@link betaBashTool}.
+   * @deprecated No longer accepted: the file tools are always confined to
+   * `workdir` plus `allowedRoots`, which is neither behavior this flag used to
+   * select, so passing either value throws. Remove it; list extra directories
+   * in {@link AgentToolContext.allowedRoots}. The property is removed in a
+   * future release.
    */
   unrestrictedPaths?: boolean;
   /**
+   * Absolute directories outside `workdir` the file tools may also reach,
+   * resolved at check time. The environment worker sets this to the session's
+   * memory-store folders. Does **not** constrain {@link betaBashTool}.
+   */
+  allowedRoots?: string[];
+  /**
    * Anthropic client. Optional — the bare toolset needs no client; it is only
-   * used by `setupSkills`, which (together with {@link AgentToolContext.sessionId})
-   * fetches the session's resolved agent and downloads each of its skills into
-   * `{workdir}/skills/<name>/`.
+   * used by `setupSkills`, which (together with {@link AgentToolContext.session},
+   * or the deprecated {@link AgentToolContext.sessionId}) downloads each of the
+   * session agent's skills into `{workdir}/skills/<name>/`.
    */
   client?: Anthropic;
-  /** Session whose agent's skills `setupSkills` should download. */
+  /**
+   * The already-fetched session whose agent's skills `setupSkills` downloads.
+   * A session's resources cannot change while it runs, so the caller fetches it
+   * once and shares that snapshot with the memory-store download; the two can
+   * then never disagree about them.
+   */
+  session?: BetaManagedAgentsSession;
+  /**
+   * @deprecated `setupSkills` fetches the session itself when given only an id,
+   * one extra round trip per context. Prefer {@link AgentToolContext.session}.
+   * Kept for callers written before `session` existed; ignored when `session`
+   * is set.
+   */
   sessionId?: string;
+  /**
+   * Directories the write and edit tools refuse to modify, resolved at check
+   * time exactly like `allowedRoots`. The worker sets this to the roots of
+   * read-only memory stores so the agent sees the error at write time instead
+   * of the change silently never syncing; the mechanism is generic to any
+   * directory.
+   */
+  readOnlyRoots?: string[];
   /**
    * Optional environment for the bash subprocess. When unset, the bash tool
    * inherits the process environment with SDK credential namespaces scrubbed.
@@ -116,14 +194,16 @@ export interface AgentToolContext {
    * to the scrubbed process environment. To keep the defaults plus extra vars,
    * build the combined mapping yourself before passing it.
    */
-  env?: NodeJS.ProcessEnv;
+  env?: Record<string, string | undefined>;
   /**
-   * Size cap for the `read` and `edit` tools, which both load the whole file into
-   * memory. `undefined` (default) uses the built-in 256 KiB cap; a positive number
-   * sets a custom cap; `null` disables the cap entirely. Disabling it reintroduces
-   * the OOM risk on a model-controlled path, so pass `null` only when the sandbox
-   * can absorb arbitrarily large files. The non-regular-file (FIFO/device) guard
-   * always applies regardless of this value.
+   * Size cap for a whole-file `read` and for `edit`, which both load the whole
+   * file into memory. A `read` with `view_range` on a larger file streams it and
+   * applies the cap to the selected lines instead. `undefined` (default) uses the
+   * built-in 256 KiB cap; a positive number sets a custom cap; `null` disables the
+   * cap entirely. Disabling it reintroduces the OOM risk on a model-controlled
+   * path, so pass `null` only when the sandbox can absorb arbitrarily large files.
+   * The non-regular-file (FIFO/device) guard always applies regardless of this
+   * value.
    */
   maxFileBytes?: number | null;
 }
@@ -140,8 +220,9 @@ export interface AgentToolContext {
  *
  * Concurrency note: `client.beta.sessions.events.toolRunner` dispatches a
  * session's tool calls serially (the sessions API delivers one `agent.tool_use`
- * at a time). `client.beta.messages.toolRunner` runs a turn's `tool.run` calls
- * via `Promise.all`. The toolset below is safe under either model —
+ * at a time). `client.beta.messages.toolRunner` starts a turn's `tool.run` calls
+ * without waiting for one another: together once the reply is complete or, when
+ * streaming, each as its call arrives. The toolset below is safe under either model —
  * {@link betaBashTool} serializes its persistent shell internally and the FS
  * tools are independent per call — but {@link betaEditTool}/{@link betaWriteTool}
  * cannot synchronize concurrent writes to the *same* file across processes, so a
@@ -160,13 +241,14 @@ export function betaAgentToolset20260401(ctx: AgentToolContext): BetaRunnableToo
 }
 
 /**
- * Resolve `p` against `ctx.workdir`. Absolute and relative inputs go through
- * the same canonicalise-then-contain check — an absolute path that lands inside
- * the workdir is permitted, only paths that resolve *outside* are rejected.
- * Every symlink in `p` (including the leaf, even a dangling one) is resolved
- * before the workdir check, and the resolved path is what the tool then operates
- * on, so a symlink inside the workdir that points outside it can neither pass
- * the check nor be followed afterwards. See the trust model on
+ * Resolve `p` against `ctx.workdir`; reject results outside `ctx.workdir` and
+ * `ctx.allowedRoots`. Absolute and relative inputs go through the same
+ * canonicalise-then-contain check — an absolute path that lands inside a
+ * permitted root is accepted, only paths that resolve *outside* all of them
+ * are rejected. Every symlink in `p` (including the leaf, even a dangling one)
+ * is resolved before the check, and the resolved path is what the tool then
+ * operates on, so a symlink inside the workdir that points outside it can
+ * neither pass the check nor be followed afterwards. See the trust model on
  * {@link AgentToolContext}.
  *
  * Residual TOCTOU: a component could still be swapped for a symlink between this
@@ -175,8 +257,19 @@ export function betaAgentToolset20260401(ctx: AgentToolContext): BetaRunnableToo
  * residual exposure exists in `tools/memory/node` and is why a sandbox is still
  * recommended for the toolset as a whole.
  */
-export function resolvePath(ctx: AgentToolContext, p: string): Promise<string> {
-  return confineToRoot(ctx.workdir, p, { allowOutside: ctx.unrestrictedPaths ?? false });
+export async function resolvePath(ctx: AgentToolContext, p: string): Promise<string> {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
+  return confineToRoot(ctx.workdir, p, { allowedRoots: ctx.allowedRoots ?? [] });
+}
+
+/**
+ * The read-only root `target` falls under, or `undefined`. `target` arrives
+ * fully canonicalized (from {@link resolvePath}), so each root is
+ * canonicalized too — a root recorded through a symlinked workdir must still
+ * match the resolved write target.
+ */
+function readOnlyRootFor(ctx: AgentToolContext, target: string): Promise<string | undefined> {
+  return containingRoot(ctx.readOnlyRoots ?? [], target);
 }
 
 // ---- bash ----------------------------------------------------------------
@@ -194,8 +287,8 @@ export function resolvePath(ctx: AgentToolContext, p: string): Promise<string> {
  * environment verbatim; nothing here is merged in, so callers who want the
  * scrubbed process environment plus extras must build that mapping themselves.
  */
-function scrubbedShellEnv(): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {};
+function scrubbedShellEnv(): Record<string, string | undefined> {
+  const env: Record<string, string | undefined> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (key.startsWith('ANTHROPIC_') || key.startsWith('TETRAL_')) continue;
     env[key] = value;
@@ -216,7 +309,7 @@ export class BashSession {
   // in `#buf` (or once the shell dies). Event-driven: no polling loop.
   #waiting: { sentinel: string; resolve: () => void } | null = null;
 
-  constructor(dir: string, env: NodeJS.ProcessEnv = scrubbedShellEnv()) {
+  constructor(dir: string, env: Record<string, string | undefined> = scrubbedShellEnv()) {
     this.#proc = cp.spawn('/bin/bash', ['--noprofile', '--norc'], {
       cwd: dir,
       // `env` is the full base environment (the scrubbed process env by
@@ -271,9 +364,9 @@ export class BashSession {
     }
     const timeoutMs = opts.timeoutMs ?? BASH_DEFAULT_TIMEOUT_MS;
     const signal = opts.signal;
-    if (signal?.aborted) {
-      throw new AnthropicError('bash command aborted');
-    }
+    // Reject with the signal's own reason, so a caller telling a user cancel
+    // apart from an `AbortSignal.timeout()` sees the platform's name intact.
+    signal?.throwIfAborted();
     this.#buf = '';
     this.#truncated = false;
     // Per-call nonce so a command that prints a fixed marker can't spoof the
@@ -298,14 +391,11 @@ export class BashSession {
         await Promise.race([
           sentinelSeen,
           new Promise<never>((_, reject) => {
-            timer = setTimeout(
-              () => reject(new AnthropicError(`bash command timed out after ${timeoutMs}ms`)),
-              timeoutMs,
-            );
+            timer = setTimeout(() => reject(new BashTimeoutError(timeoutMs)), timeoutMs);
           }),
           new Promise<never>((_, reject) => {
             if (!signal) return;
-            onAbort = () => reject(new AnthropicError('bash command aborted'));
+            onAbort = () => reject(signal.reason);
             signal.addEventListener('abort', onAbort, { once: true });
           }),
         ]);
@@ -352,6 +442,7 @@ export class BashSession {
 }
 
 export function betaBashTool(ctx: AgentToolContext): BetaRunnableTool {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   let session: BashSession | undefined;
   // Concurrent run() callers chain onto this promise so writes to the shared
   // shell's stdin can't interleave (which would corrupt the sentinel-match
@@ -420,6 +511,7 @@ export function betaBashTool(ctx: AgentToolContext): BetaRunnableTool {
 // ---- fs ------------------------------------------------------------------
 
 export function betaReadTool(ctx: AgentToolContext): BetaRunnableTool {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: 'read',
     description: 'Read a UTF-8 text file relative to the workdir.',
@@ -438,6 +530,9 @@ export function betaReadTool(ctx: AgentToolContext): BetaRunnableTool {
     run: async ({ file_path, view_range }) => {
       if (!file_path) throw new ToolError('read: file_path is required');
       const abs = await resolvePath(ctx, file_path);
+      if (view_range?.length && view_range.length !== 2) {
+        throw new ToolError('read: view_range must be [start_line, end_line]');
+      }
       let data: string;
       try {
         // stat() before any open(): the size cap stops a multi-GB file from
@@ -449,18 +544,21 @@ export function betaReadTool(ctx: AgentToolContext): BetaRunnableTool {
         }
         const limit = resolveMaxBytes(ctx.maxFileBytes);
         if (limit !== null && st.size > limit) {
-          throw new ToolError(
-            `read: ${file_path} is ${st.size} bytes, exceeds ${limit}-byte limit. ` +
-              'Use bash (head/tail/sed) to read a slice.',
-          );
+          if (!view_range?.length) {
+            throw new ToolError(
+              `read: ${file_path} is ${st.size} bytes, exceeds ${limit}-byte limit. ` +
+                'Use the view_range parameter to read specific line ranges, e.g. view_range: [1, 500].',
+            );
+          }
+          const [startLine, endLine] = view_range as [number, number];
+          return await readRangeStreaming(abs, file_path, startLine, endLine, limit);
         }
         data = await fs.readFile(abs, 'utf8');
       } catch (e) {
         if (e instanceof ToolError) throw e;
         throw new ToolError(`read: ${fsErrorMessage(e, file_path)}`);
       }
-      if (!view_range) return data;
-      if (view_range.length !== 2) throw new ToolError('read: view_range must be [start_line, end_line]');
+      if (!view_range?.length) return data;
       const [startLine, endLine] = view_range as [number, number];
       const lines = data.split('\n');
       const start = Math.max(0, startLine - 1);
@@ -470,7 +568,103 @@ export function betaReadTool(ctx: AgentToolContext): BetaRunnableTool {
   });
 }
 
+/** Returns lines `[startLine, endLine]` of the file at `abs`, capping the selected bytes at `limit`. */
+async function readRangeStreaming(
+  abs: string,
+  filePath: string,
+  startLine: number,
+  endLine: number,
+  limit: number,
+): Promise<string> {
+  const lines = new LineRangeCollector(filePath, startLine, endLine, limit);
+  if (lines.rangeIsEmpty()) return '';
+  // Byte chunks rather than readline: a single huge line must never be buffered
+  // whole, so memory stays bounded by `limit` plus one chunk.
+  const stream = fssync.createReadStream(abs, { highWaterMark: READ_STREAM_CHUNK_BYTES });
+  try {
+    for await (const chunk of stream as AsyncIterable<Buffer>) {
+      lines.collectFrom(chunk);
+      if (lines.rangeIsCollected()) break;
+    }
+  } finally {
+    stream.destroy();
+  }
+  return lines.text();
+}
+
+/** Collects the bytes of lines `[startLine, endLine]` from consecutive file chunks, capped at `limit`. */
+class LineRangeCollector {
+  readonly #filePath: string;
+  readonly #startLine: number;
+  readonly #endLine: number;
+  readonly #start: number;
+  readonly #end: number;
+  readonly #limit: number;
+  #line = 0;
+  #collected: Buffer[] = [];
+  #collectedBytes = 0;
+
+  constructor(filePath: string, startLine: number, endLine: number, limit: number) {
+    this.#filePath = filePath;
+    this.#startLine = startLine;
+    this.#endLine = endLine;
+    this.#start = Math.max(0, startLine - 1);
+    this.#end = endLine > 0 ? endLine : Infinity;
+    this.#limit = limit;
+  }
+
+  rangeIsEmpty(): boolean {
+    return this.#end <= this.#start;
+  }
+
+  rangeIsCollected(): boolean {
+    return this.#line >= this.#end;
+  }
+
+  collectFrom(chunk: Buffer): void {
+    let lineStart = 0;
+    while (lineStart < chunk.length && !this.rangeIsCollected()) {
+      const newline = chunk.indexOf(0x0a, lineStart);
+      const lineEnd = newline < 0 ? chunk.length : newline;
+      if (this.#line >= this.#start) {
+        this.#collect(chunk.subarray(lineStart, lineEnd), newline >= 0);
+      }
+      if (newline < 0) break;
+      this.#line++;
+      lineStart = newline + 1;
+    }
+  }
+
+  #collect(lineBytes: Buffer, newlineTerminated: boolean): void {
+    this.#collected.push(lineBytes);
+    this.#collectedBytes += lineBytes.length;
+    if (newlineTerminated && this.#line + 1 < this.#end) {
+      this.#collected.push(NEWLINE);
+      this.#collectedBytes += NEWLINE.length;
+    }
+    if (this.#collectedBytes > this.#limit) throw this.#overLimitError();
+  }
+
+  #overLimitError(): ToolError {
+    if (this.#end - this.#start === 1) {
+      return new ToolError(
+        `read: line ${this.#start + 1} of ${this.#filePath} alone exceeds ${this.#limit}-byte limit. ` +
+          'The read tool cannot return part of a line, so view_range cannot narrow this further.',
+      );
+    }
+    return new ToolError(
+      `read: view_range [${this.#startLine}, ${this.#endLine}] of ${this.#filePath} exceeds ${this.#limit}-byte limit. ` +
+        'Narrow the view_range to read a smaller portion.',
+    );
+  }
+
+  text(): string {
+    return Buffer.concat(this.#collected, this.#collectedBytes).toString('utf8');
+  }
+}
+
 export function betaWriteTool(ctx: AgentToolContext): BetaRunnableTool {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: 'write',
     description: 'Write a UTF-8 text file relative to the workdir, creating parent directories as needed.',
@@ -482,6 +676,10 @@ export function betaWriteTool(ctx: AgentToolContext): BetaRunnableTool {
     run: async ({ file_path, content }) => {
       if (!file_path) throw new ToolError('write: file_path is required');
       const abs = await resolvePath(ctx, file_path);
+      const ro = await readOnlyRootFor(ctx, abs);
+      if (ro !== undefined) {
+        throw new ToolError(`write: ${file_path} is inside read-only directory ${ro}`);
+      }
       try {
         await fs.mkdir(path.dirname(abs), { recursive: true, mode: DIR_CREATE_MODE });
         await atomicWriteFile(abs, content ?? '');
@@ -494,6 +692,7 @@ export function betaWriteTool(ctx: AgentToolContext): BetaRunnableTool {
 }
 
 export function betaEditTool(ctx: AgentToolContext): BetaRunnableTool {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: 'edit',
     description:
@@ -512,6 +711,10 @@ export function betaEditTool(ctx: AgentToolContext): BetaRunnableTool {
       if (!file_path) throw new ToolError('edit: file_path is required');
       if (!old_string) throw new ToolError('edit: old_string is required');
       const abs = await resolvePath(ctx, file_path);
+      const ro = await readOnlyRootFor(ctx, abs);
+      if (ro !== undefined) {
+        throw new ToolError(`edit: ${file_path} is inside read-only directory ${ro}`);
+      }
       let data: string;
       try {
         // stat() before any open() — same guard as `read`: the size cap stops a
@@ -527,7 +730,7 @@ export function betaEditTool(ctx: AgentToolContext): BetaRunnableTool {
         if (limit !== null && st.size > limit) {
           throw new ToolError(
             `edit: ${file_path} is ${st.size} bytes, exceeds ${limit}-byte limit. ` +
-              'Use bash (sed/awk) to edit a large file.',
+              'The edit tool loads the whole file and cannot modify a file this large.',
           );
         }
         data = await fs.readFile(abs, 'utf8');
@@ -559,7 +762,17 @@ export function betaEditTool(ctx: AgentToolContext): BetaRunnableTool {
 
 // ---- search --------------------------------------------------------------
 
+/**
+ * Best-effort: stops `fs.glob` from walking out of the root via a literal or
+ * brace-expanded `..`. The realpath post-filter in {@link betaGlobTool} is the
+ * boundary; this only avoids the walk.
+ */
+function patternCanAscend(pattern: string): boolean {
+  return pattern.split(/[\\/{},]/).includes('..');
+}
+
 export function betaGlobTool(ctx: AgentToolContext): BetaRunnableTool {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: 'glob',
     description:
@@ -574,34 +787,31 @@ export function betaGlobTool(ctx: AgentToolContext): BetaRunnableTool {
     },
     run: async ({ pattern, path: searchPath }) => {
       if (!pattern) throw new ToolError('glob: pattern is required');
-      let root = path.resolve(ctx.workdir);
-      let pat = pattern;
       if (path.isAbsolute(pattern)) {
-        if (!ctx.unrestrictedPaths) throw new ToolError('glob: absolute pattern not permitted');
-        root = path.parse(pattern).root;
-        pat = path.relative(root, pattern);
-      } else if (searchPath) {
-        root = await resolvePath(ctx, searchPath);
+        throw new ToolError(
+          'glob: absolute pattern not permitted; pass a relative pattern (and optionally path)',
+        );
       }
-      // A `..` in the *pattern itself* (e.g. `../../*`) walks `fs.glob` out of
-      // the search root — this is separate from the `searchPath` confinement
-      // above, which only covers the path argument. Reject it outright when the
-      // toolset is confined.
-      if (!ctx.unrestrictedPaths && pat.split(/[\\/]/).includes('..')) {
+      if (patternCanAscend(pattern)) {
         throw new ToolError('glob: ".." is not permitted in the pattern');
       }
+      const root = searchPath ? await resolvePath(ctx, searchPath) : path.resolve(ctx.workdir);
       // Compare canonical against canonical: a workdir that is itself a
       // symlink would otherwise falsely reject every realpath'd match below.
-      const realRoot = ctx.unrestrictedPaths ? root : await fs.realpath(root).catch(() => root);
+      const realRoot = searchPath ? root : await canonicalize(root);
       const matches: { path: string; mtime: number }[] = [];
+      // Bounds the walk for patterns that match, or brace-expand into,
+      // enormous trees.
+      let remaining = WALK_MAX_ENTRIES;
       try {
         // Native `fs.glob` (Node 22+). `exclude` prunes the noisy dirs the
         // legacy walker skipped; only regular files are collected.
-        for await (const entry of fsGlob(pat, {
+        for await (const entry of fsGlob(pattern, {
           cwd: root,
           withFileTypes: true,
           exclude: (d) => d.name === '.git' || d.name === 'node_modules',
         })) {
+          if (remaining-- <= 0) break;
           if (!entry.isFile()) continue;
           const full = path.join(entry.parentPath, entry.name);
           // Drop any match that resolves outside the search root. A pattern
@@ -611,15 +821,13 @@ export function betaGlobTool(ctx: AgentToolContext): BetaRunnableTool {
           // the raw parent path, so a lexical check on `full` alone would
           // pass `root/link_out/secret` even though it lives outside the
           // jail. Resolve-failure (ELOOP, EACCES, a racing unlink) is a deny.
-          if (!ctx.unrestrictedPaths) {
-            let real: string;
-            try {
-              real = await fs.realpath(full);
-            } catch {
-              continue;
-            }
-            if (!isWithin(realRoot, real)) continue;
+          let real: string;
+          try {
+            real = await fs.realpath(full);
+          } catch {
+            continue;
           }
+          if (!isWithin(realRoot, real)) continue;
           let mtime = 0;
           try {
             mtime = (await fs.stat(full)).mtimeMs;
@@ -642,6 +850,7 @@ export function betaGlobTool(ctx: AgentToolContext): BetaRunnableTool {
 }
 
 export function betaGrepTool(ctx: AgentToolContext): BetaRunnableTool {
+  rejectUnrestrictedPaths(ctx.unrestrictedPaths);
   return betaTool({
     name: 'grep',
     description: 'Search file contents for a regex. Uses ripgrep if available, otherwise a built-in walker.',
@@ -753,12 +962,6 @@ async function grepFile(file: string, re: RegExp, push: (line: string) => boolea
 }
 
 // ---- utils ---------------------------------------------------------------
-
-/** True when `p` is `root` itself or lexically contained within it. */
-function isWithin(root: string, p: string): boolean {
-  const rel = path.relative(root, p);
-  return rel === '' || (!rel.startsWith('..' + path.sep) && rel !== '..' && !path.isAbsolute(rel));
-}
 
 const WALK_MAX_DEPTH = 40;
 const WALK_MAX_ENTRIES = 50_000;

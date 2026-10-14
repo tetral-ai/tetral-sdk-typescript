@@ -1,18 +1,19 @@
+import type { MockInstance } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 import {
   AnthropicError,
   APIConnectionError,
   APIConnectionTimeoutError,
   RetryableError,
-} from '@tetral-ai/sdk';
-import type { Middleware } from '@tetral-ai/sdk';
-import { BetaFallbackState, betaRefusalFallbackMiddleware } from '@tetral-ai/sdk/lib/middleware';
-import { wrapFetchWithMiddleware } from '@tetral-ai/sdk/core/middleware';
-import { Stream as SSEStream } from '@tetral-ai/sdk/core/streaming';
-import { WorkloadIdentityError } from '@tetral-ai/sdk/lib/credentials/types';
+} from '@anthropic-ai/sdk';
+import type { Middleware } from '@anthropic-ai/sdk';
+import { BetaFallbackState, betaRefusalFallbackMiddleware } from '@anthropic-ai/sdk/lib/middleware';
+import { wrapFetchWithMiddleware } from '@anthropic-ai/sdk/core/middleware';
+import { Stream as SSEStream } from '@anthropic-ai/sdk/core/streaming';
+import { WorkloadIdentityError } from '@anthropic-ai/sdk/lib/credentials/types';
 
 const jsonResponse = (body: unknown = { a: 1 }, init: ResponseInit = {}) =>
   new Response(JSON.stringify(body), {
@@ -539,8 +540,7 @@ describe('middleware', () => {
   });
 
   test('timeout applies to the underlying fetch, not middleware', async () => {
-    // jest's sandbox realm breaks `DOMException instanceof Error`, so simulate
-    // fetch's abort rejection with a plain Error carrying the AbortError name
+    // the SDK only inspects `name`, so a plain Error stands in for fetch's abort `DOMException`
     const abortError = () => {
       const err = new Error('This operation was aborted');
       err.name = 'AbortError';
@@ -1474,11 +1474,11 @@ describe('middleware', () => {
     });
 
     test("debug-logs 'sending request' once per inner fetch, with the prepared headers", async () => {
-      const debugMock = jest.fn();
+      const debugMock = vi.fn();
       const client = new SigningClient({
         apiKey: 'my-anthropic-api-key',
         logLevel: 'debug',
-        logger: { debug: debugMock, info: jest.fn(), warn: jest.fn(), error: jest.fn() },
+        logger: { debug: debugMock, info: vi.fn(), warn: vi.fn(), error: vi.fn() },
         fetch: async () => jsonResponse(),
         middleware: [
           async (request, next) => {
@@ -1553,8 +1553,8 @@ describe('wrapFetchWithMiddleware', () => {
   });
 
   test('without a client, ctx.logger falls back to console at the default level', async () => {
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const originalEnv = process.env['ANTHROPIC_LOG'];
     try {
       const middleware: Middleware = async (request, next, ctx) => {
@@ -1822,9 +1822,9 @@ describe('backend middleware', () => {
 });
 
 describe('betaRefusalFallbackMiddleware', () => {
-  let warn: jest.SpyInstance;
+  let warn: MockInstance;
   beforeEach(() => {
-    warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
   afterEach(() => warn.mockRestore());
 
@@ -1877,7 +1877,7 @@ describe('betaRefusalFallbackMiddleware', () => {
     expect(result.model).toEqual('fallback-model');
     expect(result.stop_reason).toEqual('end_turn');
     expect(bodies.map((b) => b['model'])).toEqual(['primary-model', 'fallback-model']);
-    expect(bodies[1]!['fallback_credit_token']).toEqual('credit-token');
+    expect(bodies[1]!['fallback_credit_token']).toEqual({ token: 'credit-token', mode: 'best_effort' });
   });
 
   test('tags the original and fallback requests', async () => {
@@ -1944,7 +1944,7 @@ describe('betaRefusalFallbackMiddleware', () => {
   test('warns once when falling back without a fallbackState', async () => {
     // an injected logger rather than the console.warn spy: the SDK caches
     // bound console methods across tests, so per-test console spies go stale
-    const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
+    const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
     const responses = [
       refusal('primary-model'),
       message('fallback-model'),
@@ -1965,7 +1965,7 @@ describe('betaRefusalFallbackMiddleware', () => {
   });
 
   test('the missing-fallbackState warning respects the client logLevel', async () => {
-    const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() };
+    const logger = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
     const responses = [refusal('primary-model'), message('fallback-model')];
     const client = new Anthropic({
       apiKey: 'my-anthropic-api-key',
@@ -2002,6 +2002,43 @@ describe('betaRefusalFallbackMiddleware', () => {
     expect(bodies).toHaveLength(1);
     expect(bodies[0]!['fallback_credit_token']).toBeUndefined();
     expect(fallbackState.index).toBeUndefined();
+  });
+
+  test('strips replayed fallback blocks, dropping only the turns the strip empties', async () => {
+    const { client, bodies } = makeClient(
+      [message('primary-model')],
+      betaRefusalFallbackMiddleware([{ model: 'fallback-model' }]),
+    );
+
+    const fallbackBlock = {
+      type: 'fallback' as const,
+      from: { model: 'primary-model' },
+      to: { model: 'fallback-model' },
+      trigger: { type: 'refusal' as const, category: null },
+    };
+    await client.beta.messages.create({
+      ...params,
+      messages: [
+        // directive-only system turn: already-empty content must survive
+        { role: 'system', content: [], output_config: { effort: 'high' } },
+        { role: 'user', content: 'hi' },
+        // emptied by the strip: dropped whole
+        { role: 'assistant', content: [fallbackBlock] },
+        { role: 'user', content: [{ type: 'text', text: 'again' }] },
+        // partially stripped: kept without the fallback block
+        { role: 'assistant', content: [fallbackBlock, { type: 'text', text: 'ok' }] },
+        { role: 'user', content: 'more' },
+      ],
+    });
+
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0]!['messages']).toEqual([
+      { role: 'system', content: [], output_config: { effort: 'high' } },
+      { role: 'user', content: 'hi' },
+      { role: 'user', content: [{ type: 'text', text: 'again' }] },
+      { role: 'assistant', content: [{ type: 'text', text: 'ok' }] },
+      { role: 'user', content: 'more' },
+    ]);
   });
 
   test('throws when the request carries a server-side fallbacks param', async () => {
@@ -2066,6 +2103,145 @@ describe('betaRefusalFallbackMiddleware', () => {
     ]);
   });
 
+  test('a hop entry patches the original params: set overrides, null unsets, absent keeps', async () => {
+    const { client, bodies } = makeClient(
+      [refusal('primary-model', 'credit-token'), message('fallback-model')],
+      betaRefusalFallbackMiddleware([
+        { model: 'fallback-model', max_tokens: 512, speed: null, top_p: undefined },
+      ]),
+    );
+
+    const richParams = { ...params, speed: 'fast' as const, temperature: 0.5, top_p: 0.9 };
+    const snapshot = structuredClone(richParams);
+    await client.beta.messages.create(richParams, { fallbackState: new BetaFallbackState() });
+
+    expect(bodies[1]!['model']).toEqual('fallback-model'); // set: overrides
+    expect(bodies[1]!['max_tokens']).toEqual(512); // set: overrides
+    expect('speed' in bodies[1]!).toBe(false); // explicit null: unset, not sent as null
+    expect(bodies[1]!['top_p']).toEqual(0.9); // explicit undefined: treated as absent
+    expect(bodies[1]!['temperature']).toEqual(0.5); // absent: original kept
+    expect(richParams).toEqual(snapshot); // caller's params not mutated
+  });
+
+  test("hop 2 patches the original params, not hop 1's patched request", async () => {
+    const { client, bodies } = makeClient(
+      [refusal('primary-model'), refusal('mid-model'), message('last-model')],
+      betaRefusalFallbackMiddleware([
+        { model: 'mid-model', max_tokens: 512, speed: null },
+        { model: 'last-model' },
+      ]),
+    );
+
+    await client.beta.messages.create(
+      { ...params, speed: 'fast' },
+      { fallbackState: new BetaFallbackState() },
+    );
+
+    expect(bodies.map((b) => b['model'])).toEqual(['primary-model', 'mid-model', 'last-model']);
+    // hop 1's max_tokens override and speed unset must not leak into hop 2
+    expect(bodies.map((b) => b['max_tokens'])).toEqual([1024, 512, 1024]);
+    expect(bodies.map((b) => 'speed' in b)).toEqual([true, false, true]);
+  });
+
+  test('between_tools thinking degrades to disabled on the hop', async () => {
+    const { client, bodies } = makeClient(
+      [refusal('primary-model', 'credit-token'), message('fallback-model')],
+      betaRefusalFallbackMiddleware([{ model: 'fallback-model' }]),
+    );
+
+    await client.beta.messages.create({ ...params, thinking: { type: 'between_tools' } });
+
+    expect(bodies.map((b) => b['thinking'])).toEqual([{ type: 'between_tools' }, { type: 'disabled' }]);
+  });
+
+  test('an entry that sets thinking overrides between_tools', async () => {
+    const { client, bodies } = makeClient(
+      [refusal('primary-model', 'credit-token'), message('fallback-model')],
+      betaRefusalFallbackMiddleware([{ model: 'fallback-model', thinking: { type: 'between_tools' } }]),
+    );
+
+    await client.beta.messages.create({ ...params, thinking: { type: 'between_tools' } });
+
+    expect(bodies[1]!['thinking']).toEqual({ type: 'between_tools' });
+  });
+
+  describe('output_config patches one level deep', () => {
+    const withConfig = {
+      ...params,
+      output_config: { effort: 'low' as const, task_budget: { type: 'tokens' as const, total: 100 } },
+    };
+    const secondBody = async (
+      entry: Record<string, unknown>,
+      first: Record<string, unknown> = withConfig,
+    ) => {
+      const { client, bodies } = makeClient(
+        [refusal('primary-model', 'credit-token'), message('fallback-model')],
+        betaRefusalFallbackMiddleware([{ model: 'fallback-model', ...entry }]),
+      );
+      await client.beta.messages.create(first as any, { fallbackState: new BetaFallbackState() });
+      return bodies[1]!;
+    };
+
+    test('a set subfield merges over the existing subfields', async () => {
+      expect((await secondBody({ output_config: { effort: 'high' } }))['output_config']).toEqual({
+        effort: 'high',
+        task_budget: { type: 'tokens', total: 100 },
+      });
+    });
+
+    test('a null subfield unsets only that subfield', async () => {
+      expect((await secondBody({ output_config: { effort: null } }))['output_config']).toEqual({
+        task_budget: { type: 'tokens', total: 100 },
+      });
+    });
+
+    test('output_config: null unsets the whole field', async () => {
+      expect('output_config' in (await secondBody({ output_config: null }))).toBe(false);
+    });
+
+    test('an absent output_config leaves the original', async () => {
+      expect((await secondBody({}))['output_config']).toEqual(withConfig.output_config);
+    });
+
+    test('subfields on a request with no output_config create it, dropping nulls', async () => {
+      expect(
+        (await secondBody({ output_config: { effort: 'high', format: null } }, params))['output_config'],
+      ).toEqual({ effort: 'high' });
+    });
+
+    // An emptied `output_config` is dropped from the request, never sent as `{}`.
+    test('unsetting every remaining subfield drops output_config entirely', async () => {
+      const body = await secondBody({ output_config: { effort: null, task_budget: null } });
+      expect('output_config' in body).toBe(false); // absent, not `{}`
+    });
+
+    test('all-null subfields on a request with no output_config do not add one', async () => {
+      const body = await secondBody({ output_config: { effort: null, format: null } }, params);
+      expect('output_config' in body).toBe(false); // absent, not `{}`
+    });
+
+    test('an absent output_config leaves an original {} untouched', async () => {
+      expect((await secondBody({}, { ...params, output_config: {} }))['output_config']).toEqual({});
+    });
+
+    test("hop 2 patches the original output_config, not hop 1's", async () => {
+      const { client, bodies } = makeClient(
+        [refusal('primary-model'), refusal('mid-model'), message('last-model')],
+        betaRefusalFallbackMiddleware([
+          { model: 'mid-model', output_config: { effort: 'high', task_budget: null } },
+          { model: 'last-model', output_config: { effort: null } },
+        ]),
+      );
+
+      await client.beta.messages.create(withConfig, { fallbackState: new BetaFallbackState() });
+      expect(bodies.map((b) => b['output_config'])).toEqual([
+        { effort: 'low', task_budget: { type: 'tokens', total: 100 } },
+        { effort: 'high' }, // hop 1: effort set, task_budget unset
+        { task_budget: { type: 'tokens', total: 100 } }, // hop 2 from the original: effort unset, budget kept
+      ]);
+    });
+  });
+
   test('a pinned start seams from the pinned entry, not the original body model', async () => {
     const { client, bodies } = makeClient(
       [refusal('mid-model'), message('last-model', { content: [{ type: 'text', text: 'ok' }] })],
@@ -2120,7 +2296,7 @@ describe('betaRefusalFallbackMiddleware', () => {
       );
 
       await client.beta.messages.create(params);
-      expect(betaHeaders).toEqual(['fallback-credit-2026-06-01', 'fallback-credit-2026-06-01']);
+      expect(betaHeaders).toEqual(['fallback-credit-2026-07-01', 'fallback-credit-2026-07-01']);
     });
 
     test('the betas option replaces the default', async () => {
@@ -2132,7 +2308,7 @@ describe('betaRefusalFallbackMiddleware', () => {
       );
 
       await client.beta.messages.create(params);
-      expect(betaHeaders).toEqual(['fallback-credit-2027-01-01, interleaved-thinking-2025-05-14']);
+      expect(betaHeaders).toEqual(['fallback-credit-2027-01-01,interleaved-thinking-2025-05-14']);
     });
 
     test('betas: [] sends no beta header', async () => {
@@ -2151,8 +2327,8 @@ describe('betaRefusalFallbackMiddleware', () => {
         betaRefusalFallbackMiddleware([{ model: 'fallback-model' }]),
       );
 
-      await client.beta.messages.create({ ...params, betas: ['fallback-credit-2026-06-01'] });
-      expect(betaHeaders).toEqual(['fallback-credit-2026-06-01']);
+      await client.beta.messages.create({ ...params, betas: ['fallback-credit-2026-07-01'] });
+      expect(betaHeaders).toEqual(['fallback-credit-2026-07-01']);
     });
 
     test('appends to betas already on the request', async () => {
@@ -2162,7 +2338,7 @@ describe('betaRefusalFallbackMiddleware', () => {
       );
 
       await client.beta.messages.create({ ...params, betas: ['interleaved-thinking-2025-05-14'] });
-      expect(betaHeaders).toEqual(['interleaved-thinking-2025-05-14, fallback-credit-2026-06-01']);
+      expect(betaHeaders).toEqual(['interleaved-thinking-2025-05-14,fallback-credit-2026-07-01']);
     });
   });
 });

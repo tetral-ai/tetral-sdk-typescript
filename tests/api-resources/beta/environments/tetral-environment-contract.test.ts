@@ -221,7 +221,7 @@ void limitedIsNotSupportedNetworking;
 
 const responseConfigIsCloudOnly: BetaEnvironment = {
   ...ENVIRONMENT_RESPONSE,
-  // @ts-expect-error Tetral Environment responses are cloud-only in this stage.
+  // @ts-expect-error Tetral Environment responses are cloud-only.
   config: { type: 'self_hosted' },
 };
 void responseConfigIsCloudOnly;

@@ -1,5 +1,5 @@
-import { WorkPoller, POLL_BLOCK_MS } from '@tetral-ai/sdk/lib/environments';
-import { APIError } from '@tetral-ai/sdk/core/error';
+import { WorkPoller, POLL_BLOCK_MS } from '@anthropic-ai/sdk/lib/environments';
+import { APIError } from '@anthropic-ai/sdk/core/error';
 
 // Minimal fake `client.beta.environments.work` resource. Tests script
 // poll/ack/stop responses; we record how each was called for assertions.
@@ -18,6 +18,14 @@ interface PollResponse {
   type: 'work' | 'null' | 'throw';
   value?: unknown;
   err?: unknown;
+  /** Runs when this poll arrives, before it is answered, so a step can move the clock or end the run. */
+  before?: () => void;
+}
+
+interface LogRecord {
+  level: 'error' | 'warn' | 'info' | 'debug';
+  message: string;
+  fields: unknown;
 }
 
 function makeFakeClient(opts: {
@@ -27,6 +35,10 @@ function makeFakeClient(opts: {
 }) {
   const calls: RecordedCall[] = [];
   const withOptionsCalls: Array<Record<string, unknown>> = [];
+  const logs: LogRecord[] = [];
+  const record = (level: LogRecord['level']) => (message: string, fields?: unknown) => {
+    logs.push({ level, message, fields });
+  };
   let pollIdx = 0;
   let ackIdx = 0;
   let stopIdx = 0;
@@ -35,6 +47,9 @@ function makeFakeClient(opts: {
     // them onto the sub-client; provide a minimal shape so the util doesn't
     // throw on the fake.
     _options: { defaultHeaders: undefined },
+    // Recorded by level so a test can tell INFO lines from per-poll DEBUG lines.
+    logger: { error: record('error'), warn: record('warn'), info: record('info'), debug: record('debug') },
+    logLevel: 'debug',
     withOptions: (options: Record<string, unknown>) => {
       withOptionsCalls.push(options);
       return fake;
@@ -45,6 +60,7 @@ function makeFakeClient(opts: {
           poll: (...args: unknown[]) => {
             calls.push({ method: 'poll', args });
             const r = opts.poll[pollIdx++] ?? { type: 'null' };
+            r.before?.();
             if (r.type === 'throw') return Promise.reject(r.err);
             if (r.type === 'null') return Promise.resolve(null);
             return Promise.resolve(r.value);
@@ -65,7 +81,11 @@ function makeFakeClient(opts: {
       },
     },
   };
-  return { client: fake as never, calls, withOptionsCalls };
+  return { client: fake as never, calls, withOptionsCalls, logs };
+}
+
+function apiError(status: number): APIError {
+  return Object.assign(Object.create(APIError.prototype) as APIError, { status });
 }
 
 function makeWork(id = 'work_1', dataType = 'session'): Record<string, unknown> {
@@ -79,10 +99,10 @@ function makeWork(id = 'work_1', dataType = 'session'): Record<string, unknown> 
 
 describe('WorkPoller', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   test('yields the work item and posts ack before yield, stop after consumer body', async () => {
@@ -105,7 +125,7 @@ describe('WorkPoller', () => {
       }
     })();
 
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     expect(items).toEqual([{ workId: 'work_1' }]);
@@ -135,7 +155,7 @@ describe('WorkPoller', () => {
         break;
       }
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     expect(withOptionsCalls).toContainEqual(
@@ -159,40 +179,85 @@ describe('WorkPoller', () => {
         break;
       }
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     expect(calls.some((c) => c.method === 'stop')).toBe(true);
   });
 
-  test('backs off on poll errors using setTimeout-based delay', async () => {
-    const err = Object.assign(Object.create(APIError.prototype) as APIError, { status: 503 });
-    const work = makeWork();
+  for (const status of [503, 409]) {
+    test(`backs off on a ${status} poll error using setTimeout-based delay, then yields the next item`, async () => {
+      const work = makeWork();
+      const { client, calls } = makeFakeClient({
+        poll: [
+          { type: 'throw', err: apiError(status) },
+          { type: 'work', value: work },
+        ],
+      });
+
+      const iter = new WorkPoller({
+        client,
+        environmentId: 'env_1',
+        environmentKey: 'env_key',
+      });
+
+      const items: string[] = [];
+      const consumer = (async () => {
+        for await (const w of iter) {
+          items.push(w.id);
+          iter.abort();
+          break;
+        }
+      })();
+      // Drive past the initial 1s backoff window.
+      await vi.advanceTimersByTimeAsync(2_000);
+      await consumer;
+
+      expect(calls.filter((c) => c.method === 'poll').length).toBe(2);
+      expect(items).toEqual(['work_1']);
+    });
+  }
+
+  test('a 401 poll error is permanent and ends iteration with the error', async () => {
+    const err = apiError(401);
     const { client, calls } = makeFakeClient({
       poll: [
         { type: 'throw', err },
-        { type: 'work', value: work },
+        { type: 'work', value: makeWork() },
       ],
     });
 
-    const iter = new WorkPoller({
-      client,
-      environmentId: 'env_1',
-      environmentKey: 'env_key',
+    const iter = new WorkPoller({ client, environmentId: 'env_1', environmentKey: 'env_key' });
+    const consumer = (async () => {
+      for await (const _ of iter) {
+        // unreachable
+      }
+    })();
+    const outcome = expect(consumer).rejects.toBe(err);
+    await vi.advanceTimersByTimeAsync(5_000);
+    await outcome;
+
+    expect(calls.filter((c) => c.method === 'poll').length).toBe(1);
+  });
+
+  test('a 409 from the post-handler stop means already stopped and is not logged', async () => {
+    const { client, calls, logs } = makeFakeClient({
+      poll: [{ type: 'work', value: makeWork() }],
+      stop: [{ type: 'throw', err: apiError(409) }],
     });
 
+    const iter = new WorkPoller({ client, environmentId: 'env_1', environmentKey: 'env_key' });
     const consumer = (async () => {
       for await (const _ of iter) {
         iter.abort();
         break;
       }
     })();
-    // Drive past the initial 1s backoff window.
-    await jest.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
-    const polls = calls.filter((c) => c.method === 'poll').length;
-    expect(polls).toBe(2);
+    expect(calls.some((c) => c.method === 'stop')).toBe(true);
+    expect(logs).not.toContainEqual(expect.objectContaining({ level: 'warn', message: 'stop failed' }));
   });
 
   test('honors externally provided AbortSignal', async () => {
@@ -212,7 +277,7 @@ describe('WorkPoller', () => {
       }
     })();
     abortCtl.abort();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
     // Reaching here without timeout is the assertion.
     expect(iter.signal.aborted).toBe(true);
@@ -251,7 +316,7 @@ describe('WorkPoller', () => {
         break;
       }
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     const poll = calls.find((c) => c.method === 'poll')!;
@@ -277,7 +342,7 @@ describe('WorkPoller', () => {
         break;
       }
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     const poll = calls.find((c) => c.method === 'poll')!;
@@ -302,7 +367,7 @@ describe('WorkPoller', () => {
         break;
       }
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     const poll = calls.find((c) => c.method === 'poll')!;
@@ -324,7 +389,7 @@ describe('WorkPoller', () => {
     const consumer = (async () => {
       for await (const work of iter) items.push(work);
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     expect(items).toEqual([]);
@@ -346,7 +411,7 @@ describe('WorkPoller', () => {
       }
     })();
     // Advance past the empty-poll jittered wait (1-3s) so the second poll runs.
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     expect(calls.filter((c) => c.method === 'poll').length).toBe(2);
@@ -369,11 +434,61 @@ describe('WorkPoller', () => {
         break;
       }
     })();
-    await jest.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await consumer;
 
     // poll + ack happened, but the poller left the stop to the consumer.
     expect(calls.some((c) => c.method === 'ack')).toBe(true);
     expect(calls.some((c) => c.method === 'stop')).toBe(false);
+  });
+
+  test('an idle poller logs once when it goes idle, then a reminder every five minutes', async () => {
+    // An idle poller must show up in the logs without an INFO line per poll:
+    // one INFO line when it goes idle (after start-up or after releasing an
+    // item), DEBUG per empty poll after that, and an INFO reminder every 5 minutes.
+    const abortCtl = new AbortController();
+    // Absolute times: the jittered waits move the fake clock too, so a relative jump would not print 301s.
+    vi.setSystemTime(0);
+    const { client, logs } = makeFakeClient({
+      poll: [
+        { type: 'null' },
+        { type: 'null' },
+        { type: 'null' },
+        { type: 'null', before: () => vi.setSystemTime(301_000) },
+        { type: 'null' },
+        { type: 'work', value: makeWork('work_a') },
+        { type: 'null' },
+        { type: 'throw', err: new Error('aborted'), before: () => abortCtl.abort() },
+      ],
+    });
+
+    const iter = new WorkPoller({
+      client,
+      environmentId: 'env_1',
+      environmentKey: 'env_key',
+      autoStop: false,
+      signal: abortCtl.signal,
+    });
+    const consumer = (async () => {
+      for await (const _ of iter) {
+        // hand the item straight back
+      }
+    })();
+    // Six empty-poll waits of at most 3s each separate the eight polls.
+    await vi.advanceTimersByTimeAsync(30_000);
+    await consumer;
+
+    const pollerLines = (level: LogRecord['level']) =>
+      logs
+        .filter((l) => l.level === level && l.message !== 'poller starting')
+        .map((l) => [l.message, l.fields]);
+    const pollerFields = { component: 'work-poller', environment_id: 'env_1' };
+    expect(pollerLines('info')).toEqual([
+      ['idle; polling for work', pollerFields],
+      ['still polling; idle for 301s', pollerFields],
+      ['claimed work', { ...pollerFields, work_id: 'work_a', work_type: 'session' }],
+      ['idle; polling for work', pollerFields],
+    ]);
+    expect(pollerLines('debug')).toEqual(new Array(3).fill(['poll returned no work', pollerFields]));
   });
 });

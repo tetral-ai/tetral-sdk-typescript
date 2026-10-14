@@ -2,6 +2,9 @@
 
 This package is an Anthropic-compatible TypeScript SDK fork for the Tetral Engine public API. It keeps the familiar `new Anthropic(...)` client entrypoint and also exports `Tetral` as an alias for projects that prefer Tetral naming.
 
+The upstream baseline is `0.133.0` (`2979ed5c`). Upgrade this SDK together with its
+paired Engine release; see [CHANGELOG.md](CHANGELOG.md) for caller changes.
+
 This project is forked from Anthropic's official SDK. It is not affiliated with or endorsed by Anthropic.
 
 ## Install
@@ -226,8 +229,7 @@ Generated API reference is in [api.md](./api.md).
 
 ## Requirements
 
-Node.js 18 or later.
-TypeScript >= 4.9 is supported.
+TypeScript >= 5.0 is supported.
 
 The following runtimes are supported:
 
@@ -242,7 +244,7 @@ The following runtimes are supported:
 
 Note that React Native is not supported at this time.
 
-If you are interested in other runtime environments, open or upvote an issue.
+If you are interested in other runtime environments, please open or upvote an issue.
 
 ## Contributing
 

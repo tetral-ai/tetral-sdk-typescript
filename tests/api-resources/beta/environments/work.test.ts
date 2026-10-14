@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -25,6 +23,7 @@ describe('resource work', () => {
     const response = await client.beta.environments.work.retrieve('work_id', {
       environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -47,11 +46,11 @@ describe('resource work', () => {
       environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
       metadata: { foo: 'string' },
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list', async () => {
+  test('list', async () => {
     const responsePromise = client.beta.environments.work.list('env_011CZkZ9X2dpNyB7HsEFoRfW');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -62,8 +61,7 @@ describe('resource work', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('list: request options and params are passed correctly', async () => {
+  test('list: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       client.beta.environments.work.list(
@@ -147,8 +145,7 @@ describe('resource work', () => {
     ).rejects.toThrow(Anthropic.NotFoundError);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('stats', async () => {
+  test('stats', async () => {
     const responsePromise = client.beta.environments.work.stats('env_011CZkZ9X2dpNyB7HsEFoRfW');
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -159,13 +156,12 @@ describe('resource work', () => {
     expect(dataAndResponse.response).toBe(rawResponse);
   });
 
-  // buildURL drops path-level query params (SDK-4349)
-  test.skip('stats: request options and params are passed correctly', async () => {
+  test('stats: request options and params are passed correctly', async () => {
     // ensure the request options are being passed correctly by passing an invalid HTTP method in order to cause an error
     await expect(
       client.beta.environments.work.stats(
         'env_011CZkZ9X2dpNyB7HsEFoRfW',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -189,6 +185,7 @@ describe('resource work', () => {
       environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
       force: true,
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 });

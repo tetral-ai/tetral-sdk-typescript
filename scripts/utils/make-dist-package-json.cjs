@@ -1,5 +1,9 @@
 const pkgJson = require(process.env['PKG_JSON_PATH'] || '../../package.json');
 
+// The published package.json keeps "type": "commonjs" whatever the root one says, so its .js files
+// load as CommonJS and its .mjs files as ESM.
+pkgJson.type = 'commonjs';
+
 function processExportMap(m) {
   for (const key in m) {
     const value = m[key];
@@ -15,6 +19,10 @@ for (const key of ['types', 'main', 'module']) {
 
 pkgJson.files = ['**/*'];
 
+// `publishConfig.directory` is only there for local development: it makes pnpm link the workspace
+// packages in packages/* against ./dist. Strip it because `bin/publish-npm` runs `pnpm publish`
+// from inside dist/, where pnpm would otherwise look for dist/dist.
+if (pkgJson.publishConfig) delete pkgJson.publishConfig.directory;
 delete pkgJson.devDependencies;
 delete pkgJson.scripts.prepack;
 delete pkgJson.scripts.prepublishOnly;

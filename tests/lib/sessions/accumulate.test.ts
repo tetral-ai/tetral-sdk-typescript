@@ -1,9 +1,9 @@
-import { accumulateManagedAgentsEvent } from '@tetral-ai/sdk/lib/sessions/accumulate';
-import type { BetaManagedAgentsAgentMessageEvent } from '@tetral-ai/sdk/resources/beta/sessions/events';
+import { accumulateManagedAgentsEvent } from '@anthropic-ai/sdk/lib/sessions/accumulate';
+import type { BetaManagedAgentsAgentMessageEvent } from '@anthropic-ai/sdk/resources/beta/sessions/events';
 import type {
   BetaManagedAgentsDeltaEvent,
   BetaManagedAgentsStartEvent,
-} from '@tetral-ai/sdk/resources/beta/sessions/sessions';
+} from '@anthropic-ai/sdk/resources/beta/sessions/sessions';
 
 function start(eventId: string): BetaManagedAgentsStartEvent {
   return { type: 'event_start', event: { id: eventId, type: 'agent.message' } };
@@ -145,5 +145,24 @@ describe('accumulateManagedAgentsEvent', () => {
     msg = { ...msg, content: [{ type: 'tool_use', id: 't', name: 'n', input: {} } as never] };
     const next = fold(msg, delta('evt_1', 'ignored', 0));
     expect(next.content[0]).toEqual({ type: 'tool_use', id: 't', name: 'n', input: {} });
+  });
+
+  test('unknown event type returns the snapshot unchanged (forward compat)', () => {
+    const msg = seed('evt_1');
+    const ev = { type: 'session.some_future_event', id: 'evt_2' } as any;
+    expect(accumulateManagedAgentsEvent(msg, ev)).toBe(msg);
+    expect(accumulateManagedAgentsEvent(undefined, ev)).toBeUndefined();
+  });
+
+  test('unknown delta fragment type leaves the existing block unchanged (forward compat)', () => {
+    let msg = seed('evt_1');
+    msg = fold(msg, delta('evt_1', 'kept', 0));
+    const ev = {
+      type: 'event_delta',
+      event_id: 'evt_1',
+      delta: { type: 'content_delta', index: 0, content: { type: 'future_fragment', data: 'x' } },
+    } as any;
+    const next = accumulateManagedAgentsEvent(msg, ev);
+    expect(next?.content).toEqual([{ type: 'text', text: 'kept' }]);
   });
 });

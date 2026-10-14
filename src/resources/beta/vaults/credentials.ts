@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
 import { APIPromise } from '../../../core/api-promise';
@@ -33,12 +31,15 @@ export class Credentials extends APIResource {
     params: CredentialCreateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsCredential> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/vaults/${vaultID}/credentials?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -51,7 +52,7 @@ export class Credentials extends APIResource {
    * ```ts
    * const betaManagedAgentsCredential =
    *   await client.beta.vaults.credentials.retrieve(
-   *     'vcrd_011CZkZEMt8gZan2iYOQfSkw',
+   *     'vcrd_011CZkZEMt8gZan2iYPQfSkw',
    *     { vault_id: 'vlt_011CZkZDLs7fYzm1hXNPeRjv' },
    *   );
    * ```
@@ -61,11 +62,14 @@ export class Credentials extends APIResource {
     params: CredentialRetrieveParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsCredential> {
-    const { vault_id, betas } = params;
+    const { vault_id, betas, workspace_id } = params;
     return this._client.get(path`/v1/vaults/${vault_id}/credentials/${credentialID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -78,7 +82,7 @@ export class Credentials extends APIResource {
    * ```ts
    * const betaManagedAgentsCredential =
    *   await client.beta.vaults.credentials.update(
-   *     'vcrd_011CZkZEMt8gZan2iYOQfSkw',
+   *     'vcrd_011CZkZEMt8gZan2iYPQfSkw',
    *     { vault_id: 'vlt_011CZkZDLs7fYzm1hXNPeRjv' },
    *   );
    * ```
@@ -88,12 +92,15 @@ export class Credentials extends APIResource {
     params: CredentialUpdateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsCredential> {
-    const { vault_id, betas, ...body } = params;
+    const { vault_id, betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/vaults/${vault_id}/credentials/${credentialID}?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -117,7 +124,7 @@ export class Credentials extends APIResource {
     params: CredentialListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsCredentialsPageCursor, BetaManagedAgentsCredential> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList(
       path`/v1/vaults/${vaultID}/credentials?beta=true`,
       PageCursor<BetaManagedAgentsCredential>,
@@ -125,7 +132,10 @@ export class Credentials extends APIResource {
         query,
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -139,7 +149,7 @@ export class Credentials extends APIResource {
    * ```ts
    * const betaManagedAgentsDeletedCredential =
    *   await client.beta.vaults.credentials.delete(
-   *     'vcrd_011CZkZEMt8gZan2iYOQfSkw',
+   *     'vcrd_011CZkZEMt8gZan2iYPQfSkw',
    *     { vault_id: 'vlt_011CZkZDLs7fYzm1hXNPeRjv' },
    *   );
    * ```
@@ -149,11 +159,14 @@ export class Credentials extends APIResource {
     params: CredentialDeleteParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsDeletedCredential> {
-    const { vault_id, betas } = params;
+    const { vault_id, betas, workspace_id } = params;
     return this._client.delete(path`/v1/vaults/${vault_id}/credentials/${credentialID}?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -166,7 +179,7 @@ export class Credentials extends APIResource {
    * ```ts
    * const betaManagedAgentsCredential =
    *   await client.beta.vaults.credentials.archive(
-   *     'vcrd_011CZkZEMt8gZan2iYOQfSkw',
+   *     'vcrd_011CZkZEMt8gZan2iYPQfSkw',
    *     { vault_id: 'vlt_011CZkZDLs7fYzm1hXNPeRjv' },
    *   );
    * ```
@@ -176,11 +189,14 @@ export class Credentials extends APIResource {
     params: CredentialArchiveParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsCredential> {
-    const { vault_id, betas } = params;
+    const { vault_id, betas, workspace_id } = params;
     return this._client.post(path`/v1/vaults/${vault_id}/credentials/${credentialID}/archive?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -193,7 +209,7 @@ export class Credentials extends APIResource {
    * ```ts
    * const betaManagedAgentsCredentialValidation =
    *   await client.beta.vaults.credentials.mcpOAuthValidate(
-   *     'vcrd_011CZkZEMt8gZan2iYOQfSkw',
+   *     'vcrd_011CZkZEMt8gZan2iYPQfSkw',
    *     { vault_id: 'vlt_011CZkZDLs7fYzm1hXNPeRjv' },
    *   );
    * ```
@@ -203,13 +219,16 @@ export class Credentials extends APIResource {
     params: CredentialMCPOAuthValidateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsCredentialValidation> {
-    const { vault_id, betas } = params;
+    const { vault_id, betas, workspace_id } = params;
     return this._client.post(
       path`/v1/vaults/${vault_id}/credentials/${credentialID}/mcp_oauth_validate?beta=true`,
       {
         ...options,
         headers: buildHeaders([
-          { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+          {
+            'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+            ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+          },
           options?.headers,
         ]),
       },
@@ -230,12 +249,12 @@ export interface BetaManagedAgentsCredential {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the credential was archived. Null if not archived.
    */
   archived_at: string | null;
 
   /**
-   * Authentication details for a credential.
+   * Authentication configuration for this credential.
    */
   auth:
     | BetaManagedAgentsMCPOAuthAuthResponse
@@ -272,11 +291,6 @@ export interface BetaManagedAgentsCredential {
   display_name?: string | null;
 }
 
-/**
- * Substitute the secret on any host the session's Environment network policy
- * permits egress to. The Environment's network policy is the only boundary on
- * where the secret can reach.
- */
 export type BetaManagedAgentsCredentialNetworkingParams =
   | BetaManagedAgentsUnrestrictedCredentialNetworkingParams
   | BetaManagedAgentsLimitedCredentialNetworkingParams;
@@ -296,24 +310,25 @@ export interface BetaManagedAgentsCredentialValidation {
   has_refresh_token: boolean;
 
   /**
-   * The failing step of an MCP validation probe.
+   * Details of the failing MCP probe step. Null when the probe succeeded.
    */
   mcp_probe: BetaManagedAgentsMCPProbe | null;
 
   /**
-   * Outcome of a refresh-token exchange attempted during credential validation.
+   * Details of the refresh-token exchange attempted on a 401. Null when no refresh
+   * was attempted.
    */
   refresh: BetaManagedAgentsRefreshObject | null;
 
   /**
-   * Overall verdict of a credential validation probe.
+   * Overall verdict of the validation probe.
    */
   status: BetaManagedAgentsCredentialValidationStatus;
 
   type: 'vault_credential_validation';
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the validation probe was performed.
    */
   validated_at: string;
 
@@ -325,6 +340,12 @@ export interface BetaManagedAgentsCredentialValidation {
 
 /**
  * Overall verdict of a credential validation probe.
+ *
+ * - `valid` - The credential successfully authenticated against its MCP server.
+ * - `invalid` - The probe reached the MCP server and was rejected, and a refresh
+ *   (if attempted) did not recover it.
+ * - `unknown` - The probe could not determine validity — for example, a transport
+ *   error or a successful refresh that was not re-probed.
  */
 export type BetaManagedAgentsCredentialValidationStatus = 'valid' | 'invalid' | 'unknown';
 
@@ -505,7 +526,7 @@ export interface BetaManagedAgentsMCPOAuthAuthResponse {
   expires_at?: string | null;
 
   /**
-   * OAuth refresh token configuration returned in credential responses.
+   * Refresh token configuration, if the credential supports token refresh.
    */
   refresh?: BetaManagedAgentsMCPOAuthRefreshResponse | null;
 }
@@ -532,7 +553,7 @@ export interface BetaManagedAgentsMCPOAuthCreateParams {
   expires_at?: string | null;
 
   /**
-   * OAuth refresh token parameters for creating a credential with refresh support.
+   * Refresh token configuration, if the credential supports token refresh.
    */
   refresh?: BetaManagedAgentsMCPOAuthRefreshParams | null;
 }
@@ -556,9 +577,6 @@ export interface BetaManagedAgentsMCPOAuthRefreshParams {
    */
   token_endpoint: string;
 
-  /**
-   * Token endpoint requires no client authentication.
-   */
   token_endpoint_auth:
     | BetaManagedAgentsTokenEndpointAuthNoneParam
     | BetaManagedAgentsTokenEndpointAuthBasicParam
@@ -589,9 +607,6 @@ export interface BetaManagedAgentsMCPOAuthRefreshResponse {
    */
   token_endpoint: string;
 
-  /**
-   * Token endpoint requires no client authentication.
-   */
   token_endpoint_auth:
     | BetaManagedAgentsTokenEndpointAuthNoneResponse
     | BetaManagedAgentsTokenEndpointAuthBasicResponse
@@ -622,9 +637,6 @@ export interface BetaManagedAgentsMCPOAuthRefreshUpdateParams {
    */
   scope?: string | null;
 
-  /**
-   * Updated HTTP Basic authentication parameters for the token endpoint.
-   */
   token_endpoint_auth?:
     | BetaManagedAgentsTokenEndpointAuthBasicUpdateParam
     | BetaManagedAgentsTokenEndpointAuthPostUpdateParam;
@@ -648,7 +660,7 @@ export interface BetaManagedAgentsMCPOAuthUpdateParams {
   expires_at?: string | null;
 
   /**
-   * Parameters for updating OAuth refresh token configuration.
+   * Updated refresh token configuration.
    */
   refresh?: BetaManagedAgentsMCPOAuthRefreshUpdateParams | null;
 }
@@ -658,7 +670,8 @@ export interface BetaManagedAgentsMCPOAuthUpdateParams {
  */
 export interface BetaManagedAgentsMCPProbe {
   /**
-   * An HTTP response captured during a credential validation probe.
+   * The captured HTTP error response. Null when no HTTP response was received
+   * (timeout, DNS, TLS).
    */
   http_response: BetaManagedAgentsRefreshHTTPResponse | null;
 
@@ -669,25 +682,21 @@ export interface BetaManagedAgentsMCPProbe {
 }
 
 /**
- * HTTP response metadata captured during MCP credential validation.
+ * An HTTP response captured during a credential validation probe.
  */
 export interface BetaManagedAgentsRefreshHTTPResponse {
   /**
-   * Response body for probe diagnostics. It may be truncated and has sensitive
-   * values scrubbed. This field is always empty on the refresh leg of
-   * `mcp_oauth_validate`.
+   * Response body. May be truncated and has sensitive values scrubbed.
    */
   body: string;
 
   /**
-   * Whether the captured response body was truncated. On the refresh leg this
-   * may be true even though `body` is empty.
+   * Whether `body` was truncated.
    */
   body_truncated: boolean;
 
   /**
-   * Value of the `Content-Type` response header for probe diagnostics. This
-   * field is always empty on the refresh leg of `mcp_oauth_validate`.
+   * Value of the `Content-Type` response header.
    */
   content_type: string;
 
@@ -702,162 +711,86 @@ export interface BetaManagedAgentsRefreshHTTPResponse {
  */
 export interface BetaManagedAgentsRefreshObject {
   /**
-   * HTTP response metadata captured during the refresh-token exchange.
+   * The captured HTTP error response from the token endpoint. Populated only when
+   * `status` is `failed`.
    */
   http_response: BetaManagedAgentsRefreshHTTPResponse | null;
 
   /**
-   * Outcome of a refresh-token exchange attempted during credential validation.
+   * Outcome of the refresh attempt.
+   *
+   * - `succeeded` - The token endpoint returned a new access token.
+   * - `failed` - The token endpoint returned an error response. See `http_response`
+   *   for detail.
+   * - `connect_error` - The token endpoint could not be reached (DNS, TLS, or
+   *   connection error).
+   * - `no_refresh_token` - No refresh token is stored for the credential, so no
+   *   exchange was attempted.
    */
   status: 'succeeded' | 'failed' | 'connect_error' | 'no_refresh_token';
 }
 
-/**
- * API-key credential details for a model provider. Secret token values are never
- * returned.
- */
 export interface BetaManagedAgentsProviderAPIKeyAuthResponse {
-  /**
-   * Provider credential routing mode, for example `model_inference`.
-   */
   access_mode: string;
 
-  /**
-   * Model provider this credential authenticates with, for example `anthropic` or
-   * `openai`.
-   */
   provider_id: string;
 
   type: 'provider_api_key';
 }
 
-/**
- * Parameters for creating a model-provider API-key credential. This key is not a
- * Tetral public SDK API key.
- */
 export interface BetaManagedAgentsProviderAPIKeyCreateParams {
-  /**
-   * Provider credential routing mode, for example `model_inference`.
-   */
   access_mode: string;
 
-  /**
-   * Model provider this credential authenticates with, for example `anthropic` or
-   * `openai`.
-   */
   provider_id: string;
 
-  /**
-   * Provider API key value. Write-only; never returned in responses.
-   */
   token: string;
 
   type: 'provider_api_key';
 }
 
-/**
- * Parameters for rotating a model-provider API-key credential. `provider_id` and
- * `access_mode` are immutable.
- */
 export interface BetaManagedAgentsProviderAPIKeyUpdateParams {
   type: 'provider_api_key';
 
-  /**
-   * Updated provider API key value.
-   */
   token?: string | null;
 }
 
-/**
- * OAuth credential details for a model provider. Secret token values are never
- * returned.
- */
 export interface BetaManagedAgentsProviderOAuthAuthResponse {
-  /**
-   * OpenAI OAuth credential routing mode.
-   */
   access_mode: 'oauth';
 
-  /**
-   * OpenAI account identifier associated with the OAuth tokens.
-   */
   account_id: string;
 
-  /**
-   * A timestamp in RFC 3339 format
-   */
   expires_at: string;
 
-  /**
-   * Whether a refresh token is stored for this credential.
-   */
   has_refresh_token: boolean;
 
-  /**
-   * Model provider this credential authenticates with.
-   */
   provider_id: 'openai';
 
   type: 'provider_oauth';
 }
 
-/**
- * Parameters for creating a model-provider OAuth credential.
- */
 export interface BetaManagedAgentsProviderOAuthCreateParams {
-  /**
-   * OAuth access token. Write-only; never returned in responses.
-   */
   access_token: string;
 
-  /**
-   * OpenAI OAuth credential routing mode.
-   */
   access_mode: 'oauth';
 
-  /**
-   * OpenAI account identifier associated with the OAuth tokens.
-   */
   account_id: string;
 
-  /**
-   * A timestamp in RFC 3339 format
-   */
   expires_at: string;
 
-  /**
-   * Model provider this credential authenticates with.
-   */
   provider_id: 'openai';
 
-  /**
-   * OAuth refresh token. Write-only; responses expose only `has_refresh_token`.
-   */
   refresh_token: string;
 
   type: 'provider_oauth';
 }
 
-/**
- * Parameters for rotating a model-provider OAuth credential. `provider_id`,
- * `access_mode`, and `account_id` are immutable.
- */
 export interface BetaManagedAgentsProviderOAuthUpdateParams {
   type: 'provider_oauth';
 
-  /**
-   * Updated OAuth access token.
-   */
   access_token?: string | null;
 
-  /**
-   * A timestamp in RFC 3339 format
-   */
   expires_at?: string | null;
 
-  /**
-   * Updated OAuth refresh token.
-   */
   refresh_token?: string | null;
 }
 
@@ -998,7 +931,7 @@ export interface BetaManagedAgentsUnrestrictedCredentialNetworkingResponse {
 
 export interface CredentialCreateParams {
   /**
-   * Body param: Authentication details for creating a credential.
+   * Body param: Authentication configuration for the credential.
    */
   auth:
     | BetaManagedAgentsMCPOAuthCreateParams
@@ -1022,11 +955,21 @@ export interface CredentialCreateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface CredentialRetrieveParams {
   /**
-   * Path param: Path parameter vault_id
+   * Path param: Identifier of the vault containing the credential.
    */
   vault_id: string;
 
@@ -1034,16 +977,27 @@ export interface CredentialRetrieveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface CredentialUpdateParams {
   /**
-   * Path param: Path parameter vault_id
+   * Path param: Identifier of the vault containing the credential.
    */
   vault_id: string;
 
   /**
-   * Body param: Updated authentication details for a credential.
+   * Body param: Updated authentication configuration. The `type` is immutable; the
+   * variant sent must match the stored credential's type.
    */
   auth?:
     | BetaManagedAgentsMCPOAuthUpdateParams
@@ -1067,6 +1021,16 @@ export interface CredentialUpdateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface CredentialListParams extends PageCursorParams {
@@ -1079,11 +1043,21 @@ export interface CredentialListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface CredentialDeleteParams {
   /**
-   * Path param: Path parameter vault_id
+   * Path param: Identifier of the vault containing the credential.
    */
   vault_id: string;
 
@@ -1091,11 +1065,21 @@ export interface CredentialDeleteParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface CredentialArchiveParams {
   /**
-   * Path param: Path parameter vault_id
+   * Path param: Identifier of the vault containing the credential.
    */
   vault_id: string;
 
@@ -1103,11 +1087,21 @@ export interface CredentialArchiveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface CredentialMCPOAuthValidateParams {
   /**
-   * Path param: Path parameter vault_id
+   * Path param: Identifier of the vault containing the credential.
    */
   vault_id: string;
 
@@ -1115,6 +1109,16 @@ export interface CredentialMCPOAuthValidateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export declare namespace Credentials {

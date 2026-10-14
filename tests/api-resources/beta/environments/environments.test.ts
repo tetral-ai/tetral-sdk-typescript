@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -40,6 +38,7 @@ describe('resource environments', () => {
       description: 'Python environment with data-analysis packages.',
       metadata: { foo: 'string' },
       betas: ['message-batches-2024-09-24'],
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
@@ -59,7 +58,7 @@ describe('resource environments', () => {
     await expect(
       client.beta.environments.retrieve(
         'env_011CZkZ9X2dpNyB7HsEFoRfW',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -96,6 +95,7 @@ describe('resource environments', () => {
           limit: 1,
           page: 'page',
           betas: ['message-batches-2024-09-24'],
+          workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
         },
         { path: '/_stainless_unknown_path' },
       ),
@@ -118,7 +118,7 @@ describe('resource environments', () => {
     await expect(
       client.beta.environments.delete(
         'env_011CZkZ9X2dpNyB7HsEFoRfW',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);
@@ -140,7 +140,7 @@ describe('resource environments', () => {
     await expect(
       client.beta.environments.archive(
         'env_011CZkZ9X2dpNyB7HsEFoRfW',
-        { betas: ['message-batches-2024-09-24'] },
+        { betas: ['message-batches-2024-09-24'], workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy' },
         { path: '/_stainless_unknown_path' },
       ),
     ).rejects.toThrow(Anthropic.NotFoundError);

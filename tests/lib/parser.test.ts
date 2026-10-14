@@ -1,5 +1,5 @@
-import { betaZodOutputFormat } from '@tetral-ai/sdk/helpers/beta/zod';
-import { zodOutputFormat } from '@tetral-ai/sdk/helpers/zod';
+import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod/v4';
 import { AnthropicError } from '../../src/core/error';
 import {
@@ -10,7 +10,7 @@ import {
 import { ParseableMessageCreateParams, maybeParseMessage, parseMessage } from '../../src/lib/parser';
 import type { BetaMessage } from '../../src/resources/beta/messages/messages';
 import type { Message } from '../../src/resources/messages/messages';
-import { Logger } from '@tetral-ai/sdk/client';
+import { Logger } from '@anthropic-ai/sdk/client';
 
 const opts: { logger: Logger } = { logger: console };
 
@@ -86,6 +86,7 @@ describe('Beta Parser', () => {
         cache_creation: null,
         cache_creation_input_tokens: 0,
         cache_read_input_tokens: 0,
+        fallback_credit: null,
         server_tool_use: null,
         service_tier: null,
         inference_geo: null,
@@ -266,6 +267,7 @@ describe('Beta Parser', () => {
         cache_creation: null,
         cache_creation_input_tokens: 0,
         cache_read_input_tokens: 0,
+        fallback_credit: null,
         server_tool_use: null,
         service_tier: null,
         inference_geo: null,
@@ -300,7 +302,7 @@ describe('Beta Parser', () => {
         output_config: { format: betaZodOutputFormat(z.object({ city: z.string() })) },
       };
 
-      const mockLogger = { warn: jest.fn() };
+      const mockLogger = { warn: vi.fn() };
 
       const parsed = maybeParseBetaMessage(mockMessage, params, { logger: mockLogger as any });
       expect(parsed.parsed_output).toEqual({ city: 'San Francisco' });
@@ -479,6 +481,7 @@ describe('GA Parser', () => {
           citations: null,
         },
       ],
+      diagnostics: null,
       stop_details: null,
       stop_reason: 'end_turn',
       stop_sequence: null,
@@ -655,6 +658,7 @@ describe('GA Parser', () => {
           citations: null,
         },
       ],
+      diagnostics: null,
       stop_details: null,
       stop_reason: 'end_turn',
       stop_sequence: null,

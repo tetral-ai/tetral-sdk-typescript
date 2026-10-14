@@ -1,5 +1,3 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
 import { APIResource } from '../../../core/resource';
 import * as BetaAPI from '../beta';
 import * as VersionsAPI from './versions';
@@ -21,20 +19,21 @@ export class Agents extends APIResource {
    * ```ts
    * const betaManagedAgentsAgent =
    *   await client.beta.agents.create({
-   *     model: 'anthropic/claude-opus-4-8',
+   *     model: 'claude-opus-5',
    *     name: 'My First Agent',
-   *     approval_mode: 'ask_for_approval',
-   *     tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
    *   });
    * ```
    */
   create(params: AgentCreateParams, options?: RequestOptions): APIPromise<BetaManagedAgentsAgent> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post('/v1/agents?beta=true', {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -56,12 +55,15 @@ export class Agents extends APIResource {
     params: AgentRetrieveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsAgent> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.get(path`/v1/agents/${agentID}?beta=true`, {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -75,7 +77,7 @@ export class Agents extends APIResource {
    * const betaManagedAgentsAgent =
    *   await client.beta.agents.update(
    *     'agent_011CZkYpogX7uDKUyvBTophP',
-   *     { version: 1 },
+   *     { description: 'updated' },
    *   );
    * ```
    */
@@ -84,12 +86,15 @@ export class Agents extends APIResource {
     params: AgentUpdateParams,
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsAgent> {
-    const { betas, ...body } = params;
+    const { betas, workspace_id, ...body } = params;
     return this._client.post(path`/v1/agents/${agentID}?beta=true`, {
       body,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -110,12 +115,15 @@ export class Agents extends APIResource {
     params: AgentListParams | null | undefined = {},
     options?: RequestOptions,
   ): PagePromise<BetaManagedAgentsAgentsPageCursor, BetaManagedAgentsAgent> {
-    const { betas, ...query } = params ?? {};
+    const { betas, workspace_id, ...query } = params ?? {};
     return this._client.getAPIList('/v1/agents?beta=true', PageCursor<BetaManagedAgentsAgent>, {
       query,
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -137,11 +145,14 @@ export class Agents extends APIResource {
     params: AgentArchiveParams | null | undefined = {},
     options?: RequestOptions,
   ): APIPromise<BetaManagedAgentsAgent> {
-    const { betas } = params ?? {};
+    const { betas, workspace_id } = params ?? {};
     return this._client.post(path`/v1/agents/${agentID}/archive?beta=true`, {
       ...options,
       headers: buildHeaders([
-        { 'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString() },
+        {
+          'anthropic-beta': [...(betas ?? []), 'managed-agents-2026-04-01'].toString(),
+          ...(workspace_id != null ? { 'anthropic-workspace-id': workspace_id } : undefined),
+        },
         options?.headers,
       ]),
     });
@@ -153,13 +164,26 @@ export type BetaManagedAgentsAgentsPageCursor = PageCursor<BetaManagedAgentsAgen
 export type AgentApprovalMode = 'full_access' | 'ask_for_approval' | 'approve_for_me';
 
 /**
+ * Platform advisor roster entry: a model the session's primary thread may consult
+ * mid-turn.
+ */
+export interface BetaManagedAgentsAdvisor {
+  /**
+   * The advisor model id.
+   */
+  model: string;
+
+  type: 'advisor';
+}
+
+/**
  * A Managed Agents `agent`.
  */
 export interface BetaManagedAgentsAgent {
   id: string;
 
   /**
-   * A timestamp in RFC 3339 format
+   * When the agent was archived. Null if not archived.
    */
   archived_at: string | null;
 
@@ -172,10 +196,6 @@ export interface BetaManagedAgentsAgent {
 
   mcp_servers: Array<BetaManagedAgentsMCPServerURLDefinition>;
 
-  /**
-   * Resolved approval mode for tool use. When omitted on create, Tetral resolves
-   * the default to `ask_for_approval`.
-   */
   approval_mode: AgentApprovalMode;
 
   metadata: { [key: string]: string };
@@ -186,7 +206,7 @@ export interface BetaManagedAgentsAgent {
   model: BetaManagedAgentsModelConfig;
 
   /**
-   * Resolved coordinator topology with a concrete agent roster.
+   * Multiagent orchestration configuration. Null when the agent is single-threaded.
    */
   multiagent: SessionsAPI.BetaManagedAgentsMultiagent | null;
 
@@ -231,40 +251,28 @@ export interface BetaManagedAgentsAgentReference {
 /**
  * Configuration for a specific agent tool.
  */
-export interface BetaManagedAgentsAgentToolConfig {
-  enabled: boolean;
-
-  /**
-   * Built-in agent tool identifier.
-   */
-  name: 'bash' | 'edit' | 'read' | 'write' | 'glob' | 'grep' | 'web_fetch' | 'web_search';
-
-  /**
-   * Permission policy for tool execution.
-   */
-  permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
-}
+export type BetaManagedAgentsAgentToolConfig =
+  | BetaManagedAgentsBashToolConfig
+  | BetaManagedAgentsEditToolConfig
+  | BetaManagedAgentsReadToolConfig
+  | BetaManagedAgentsWriteToolConfig
+  | BetaManagedAgentsGlobToolConfig
+  | BetaManagedAgentsGrepToolConfig
+  | BetaManagedAgentsWebFetchToolConfig
+  | BetaManagedAgentsWebSearchToolConfig;
 
 /**
  * Configuration override for a specific tool within a toolset.
  */
-export interface BetaManagedAgentsAgentToolConfigParams {
-  /**
-   * Built-in agent tool identifier.
-   */
-  name: 'bash' | 'edit' | 'read' | 'write' | 'glob' | 'grep' | 'web_fetch' | 'web_search';
-
-  /**
-   * Whether this tool is enabled and available to Claude. Overrides the
-   * default_config setting.
-   */
-  enabled?: boolean | null;
-
-  /**
-   * Permission policy for tool execution.
-   */
-  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
-}
+export type BetaManagedAgentsAgentToolConfigParams =
+  | BetaManagedAgentsBashToolConfigParams
+  | BetaManagedAgentsEditToolConfigParams
+  | BetaManagedAgentsReadToolConfigParams
+  | BetaManagedAgentsWriteToolConfigParams
+  | BetaManagedAgentsGlobToolConfigParams
+  | BetaManagedAgentsGrepToolConfigParams
+  | BetaManagedAgentsWebFetchToolConfigParams
+  | BetaManagedAgentsWebSearchToolConfigParams;
 
 /**
  * Resolved default configuration for agent tools.
@@ -275,7 +283,10 @@ export interface BetaManagedAgentsAgentToolsetDefaultConfig {
   /**
    * Permission policy for tool execution.
    */
-  permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
 }
 
 /**
@@ -289,9 +300,14 @@ export interface BetaManagedAgentsAgentToolsetDefaultConfigParams {
   enabled?: boolean | null;
 
   /**
-   * Permission policy for tool execution.
+   * Default permission policy for tools. Controls whether tool calls are
+   * auto-approved or require confirmation.
    */
-  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
 }
 
 export type BetaManagedAgentsTetralPlatformToolName = 'web' | 'memory' | 'subagent';
@@ -320,74 +336,41 @@ export type BetaManagedAgentsTetralAgentToolsetParams =
   | BetaManagedAgentsTetralClaudeAgentToolsetParams
   | BetaManagedAgentsTetralGPTAgentToolsetParams;
 
-/**
- * Resolved Tetral built-in tool configuration for a Claude-family agent.
- */
 export interface BetaManagedAgentsTetralClaudeToolConfig {
   enabled: boolean;
 
   name: BetaManagedAgentsTetralClaudeToolName;
 
-  /**
-   * Permission policy for tool execution.
-   */
   permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
 }
 
-/**
- * Tetral built-in tool configuration for a Claude-family agent.
- */
 export interface BetaManagedAgentsTetralClaudeToolConfigParams {
   name: BetaManagedAgentsTetralClaudeToolName;
 
-  /**
-   * Whether this tool is enabled and available to the agent.
-   */
   enabled?: boolean | null;
 
-  /**
-   * Permission policy for tool execution.
-   */
   permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
 }
 
-/**
- * Resolved Tetral built-in tool configuration for a GPT-family agent.
- */
 export interface BetaManagedAgentsTetralGPTToolConfig {
   enabled: boolean;
 
   name: BetaManagedAgentsTetralGPTToolName;
 
-  /**
-   * Permission policy for tool execution.
-   */
   permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
 }
 
-/**
- * Tetral built-in tool configuration for a GPT-family agent.
- */
 export interface BetaManagedAgentsTetralGPTToolConfigParams {
   name: BetaManagedAgentsTetralGPTToolName;
 
-  /**
-   * Whether this tool is enabled and available to the agent.
-   */
   enabled?: boolean | null;
 
-  /**
-   * Permission policy for tool execution.
-   */
   permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
 }
 
 export interface BetaManagedAgentsTetralClaudeAgentToolset {
   configs: Array<BetaManagedAgentsTetralClaudeToolConfig>;
 
-  /**
-   * Resolved default configuration for Tetral built-in tools.
-   */
   default_config: BetaManagedAgentsAgentToolsetDefaultConfig;
 
   family: 'claude';
@@ -400,24 +383,14 @@ export interface BetaManagedAgentsTetralClaudeAgentToolsetParams {
 
   family: 'claude';
 
-  /**
-   * Per-tool configuration overrides. Claude-family configs accept Claude built-ins
-   * plus platform built-ins.
-   */
   configs?: Array<BetaManagedAgentsTetralClaudeToolConfigParams>;
 
-  /**
-   * Default configuration for all tools in the toolset.
-   */
   default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
 }
 
 export interface BetaManagedAgentsTetralGPTAgentToolset {
   configs: Array<BetaManagedAgentsTetralGPTToolConfig>;
 
-  /**
-   * Resolved default configuration for Tetral built-in tools.
-   */
   default_config: BetaManagedAgentsAgentToolsetDefaultConfig;
 
   family: 'gpt';
@@ -430,23 +403,11 @@ export interface BetaManagedAgentsTetralGPTAgentToolsetParams {
 
   family: 'gpt';
 
-  /**
-   * Per-tool configuration overrides. GPT-family configs accept GPT built-ins plus
-   * platform built-ins.
-   */
   configs?: Array<BetaManagedAgentsTetralGPTToolConfigParams>;
 
-  /**
-   * Default configuration for all tools in the toolset.
-   */
   default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
 }
 
-/**
- * Legacy Anthropic-managed built-in toolset retained for upstream compatibility.
- * Tetral Agent create/update uses `tetral_agent_toolset`; Tetral rejects this
- * legacy shape in this stage.
- */
 export interface BetaManagedAgentsAgentToolset20260401 {
   configs: Array<BetaManagedAgentsAgentToolConfig>;
 
@@ -545,9 +506,8 @@ export interface BetaManagedAgentsAgentToolset20260401GrepInput {
 }
 
 /**
- * Legacy Anthropic-managed built-in toolset params retained for upstream
- * compatibility. Tetral Agent create/update uses `tetral_agent_toolset`; Tetral
- * rejects this legacy shape in this stage.
+ * Configuration for built-in agent tools. Use this to enable or disable groups of
+ * tools available to the agent.
  */
 export interface BetaManagedAgentsAgentToolset20260401Params {
   type: 'agent_toolset_20260401';
@@ -558,7 +518,7 @@ export interface BetaManagedAgentsAgentToolset20260401Params {
   configs?: Array<BetaManagedAgentsAgentToolConfigParams>;
 
   /**
-   * Default configuration for all tools in a toolset.
+   * Default configuration applied to all tools in this set.
    */
   default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
 }
@@ -639,6 +599,63 @@ export interface BetaManagedAgentsAnthropicSkillParams {
 }
 
 /**
+ * The server decides each tool call individually: it judges, from the tool, its
+ * input, and the session content so far, whether the call is safe to execute or
+ * high-risk, and evaluates it to allow when judged safe and to deny when judged
+ * high-risk. A call the server cannot reach a judgement on evaluates to ask.
+ */
+export interface BetaManagedAgentsAutoPolicy {
+  type: 'auto';
+}
+
+/**
+ * Configuration for the bash tool.
+ */
+export interface BetaManagedAgentsBashToolConfig {
+  enabled: boolean;
+
+  name: 'bash';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'bash';
+}
+
+/**
+ * Configuration override for the bash tool.
+ */
+export interface BetaManagedAgentsBashToolConfigParams {
+  /**
+   * Must be "bash".
+   */
+  name: 'bash';
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'bash';
+}
+
+/**
  * A resolved user-created custom skill.
  */
 export interface BetaManagedAgentsCustomSkill {
@@ -667,8 +684,7 @@ export interface BetaManagedAgentsCustomSkillParams {
 }
 
 /**
- * A custom tool as returned in API responses. Retained for upstream compatibility;
- * Tetral rejects client-executed custom Agent tools in this stage.
+ * A custom tool as returned in API responses.
  */
 export interface BetaManagedAgentsCustomTool {
   description: string;
@@ -697,19 +713,20 @@ export interface BetaManagedAgentsCustomToolInputSchema {
 }
 
 /**
- * A custom tool that is executed by the API client rather than the agent. Retained
- * for upstream compatibility; Tetral rejects this Agent tool shape in this stage
- * instead of treating it as a local success or no-op.
+ * A custom tool that is executed by the API client rather than the agent. When the
+ * agent calls this tool, an `agent.custom_tool_use` event is emitted and the
+ * session goes idle, waiting for the client to provide the result via a
+ * `user.custom_tool_result` event.
  */
 export interface BetaManagedAgentsCustomToolParams {
   /**
    * Description of what the tool does, shown to the agent to help it decide when to
-   * use the tool. 1-1024 characters.
+   * use the tool.
    */
   description: string;
 
   /**
-   * JSON Schema for custom tool input parameters.
+   * JSON Schema defining the expected input parameters for the tool.
    */
   input_schema: BetaManagedAgentsCustomToolInputSchema;
 
@@ -720,6 +737,182 @@ export interface BetaManagedAgentsCustomToolParams {
   name: string;
 
   type: 'custom';
+}
+
+/**
+ * Configuration for the edit tool.
+ */
+export interface BetaManagedAgentsEditToolConfig {
+  enabled: boolean;
+
+  name: 'edit';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'edit';
+}
+
+/**
+ * Configuration override for the edit tool.
+ */
+export interface BetaManagedAgentsEditToolConfigParams {
+  /**
+   * Must be "edit".
+   */
+  name: 'edit';
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'edit';
+}
+
+/**
+ * High effort. Favors reasoning depth.
+ */
+export interface BetaManagedAgentsEffortHigh {
+  type: 'high';
+}
+
+/**
+ * Low effort. Favors latency over reasoning depth.
+ */
+export interface BetaManagedAgentsEffortLow {
+  type: 'low';
+}
+
+/**
+ * Maximum effort. Favors reasoning depth over latency.
+ */
+export interface BetaManagedAgentsEffortMax {
+  type: 'max';
+}
+
+/**
+ * Medium effort. Balances latency and reasoning depth.
+ */
+export interface BetaManagedAgentsEffortMedium {
+  type: 'medium';
+}
+
+/**
+ * Extra-high effort. Not all models accept this level.
+ */
+export interface BetaManagedAgentsEffortXhigh {
+  type: 'xhigh';
+}
+
+/**
+ * Configuration for the glob tool.
+ */
+export interface BetaManagedAgentsGlobToolConfig {
+  enabled: boolean;
+
+  name: 'glob';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'glob';
+}
+
+/**
+ * Configuration override for the glob tool.
+ */
+export interface BetaManagedAgentsGlobToolConfigParams {
+  /**
+   * Must be "glob".
+   */
+  name: 'glob';
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'glob';
+}
+
+/**
+ * Configuration for the grep tool.
+ */
+export interface BetaManagedAgentsGrepToolConfig {
+  enabled: boolean;
+
+  name: 'grep';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'grep';
+}
+
+/**
+ * Configuration override for the grep tool.
+ */
+export interface BetaManagedAgentsGrepToolConfigParams {
+  /**
+   * Must be "grep".
+   */
+  name: 'grep';
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'grep';
 }
 
 /**
@@ -744,7 +937,10 @@ export interface BetaManagedAgentsMCPToolConfig {
   /**
    * Permission policy for tool execution.
    */
-  permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
 }
 
 /**
@@ -762,9 +958,13 @@ export interface BetaManagedAgentsMCPToolConfigParams {
   enabled?: boolean | null;
 
   /**
-   * Permission policy for tool execution.
+   * Permission policy for this tool. Overrides the `default_config` setting.
    */
-  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
 }
 
 export interface BetaManagedAgentsMCPToolset {
@@ -789,7 +989,10 @@ export interface BetaManagedAgentsMCPToolsetDefaultConfig {
   /**
    * Permission policy for tool execution.
    */
-  permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
 }
 
 /**
@@ -802,9 +1005,13 @@ export interface BetaManagedAgentsMCPToolsetDefaultConfigParams {
   enabled?: boolean | null;
 
   /**
-   * Permission policy for tool execution.
+   * Default permission policy for tools from this server.
    */
-  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
 }
 
 /**
@@ -825,7 +1032,7 @@ export interface BetaManagedAgentsMCPToolsetParams {
   configs?: Array<BetaManagedAgentsMCPToolConfigParams>;
 
   /**
-   * Default configuration for all tools from an MCP server.
+   * Default configuration for all tools from this server.
    */
   default_config?: BetaManagedAgentsMCPToolsetDefaultConfigParams | null;
 }
@@ -833,12 +1040,8 @@ export interface BetaManagedAgentsMCPToolsetParams {
 /**
  * The model that will power your agent.
  *
- * Known Tetral model IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`,
- * `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`,
- * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`.
- * This type provides autocomplete, not admission: arbitrary strings
- * type-check, while the engine gates model IDs and rejects unknown values with
- * a 400 response that enumerates the allowed set.
+ * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+ * details and options.
  */
 export type BetaManagedAgentsModel =
   | 'openai/gpt-5.5'
@@ -857,19 +1060,33 @@ export interface BetaManagedAgentsModelConfig {
   /**
    * The model that will power your agent.
    *
-   * Known Tetral model IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`,
-   * `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`,
-   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`.
-   * This type provides autocomplete, not admission: arbitrary strings
-   * type-check, while the engine gates model IDs and rejects unknown values
-   * with a 400 response that enumerates the allowed set.
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * details and options.
    */
   id: BetaManagedAgentsModel;
 
   /**
+   * How hard Claude works on each inference call. One of `low`, `medium`, `high`,
+   * `xhigh`, `max`. Always present; resolved to the per-model default at save time
+   * when not supplied.
+   */
+  effort?:
+    | BetaManagedAgentsEffortLow
+    | BetaManagedAgentsEffortMedium
+    | BetaManagedAgentsEffortHigh
+    | BetaManagedAgentsEffortXhigh
+    | BetaManagedAgentsEffortMax;
+
+  /**
+   * Geographic region for model inference. When unset, requests fall through to the
+   * workspace's default_inference_geo.
+   */
+  inference_geo?: string;
+
+  /**
    * Inference speed mode. `fast` provides significantly faster output token
-   * generation at premium pricing. Not all models support `fast`; invalid
-   * combinations are rejected at create time.
+   * generation at premium pricing. Defaults to `standard`. Not all models support
+   * `fast`; invalid combinations are rejected at create time.
    */
   speed?: 'standard' | 'fast';
 }
@@ -881,22 +1098,94 @@ export interface BetaManagedAgentsModelConfigParams {
   /**
    * The model that will power your agent.
    *
-   * Known Tetral model IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`,
-   * `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`,
-   * `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`.
-   * This type provides autocomplete, not admission: arbitrary strings
-   * type-check, while the engine gates model IDs and rejects unknown values
-   * with a 400 response that enumerates the allowed set.
+   * See [models](https://docs.anthropic.com/en/docs/models-overview) for additional
+   * details and options.
    */
   id: BetaManagedAgentsModel;
 
   /**
-   * Inference speed mode. `fast` provides significantly faster output token
-   * generation at premium pricing. Not all models support `fast`; invalid
-   * combinations are rejected at create time.
+   * How hard Claude works on each inference call. Accepts a bare level string
+   * (`"high"`) or `{"type": "high"}`. On create, omitting it resolves the per-model
+   * default; on update, omitting it leaves the stored value unchanged.
+   */
+  effort?:
+    | 'low'
+    | 'medium'
+    | 'high'
+    | 'xhigh'
+    | 'max'
+    | BetaManagedAgentsEffortLow
+    | BetaManagedAgentsEffortMedium
+    | BetaManagedAgentsEffortHigh
+    | BetaManagedAgentsEffortXhigh
+    | BetaManagedAgentsEffortMax
+    | null;
+
+  /**
+   * Geographic region for model inference. When unset, requests fall through to the
+   * workspace's default_inference_geo. On update, `model` is whole-object
+   * replacement — omitting inference_geo clears it.
+   */
+  inference_geo?: string | null;
+
+  /**
+   * Inference speed mode. Defaults to `standard`.
    */
   speed?: 'standard' | 'fast' | null;
 }
+
+/**
+ * Whether the session's primary thread can consult an advisor model.
+ */
+export type BetaManagedAgentsMultiagentAdvisor =
+  | BetaManagedAgentsMultiagentAdvisorEnabled
+  | BetaManagedAgentsMultiagentAdvisorDisabled;
+
+/**
+ * The agent has no advisor.
+ */
+export interface BetaManagedAgentsMultiagentAdvisorDisabled {
+  type: 'disabled';
+}
+
+/**
+ * The agent has no advisor.
+ */
+export interface BetaManagedAgentsMultiagentAdvisorDisabledParams {
+  type: 'disabled';
+}
+
+/**
+ * The session's primary thread can consult `model` mid-turn.
+ */
+export interface BetaManagedAgentsMultiagentAdvisorEnabled {
+  /**
+   * The advisor model id.
+   */
+  model: string;
+
+  type: 'enabled';
+}
+
+/**
+ * The session's primary thread can consult `model` mid-turn.
+ */
+export interface BetaManagedAgentsMultiagentAdvisorEnabledParams {
+  /**
+   * A Claude model id. The model must be permitted as an advisor for this agent's
+   * model.
+   */
+  model: string;
+
+  type: 'enabled';
+}
+
+/**
+ * Whether the session's primary thread can consult an advisor model.
+ */
+export type BetaManagedAgentsMultiagentAdvisorParams =
+  | BetaManagedAgentsMultiagentAdvisorEnabledParams
+  | BetaManagedAgentsMultiagentAdvisorDisabledParams;
 
 /**
  * Resolved coordinator topology with a concrete agent roster.
@@ -906,7 +1195,7 @@ export interface BetaManagedAgentsMultiagentCoordinator {
    * Agents the coordinator may spawn as session threads, each resolved to a specific
    * version.
    */
-  agents: Array<BetaManagedAgentsAgentReference>;
+  agents: Array<BetaManagedAgentsAgentReference | BetaManagedAgentsAdvisor>;
 
   type: 'coordinator';
 }
@@ -930,11 +1219,310 @@ export interface BetaManagedAgentsMultiagentCoordinatorParams {
 }
 
 /**
+ * Whether the agent can define inline agents. The agent defines an inline agent
+ * itself, in a workflow run's plan or when it spawns a session thread, and the
+ * inline agent is not saved.
+ */
+export type BetaManagedAgentsMultiagentInlineAgents =
+  | BetaManagedAgentsMultiagentInlineAgentsEnabled
+  | BetaManagedAgentsMultiagentInlineAgentsDisabled;
+
+/**
+ * The agent cannot define inline agents.
+ */
+export interface BetaManagedAgentsMultiagentInlineAgentsDisabled {
+  type: 'disabled';
+}
+
+/**
+ * The agent cannot define inline agents.
+ */
+export interface BetaManagedAgentsMultiagentInlineAgentsDisabledParams {
+  type: 'disabled';
+}
+
+/**
+ * The agent can define inline agents.
+ */
+export interface BetaManagedAgentsMultiagentInlineAgentsEnabled {
+  type: 'enabled';
+}
+
+/**
+ * The agent can define inline agents.
+ */
+export interface BetaManagedAgentsMultiagentInlineAgentsEnabledParams {
+  type: 'enabled';
+}
+
+/**
+ * Whether the agent can define inline agents. The agent defines an inline agent
+ * itself, in a workflow run's plan or when it spawns a session thread, and the
+ * inline agent is not saved.
+ */
+export type BetaManagedAgentsMultiagentInlineAgentsParams =
+  | BetaManagedAgentsMultiagentInlineAgentsEnabledParams
+  | BetaManagedAgentsMultiagentInlineAgentsDisabledParams;
+
+/**
+ * One agent in a `predefined_agents` list. It is an agent ID string, an `agent`
+ * reference with an optional `version`, or `self` for the agent that owns this
+ * configuration.
+ */
+export type BetaManagedAgentsMultiagentPredefinedAgentParams =
+  | string
+  | SessionsAPI.BetaManagedAgentsAgentParams
+  | BetaManagedAgentsMultiagentSelfParams;
+
+/**
  * Sentinel roster entry meaning "the agent that owns this configuration". Resolved
  * server-side to a concrete agent reference.
  */
 export interface BetaManagedAgentsMultiagentSelfParams {
   type: 'self';
+}
+
+/**
+ * Whether the agent can spawn session threads.
+ */
+export type BetaManagedAgentsMultiagentSubagents =
+  | BetaManagedAgentsMultiagentSubagentsEnabled
+  | BetaManagedAgentsMultiagentSubagentsDisabled;
+
+/**
+ * The agent cannot spawn session threads.
+ */
+export interface BetaManagedAgentsMultiagentSubagentsDisabled {
+  type: 'disabled';
+}
+
+/**
+ * The agent cannot spawn session threads.
+ */
+export interface BetaManagedAgentsMultiagentSubagentsDisabledParams {
+  type: 'disabled';
+}
+
+/**
+ * The agent can spawn session threads.
+ */
+export interface BetaManagedAgentsMultiagentSubagentsEnabled {
+  /**
+   * Whether the agent can define inline agents, which are not saved, when it spawns
+   * session threads.
+   */
+  inline_agents: BetaManagedAgentsMultiagentInlineAgents;
+
+  /**
+   * Predefined agents, which are saved agents that this agent can spawn as session
+   * threads, each resolved to a specific version.
+   */
+  predefined_agents: Array<BetaManagedAgentsAgentReference>;
+
+  type: 'enabled';
+}
+
+/**
+ * The agent can spawn session threads. Each thread runs a predefined agent, which
+ * is a saved agent in `predefined_agents`, or an inline agent, which the agent
+ * defines when it spawns the thread and which is not saved. If `inline_agents` is
+ * disabled, `predefined_agents` must name at least one agent.
+ */
+export interface BetaManagedAgentsMultiagentSubagentsEnabledParams {
+  type: 'enabled';
+
+  /**
+   * Whether the agent can define inline agents when it spawns session threads.
+   * Defaults to enabled.
+   */
+  inline_agents?: BetaManagedAgentsMultiagentInlineAgentsParams | null;
+
+  /**
+   * Predefined agents that this agent can spawn as session threads. At most 20.
+   * Defaults to null. Null and an empty list both mean no predefined agents. This
+   * list is separate from `workflows.predefined_agents`, and an agent in one list is
+   * not added to the other.
+   */
+  predefined_agents?: Array<BetaManagedAgentsMultiagentPredefinedAgentParams> | null;
+}
+
+/**
+ * Whether the agent can spawn session threads.
+ */
+export type BetaManagedAgentsMultiagentSubagentsParams =
+  | BetaManagedAgentsMultiagentSubagentsEnabledParams
+  | BetaManagedAgentsMultiagentSubagentsDisabledParams;
+
+/**
+ * Whether the agent can start workflow runs.
+ */
+export type BetaManagedAgentsMultiagentWorkflows =
+  | BetaManagedAgentsMultiagentWorkflowsEnabled
+  | BetaManagedAgentsMultiagentWorkflowsDisabled;
+
+/**
+ * The agent cannot start workflow runs.
+ */
+export interface BetaManagedAgentsMultiagentWorkflowsDisabled {
+  type: 'disabled';
+}
+
+/**
+ * The agent cannot start workflow runs.
+ */
+export interface BetaManagedAgentsMultiagentWorkflowsDisabledParams {
+  type: 'disabled';
+}
+
+/**
+ * The agent can start workflow runs.
+ */
+export interface BetaManagedAgentsMultiagentWorkflowsEnabled {
+  /**
+   * Whether a run's plan can define inline agents, which are not saved.
+   */
+  inline_agents: BetaManagedAgentsMultiagentInlineAgents;
+
+  /**
+   * Predefined agents, which are saved agents that a run's plan can use, each
+   * resolved to a specific version.
+   */
+  predefined_agents: Array<BetaManagedAgentsAgentReference>;
+
+  type: 'enabled';
+}
+
+/**
+ * The agent can start workflow runs. Each run follows a plan, a program that the
+ * agent writes. A plan can use predefined agents, which are the saved agents in
+ * `predefined_agents`, and inline agents, which it defines itself and which are
+ * not saved. If `inline_agents` is disabled, `predefined_agents` must name at
+ * least one agent.
+ */
+export interface BetaManagedAgentsMultiagentWorkflowsEnabledParams {
+  type: 'enabled';
+
+  /**
+   * Whether a run's plan can define inline agents. Defaults to enabled.
+   */
+  inline_agents?: BetaManagedAgentsMultiagentInlineAgentsParams | null;
+
+  /**
+   * Predefined agents that a run's plan can use. At most 20. Defaults to null. Null
+   * and an empty list both mean no predefined agents. This list is separate from
+   * `subagents.predefined_agents`, and an agent in one list is not added to the
+   * other.
+   */
+  predefined_agents?: Array<BetaManagedAgentsMultiagentPredefinedAgentParams> | null;
+}
+
+/**
+ * Whether the agent can start workflow runs.
+ */
+export type BetaManagedAgentsMultiagentWorkflowsParams =
+  | BetaManagedAgentsMultiagentWorkflowsEnabledParams
+  | BetaManagedAgentsMultiagentWorkflowsDisabledParams;
+
+/**
+ * Resolved multiagent configuration with three members, each enabled or disabled
+ * on its own.
+ */
+export interface BetaManagedAgentsMultiagent20261001 {
+  /**
+   * Whether the session's primary thread can consult an advisor model.
+   */
+  advisor: BetaManagedAgentsMultiagentAdvisor;
+
+  /**
+   * Whether the agent can spawn session threads.
+   */
+  subagents: BetaManagedAgentsMultiagentSubagents;
+
+  type: 'multiagent_20261001';
+
+  /**
+   * Whether the agent can start workflow runs.
+   */
+  workflows: BetaManagedAgentsMultiagentWorkflows;
+}
+
+/**
+ * Multiagent configuration with three members, each enabled or disabled on its
+ * own. On an update, if the agent's stored `multiagent` also has type
+ * `multiagent_20261001`, this configuration is merged into the stored one, level
+ * by level, instead of replacing it. A key that the update omits keeps its stored
+ * value. A key sent as null takes its default, on create as well, so
+ * `"workflows": null` enables workflows. An object sent with a `type` other than
+ * the stored one replaces the stored object, and the keys that it omits take their
+ * defaults. A `predefined_agents` list that is sent replaces the stored list.
+ * Every object that is sent needs its `type`, and an enabled `advisor` needs its
+ * `model`. Other validation applies to the merged result.
+ */
+export interface BetaManagedAgentsMultiagent20261001Params {
+  type: 'multiagent_20261001';
+
+  /**
+   * Whether the session's primary thread can consult an advisor model. Defaults to
+   * disabled.
+   */
+  advisor?: BetaManagedAgentsMultiagentAdvisorParams | null;
+
+  /**
+   * Whether the agent can spawn session threads. Defaults to enabled.
+   */
+  subagents?: BetaManagedAgentsMultiagentSubagentsParams | null;
+
+  /**
+   * Whether the agent can start workflow runs. Defaults to enabled.
+   */
+  workflows?: BetaManagedAgentsMultiagentWorkflowsParams | null;
+}
+
+/**
+ * Configuration for the read tool.
+ */
+export interface BetaManagedAgentsReadToolConfig {
+  enabled: boolean;
+
+  name: 'read';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'read';
+}
+
+/**
+ * Configuration override for the read tool.
+ */
+export interface BetaManagedAgentsReadToolConfigParams {
+  /**
+   * Must be "read".
+   */
+  name: 'read';
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'read';
 }
 
 /**
@@ -949,9 +1537,6 @@ export interface BetaManagedAgentsSessionThreadAgent {
 
   mcp_servers: Array<BetaManagedAgentsMCPServerURLDefinition>;
 
-  /**
-   * Resolved approval mode for tool use.
-   */
   approval_mode: AgentApprovalMode;
 
   /**
@@ -1002,11 +1587,404 @@ export interface BetaManagedAgentsURLMCPServerParams {
   url: string;
 }
 
+/**
+ * Approximate user location for search result localization.
+ */
+export interface BetaManagedAgentsUserLocation {
+  /**
+   * Location precision. Only "approximate" is supported.
+   */
+  type: 'approximate';
+
+  /**
+   * City name.
+   */
+  city?: string | null;
+
+  /**
+   * Two-letter ISO 3166-1 country code, uppercase.
+   */
+  country?: string | null;
+
+  /**
+   * Region or state name.
+   */
+  region?: string | null;
+
+  /**
+   * IANA timezone identifier, e.g. "America/Los_Angeles".
+   */
+  timezone?: string | null;
+}
+
+/**
+ * Configuration for the web_fetch tool.
+ */
+export interface BetaManagedAgentsWebFetchToolConfig {
+  enabled: boolean;
+
+  name: 'web_fetch';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'web_fetch';
+
+  /**
+   * Which sources contribute URLs the tool may fetch, always in the object form.
+   * Null when not set, which allows every source.
+   */
+  url_sources: BetaManagedAgentsWebFetchURLSources | null;
+
+  allowed_domains?: Array<string>;
+
+  blocked_domains?: Array<string>;
+
+  max_content_tokens?: number | null;
+}
+
+/**
+ * Configuration override for the web_fetch tool.
+ */
+export interface BetaManagedAgentsWebFetchToolConfigParams {
+  /**
+   * Must be "web_fetch".
+   */
+  name: 'web_fetch';
+
+  /**
+   * Only fetch URLs whose host is one of these domains or a subdomain of one. Each
+   * entry is a plain hostname like "docs.example.com" (no scheme, port, or path). At
+   * most 64 entries; an empty list is rejected (omit the field instead). Cannot be
+   * combined with blocked_domains.
+   */
+  allowed_domains?: Array<string>;
+
+  /**
+   * Never fetch URLs whose host is one of these domains or a subdomain of one. Each
+   * entry is a plain hostname like "ads.example.com" (no scheme, port, or path). At
+   * most 64 entries; an empty list is rejected (omit the field instead). Cannot be
+   * combined with allowed_domains.
+   */
+  blocked_domains?: Array<string>;
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Maximum number of tokens of fetched text content to include in context per call.
+   * Does not apply to binary content such as PDFs.
+   */
+  max_content_tokens?: number | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'web_fetch';
+
+  /**
+   * Which sources contribute URLs the tool may fetch. Omit to allow every source.
+   */
+  url_sources?: BetaManagedAgentsWebFetchURLSourcesParams | null;
+}
+
+/**
+ * Every URL from this source may be fetched. This is the default.
+ */
+export interface BetaManagedAgentsWebFetchURLSourceAll {
+  type: 'all';
+}
+
+/**
+ * Every tool's results contribute URLs that may be fetched, except the named
+ * tools' results.
+ */
+export interface BetaManagedAgentsWebFetchURLSourceExcept {
+  /**
+   * The tools whose results do not contribute. Between 1 and 128 entries, each with
+   * a different name. An empty list is rejected; use "all" to leave out no tool's
+   * results.
+   */
+  tools: Array<BetaManagedAgentsWebFetchURLSourceToolReference>;
+
+  type: 'except';
+}
+
+/**
+ * This source contributes no URLs that may be fetched.
+ */
+export interface BetaManagedAgentsWebFetchURLSourceNone {
+  type: 'none';
+}
+
+/**
+ * Only the named tools' results contribute URLs that may be fetched.
+ */
+export interface BetaManagedAgentsWebFetchURLSourceOnly {
+  /**
+   * The tools whose results contribute. Between 1 and 128 entries, each with a
+   * different name. An empty list is rejected; use "none" to allow no tool's
+   * results.
+   */
+  tools: Array<BetaManagedAgentsWebFetchURLSourceToolReference>;
+
+  type: 'only';
+}
+
+/**
+ * String form of a url_sources value that has no field other than its type: "all"
+ * means {"type": "all"} and "none" means {"type": "none"}.
+ */
+export type BetaManagedAgentsWebFetchURLSourceShorthand = 'all' | 'none';
+
+/**
+ * Which tools' results contribute URLs that may be fetched.
+ */
+export type BetaManagedAgentsWebFetchURLSourceToolFilter =
+  | BetaManagedAgentsWebFetchURLSourceAll
+  | BetaManagedAgentsWebFetchURLSourceNone
+  | BetaManagedAgentsWebFetchURLSourceOnly
+  | BetaManagedAgentsWebFetchURLSourceExcept;
+
+/**
+ * Which tools' results contribute URLs that may be fetched. Accepts the string
+ * "all" or "none", or an object whose type is "all", "none", "only" or "except".
+ * Responses use the object form.
+ */
+export type BetaManagedAgentsWebFetchURLSourceToolFilterParams =
+  | BetaManagedAgentsWebFetchURLSourceShorthand
+  | BetaManagedAgentsWebFetchURLSourceToolFilter;
+
+/**
+ * Names one tool in an only or except list.
+ */
+export interface BetaManagedAgentsWebFetchURLSourceToolReference {
+  /**
+   * Name of the tool. Compared exactly, so upper and lower case letters are
+   * different.
+   */
+  name: string;
+
+  /**
+   * Must be "tool_reference".
+   */
+  type: 'tool_reference';
+}
+
+/**
+ * Whether URLs in the text of user messages may be fetched.
+ */
+export type BetaManagedAgentsWebFetchURLSourceUserInput =
+  | BetaManagedAgentsWebFetchURLSourceAll
+  | BetaManagedAgentsWebFetchURLSourceNone;
+
+/**
+ * Whether URLs in the text of user messages may be fetched. Accepts the string
+ * "all" or "none", or the object {"type": "all"} or {"type": "none"}. Responses
+ * use the object form.
+ */
+export type BetaManagedAgentsWebFetchURLSourceUserInputParams =
+  | BetaManagedAgentsWebFetchURLSourceShorthand
+  | BetaManagedAgentsWebFetchURLSourceUserInput;
+
+/**
+ * Which sources contribute URLs the web_fetch tool may fetch. A key that is null
+ * was not set and allows every URL from that source.
+ */
+export interface BetaManagedAgentsWebFetchURLSources {
+  /**
+   * Which custom tools' results contribute URLs that may be fetched. Null when not
+   * set, which allows every custom tool's results.
+   */
+  client_tool_results: BetaManagedAgentsWebFetchURLSourceToolFilter | null;
+
+  /**
+   * Which of the web_search and web_fetch tools' results contribute URLs that may be
+   * fetched. Null when not set, which allows both.
+   */
+  server_tool_results: BetaManagedAgentsWebFetchURLSourceToolFilter | null;
+
+  /**
+   * Whether URLs in the text of user messages may be fetched. Null when not set,
+   * which allows them.
+   */
+  user_input: BetaManagedAgentsWebFetchURLSourceUserInput | null;
+}
+
+/**
+ * Which sources contribute URLs the web_fetch tool may fetch. When web_fetch is
+ * limited to URLs the conversation has already shown the model (in a user message,
+ * a custom tool's result, or an earlier web_search or web_fetch result), each key
+ * narrows one of those sources and defaults to "all". Setting all three keys to
+ * "none" is rejected.
+ */
+export interface BetaManagedAgentsWebFetchURLSourcesParams {
+  /**
+   * Which custom tools' results contribute URLs that may be fetched: "all" (the
+   * default), "none", or an only or except list. Each name in a list must be a
+   * custom tool in the same tools array.
+   */
+  client_tool_results?: BetaManagedAgentsWebFetchURLSourceToolFilterParams | null;
+
+  /**
+   * Which of the web_search and web_fetch tools' results contribute URLs that may be
+   * fetched: "all" (the default), "none", or an only or except list. Each name in a
+   * list must be "web_search" or "web_fetch".
+   */
+  server_tool_results?: BetaManagedAgentsWebFetchURLSourceToolFilterParams | null;
+
+  /**
+   * Whether URLs in the text of user messages may be fetched: "all" (the default) or
+   * "none".
+   */
+  user_input?: BetaManagedAgentsWebFetchURLSourceUserInputParams | null;
+}
+
+/**
+ * Configuration for the web_search tool.
+ */
+export interface BetaManagedAgentsWebSearchToolConfig {
+  enabled: boolean;
+
+  name: 'web_search';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'web_search';
+
+  allowed_domains?: Array<string>;
+
+  blocked_domains?: Array<string>;
+
+  /**
+   * Approximate user location for search result localization.
+   */
+  user_location?: BetaManagedAgentsUserLocation | null;
+}
+
+/**
+ * Configuration override for the web_search tool.
+ */
+export interface BetaManagedAgentsWebSearchToolConfigParams {
+  /**
+   * Must be "web_search".
+   */
+  name: 'web_search';
+
+  /**
+   * Only return search results whose host is one of these domains or a subdomain of
+   * one. Each entry is a plain hostname like "docs.example.com" (no scheme or port;
+   * an optional path suffix is accepted). At most 64 entries; an empty list is
+   * rejected (omit the field instead). Cannot be combined with blocked_domains.
+   */
+  allowed_domains?: Array<string>;
+
+  /**
+   * Never return search results whose host is one of these domains or a subdomain of
+   * one. Each entry is a plain hostname like "ads.example.com" (no scheme or port;
+   * an optional path suffix is accepted). At most 64 entries; an empty list is
+   * rejected (omit the field instead). Cannot be combined with allowed_domains.
+   */
+  blocked_domains?: Array<string>;
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'web_search';
+
+  /**
+   * Approximate user location for search result localization.
+   */
+  user_location?: BetaManagedAgentsUserLocation | null;
+}
+
+/**
+ * Configuration for the write tool.
+ */
+export interface BetaManagedAgentsWriteToolConfig {
+  enabled: boolean;
+
+  name: 'write';
+
+  /**
+   * Permission policy for tool execution.
+   */
+  permission_policy:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy;
+
+  type: 'write';
+}
+
+/**
+ * Configuration override for the write tool.
+ */
+export interface BetaManagedAgentsWriteToolConfigParams {
+  /**
+   * Must be "write".
+   */
+  name: 'write';
+
+  /**
+   * Whether this tool is enabled and available to Claude. Overrides the
+   * default_config setting.
+   */
+  enabled?: boolean | null;
+
+  /**
+   * Permission policy for this tool. Controls whether tool calls are auto-approved
+   * or require confirmation.
+   */
+  permission_policy?:
+    | BetaManagedAgentsAlwaysAllowPolicy
+    | BetaManagedAgentsAlwaysAskPolicy
+    | BetaManagedAgentsAutoPolicy
+    | null;
+
+  type?: 'write';
+}
+
 export interface AgentCreateParams {
   /**
-   * Body param: Model identifier. Tetral model IDs use canonical `provider/model`
-   * form and are limited to the supported Tetral Agent model set, or a
-   * `model_config` object for additional configuration control.
+   * Body param: Model identifier. Accepts the
+   * [model string](https://platform.claude.com/docs/en/about-claude/models/overview#latest-models-comparison),
+   * e.g. `claude-opus-5`, or a `model_config` object for additional configuration
+   * control
    */
   model: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
@@ -1015,10 +1993,6 @@ export interface AgentCreateParams {
    */
   name: string;
 
-  /**
-   * Body param: Tool approval mode. Omit to let the backend resolve the default to
-   * `ask_for_approval`.
-   */
   approval_mode?: AgentApprovalMode;
 
   /**
@@ -1041,11 +2015,7 @@ export interface AgentCreateParams {
   metadata?: { [key: string]: string };
 
   /**
-   * Body param: A coordinator topology: the session's primary thread orchestrates
-   * work by spawning session threads, each running an agent drawn from the
-   * `agents` roster. Tetral supports omitted or `null` in this stage; non-null
-   * coordinator topology is retained as an unsupported compatibility surface and
-   * rejected by backend admission.
+   * Body param: Multiagent orchestration configuration.
    */
   multiagent?: SessionsAPI.BetaManagedAgentsMultiagentParams | null;
 
@@ -1060,11 +2030,8 @@ export interface AgentCreateParams {
   system?: string | null;
 
   /**
-   * Body param: Tool configurations available to the agent. Maximum of 128 tools
-   * across all toolsets allowed. Tetral supports `tetral_agent_toolset` with an
-   * explicit `family` and supported `mcp_toolset` declarations. Legacy
-   * `agent_toolset_20260401` and `custom` tool params remain assignable for
-   * compatibility but are rejected by Tetral in this stage.
+   * Body param: Tool configurations available to the agent. Maximum of 256 tools
+   * across all toolsets allowed.
    */
   tools?: Array<
     | BetaManagedAgentsTetralAgentToolsetParams
@@ -1077,6 +2044,16 @@ export interface AgentCreateParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface AgentRetrieveParams {
@@ -1090,19 +2067,19 @@ export interface AgentRetrieveParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface AgentUpdateParams {
-  /**
-   * Body param: The agent's current version, used to prevent concurrent overwrites.
-   * Obtain this value from a create or retrieve response. The request fails if this
-   * does not match the server's current version.
-   */
-  version: number;
-
-  /**
-   * Body param: Tool approval mode. Omit to preserve the current approval mode.
-   */
   approval_mode?: AgentApprovalMode;
 
   /**
@@ -1127,19 +2104,16 @@ export interface AgentUpdateParams {
   metadata?: { [key: string]: string | null } | null;
 
   /**
-   * Body param: Model identifier. Tetral model IDs use canonical `provider/model`
-   * form and are limited to the supported Tetral Agent model set, or a
-   * `model_config` object for additional configuration control. Omit to
-   * preserve. Cannot be cleared.
+   * Body param: Model identifier. Accepts the
+   * [model string](https://platform.claude.com/docs/en/about-claude/models/overview#latest-models-comparison),
+   * e.g. `claude-opus-5`, or a `model_config` object for additional configuration
+   * control. Omit to preserve. Cannot be cleared.
    */
   model?: BetaManagedAgentsModel | BetaManagedAgentsModelConfigParams;
 
   /**
-   * Body param: A coordinator topology: the session's primary thread orchestrates
-   * work by spawning session threads, each running an agent drawn from the
-   * `agents` roster. Tetral supports omitted or `null` in this stage; non-null
-   * coordinator topology is retained as an unsupported compatibility surface and
-   * rejected by backend admission.
+   * Body param: Multiagent orchestration configuration. Full replacement. Omit to
+   * preserve; send null to clear.
    */
   multiagent?: SessionsAPI.BetaManagedAgentsMultiagentParams | null;
 
@@ -1162,11 +2136,8 @@ export interface AgentUpdateParams {
 
   /**
    * Body param: Tool configurations available to the agent. Full replacement. Omit
-   * to preserve; send empty array or null to clear. Maximum of 128 tools across all
-   * toolsets allowed. Tetral supports `tetral_agent_toolset` with an explicit
-   * `family` and supported `mcp_toolset` declarations. Legacy
-   * `agent_toolset_20260401` and `custom` tool params remain assignable for
-   * compatibility but are rejected by Tetral in this stage.
+   * to preserve; send empty array or null to clear. Maximum of 256 tools across all
+   * toolsets allowed.
    */
   tools?: Array<
     | BetaManagedAgentsTetralAgentToolsetParams
@@ -1176,9 +2147,27 @@ export interface AgentUpdateParams {
   > | null;
 
   /**
+   * Body param: The agent's current version, used to prevent concurrent overwrites.
+   * Obtain this value from a create or retrieve response. Must be at least 1 if
+   * specified. When supplied, the request fails if it does not match the server's
+   * current version; omit to apply the update unconditionally.
+   */
+  version?: number;
+
+  /**
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface AgentListParams extends PageCursorParams {
@@ -1201,6 +2190,16 @@ export interface AgentListParams extends PageCursorParams {
    * Header param: Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Header param: Optional header to select the Workspace for this request. The
+   * value is a Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 export interface AgentArchiveParams {
@@ -1208,12 +2207,23 @@ export interface AgentArchiveParams {
    * Optional header to specify the beta version(s) you want to use.
    */
   betas?: Array<BetaAPI.AnthropicBeta>;
+
+  /**
+   * Optional header to select the Workspace for this request. The value is a
+   * Workspace ID (for example, `wrkspc_011CZkZaBF1tNoB5wlCeusgy`).
+   *
+   * Only needed for credentials that can act on more than one Workspace. A
+   * credential that belongs to a specific Workspace may omit it; if sent, it must
+   * match that Workspace.
+   */
+  workspace_id?: string;
 }
 
 Agents.Versions = Versions;
 
 export declare namespace Agents {
   export {
+    type BetaManagedAgentsAdvisor as BetaManagedAgentsAdvisor,
     type BetaManagedAgentsAgent as BetaManagedAgentsAgent,
     type BetaManagedAgentsAgentReference as BetaManagedAgentsAgentReference,
     type BetaManagedAgentsAgentToolConfig as BetaManagedAgentsAgentToolConfig,
@@ -1246,11 +2256,25 @@ export declare namespace Agents {
     type BetaManagedAgentsAlwaysAskPolicy as BetaManagedAgentsAlwaysAskPolicy,
     type BetaManagedAgentsAnthropicSkill as BetaManagedAgentsAnthropicSkill,
     type BetaManagedAgentsAnthropicSkillParams as BetaManagedAgentsAnthropicSkillParams,
+    type BetaManagedAgentsAutoPolicy as BetaManagedAgentsAutoPolicy,
+    type BetaManagedAgentsBashToolConfig as BetaManagedAgentsBashToolConfig,
+    type BetaManagedAgentsBashToolConfigParams as BetaManagedAgentsBashToolConfigParams,
     type BetaManagedAgentsCustomSkill as BetaManagedAgentsCustomSkill,
     type BetaManagedAgentsCustomSkillParams as BetaManagedAgentsCustomSkillParams,
     type BetaManagedAgentsCustomTool as BetaManagedAgentsCustomTool,
     type BetaManagedAgentsCustomToolInputSchema as BetaManagedAgentsCustomToolInputSchema,
     type BetaManagedAgentsCustomToolParams as BetaManagedAgentsCustomToolParams,
+    type BetaManagedAgentsEditToolConfig as BetaManagedAgentsEditToolConfig,
+    type BetaManagedAgentsEditToolConfigParams as BetaManagedAgentsEditToolConfigParams,
+    type BetaManagedAgentsEffortHigh as BetaManagedAgentsEffortHigh,
+    type BetaManagedAgentsEffortLow as BetaManagedAgentsEffortLow,
+    type BetaManagedAgentsEffortMax as BetaManagedAgentsEffortMax,
+    type BetaManagedAgentsEffortMedium as BetaManagedAgentsEffortMedium,
+    type BetaManagedAgentsEffortXhigh as BetaManagedAgentsEffortXhigh,
+    type BetaManagedAgentsGlobToolConfig as BetaManagedAgentsGlobToolConfig,
+    type BetaManagedAgentsGlobToolConfigParams as BetaManagedAgentsGlobToolConfigParams,
+    type BetaManagedAgentsGrepToolConfig as BetaManagedAgentsGrepToolConfig,
+    type BetaManagedAgentsGrepToolConfigParams as BetaManagedAgentsGrepToolConfigParams,
     type BetaManagedAgentsMCPServerURLDefinition as BetaManagedAgentsMCPServerURLDefinition,
     type BetaManagedAgentsMCPToolConfig as BetaManagedAgentsMCPToolConfig,
     type BetaManagedAgentsMCPToolConfigParams as BetaManagedAgentsMCPToolConfigParams,
@@ -1261,12 +2285,60 @@ export declare namespace Agents {
     type BetaManagedAgentsModel as BetaManagedAgentsModel,
     type BetaManagedAgentsModelConfig as BetaManagedAgentsModelConfig,
     type BetaManagedAgentsModelConfigParams as BetaManagedAgentsModelConfigParams,
+    type BetaManagedAgentsMultiagentAdvisor as BetaManagedAgentsMultiagentAdvisor,
+    type BetaManagedAgentsMultiagentAdvisorDisabled as BetaManagedAgentsMultiagentAdvisorDisabled,
+    type BetaManagedAgentsMultiagentAdvisorDisabledParams as BetaManagedAgentsMultiagentAdvisorDisabledParams,
+    type BetaManagedAgentsMultiagentAdvisorEnabled as BetaManagedAgentsMultiagentAdvisorEnabled,
+    type BetaManagedAgentsMultiagentAdvisorEnabledParams as BetaManagedAgentsMultiagentAdvisorEnabledParams,
+    type BetaManagedAgentsMultiagentAdvisorParams as BetaManagedAgentsMultiagentAdvisorParams,
     type BetaManagedAgentsMultiagentCoordinator as BetaManagedAgentsMultiagentCoordinator,
     type BetaManagedAgentsMultiagentCoordinatorParams as BetaManagedAgentsMultiagentCoordinatorParams,
+    type BetaManagedAgentsMultiagentInlineAgents as BetaManagedAgentsMultiagentInlineAgents,
+    type BetaManagedAgentsMultiagentInlineAgentsDisabled as BetaManagedAgentsMultiagentInlineAgentsDisabled,
+    type BetaManagedAgentsMultiagentInlineAgentsDisabledParams as BetaManagedAgentsMultiagentInlineAgentsDisabledParams,
+    type BetaManagedAgentsMultiagentInlineAgentsEnabled as BetaManagedAgentsMultiagentInlineAgentsEnabled,
+    type BetaManagedAgentsMultiagentInlineAgentsEnabledParams as BetaManagedAgentsMultiagentInlineAgentsEnabledParams,
+    type BetaManagedAgentsMultiagentInlineAgentsParams as BetaManagedAgentsMultiagentInlineAgentsParams,
+    type BetaManagedAgentsMultiagentPredefinedAgentParams as BetaManagedAgentsMultiagentPredefinedAgentParams,
     type BetaManagedAgentsMultiagentSelfParams as BetaManagedAgentsMultiagentSelfParams,
+    type BetaManagedAgentsMultiagentSubagents as BetaManagedAgentsMultiagentSubagents,
+    type BetaManagedAgentsMultiagentSubagentsDisabled as BetaManagedAgentsMultiagentSubagentsDisabled,
+    type BetaManagedAgentsMultiagentSubagentsDisabledParams as BetaManagedAgentsMultiagentSubagentsDisabledParams,
+    type BetaManagedAgentsMultiagentSubagentsEnabled as BetaManagedAgentsMultiagentSubagentsEnabled,
+    type BetaManagedAgentsMultiagentSubagentsEnabledParams as BetaManagedAgentsMultiagentSubagentsEnabledParams,
+    type BetaManagedAgentsMultiagentSubagentsParams as BetaManagedAgentsMultiagentSubagentsParams,
+    type BetaManagedAgentsMultiagentWorkflows as BetaManagedAgentsMultiagentWorkflows,
+    type BetaManagedAgentsMultiagentWorkflowsDisabled as BetaManagedAgentsMultiagentWorkflowsDisabled,
+    type BetaManagedAgentsMultiagentWorkflowsDisabledParams as BetaManagedAgentsMultiagentWorkflowsDisabledParams,
+    type BetaManagedAgentsMultiagentWorkflowsEnabled as BetaManagedAgentsMultiagentWorkflowsEnabled,
+    type BetaManagedAgentsMultiagentWorkflowsEnabledParams as BetaManagedAgentsMultiagentWorkflowsEnabledParams,
+    type BetaManagedAgentsMultiagentWorkflowsParams as BetaManagedAgentsMultiagentWorkflowsParams,
+    type BetaManagedAgentsMultiagent20261001 as BetaManagedAgentsMultiagent20261001,
+    type BetaManagedAgentsMultiagent20261001Params as BetaManagedAgentsMultiagent20261001Params,
+    type BetaManagedAgentsReadToolConfig as BetaManagedAgentsReadToolConfig,
+    type BetaManagedAgentsReadToolConfigParams as BetaManagedAgentsReadToolConfigParams,
     type BetaManagedAgentsSessionThreadAgent as BetaManagedAgentsSessionThreadAgent,
     type BetaManagedAgentsSkillParams as BetaManagedAgentsSkillParams,
     type BetaManagedAgentsURLMCPServerParams as BetaManagedAgentsURLMCPServerParams,
+    type BetaManagedAgentsUserLocation as BetaManagedAgentsUserLocation,
+    type BetaManagedAgentsWebFetchToolConfig as BetaManagedAgentsWebFetchToolConfig,
+    type BetaManagedAgentsWebFetchToolConfigParams as BetaManagedAgentsWebFetchToolConfigParams,
+    type BetaManagedAgentsWebFetchURLSourceAll as BetaManagedAgentsWebFetchURLSourceAll,
+    type BetaManagedAgentsWebFetchURLSourceExcept as BetaManagedAgentsWebFetchURLSourceExcept,
+    type BetaManagedAgentsWebFetchURLSourceNone as BetaManagedAgentsWebFetchURLSourceNone,
+    type BetaManagedAgentsWebFetchURLSourceOnly as BetaManagedAgentsWebFetchURLSourceOnly,
+    type BetaManagedAgentsWebFetchURLSourceShorthand as BetaManagedAgentsWebFetchURLSourceShorthand,
+    type BetaManagedAgentsWebFetchURLSourceToolFilter as BetaManagedAgentsWebFetchURLSourceToolFilter,
+    type BetaManagedAgentsWebFetchURLSourceToolFilterParams as BetaManagedAgentsWebFetchURLSourceToolFilterParams,
+    type BetaManagedAgentsWebFetchURLSourceToolReference as BetaManagedAgentsWebFetchURLSourceToolReference,
+    type BetaManagedAgentsWebFetchURLSourceUserInput as BetaManagedAgentsWebFetchURLSourceUserInput,
+    type BetaManagedAgentsWebFetchURLSourceUserInputParams as BetaManagedAgentsWebFetchURLSourceUserInputParams,
+    type BetaManagedAgentsWebFetchURLSources as BetaManagedAgentsWebFetchURLSources,
+    type BetaManagedAgentsWebFetchURLSourcesParams as BetaManagedAgentsWebFetchURLSourcesParams,
+    type BetaManagedAgentsWebSearchToolConfig as BetaManagedAgentsWebSearchToolConfig,
+    type BetaManagedAgentsWebSearchToolConfigParams as BetaManagedAgentsWebSearchToolConfigParams,
+    type BetaManagedAgentsWriteToolConfig as BetaManagedAgentsWriteToolConfig,
+    type BetaManagedAgentsWriteToolConfigParams as BetaManagedAgentsWriteToolConfigParams,
     type BetaManagedAgentsAgentsPageCursor as BetaManagedAgentsAgentsPageCursor,
     type AgentCreateParams as AgentCreateParams,
     type AgentRetrieveParams as AgentRetrieveParams,

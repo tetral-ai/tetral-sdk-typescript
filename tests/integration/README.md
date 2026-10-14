@@ -1,9 +1,9 @@
 # Tetral Integration Suite
 
 The suite in `tetral.integration.test.ts` is compiled in CI and runs only when
-`TETRAL_COMPAT_LIVE=1`. The live compatibility launcher requires `TETRAL_BASE_URL`
-and `TETRAL_API_KEY` and checks Engine reachability before starting it. A live
-Engine run is outside normal SDK CI.
+`TETRAL_COMPAT_LIVE=1`. Engine CI starts the real local Auth, API and event-stream
+services and supplies `TETRAL_BASE_URL` and `TETRAL_API_KEY`. SDK CI compiles the
+suite; Engine CI executes it.
 
 ## Observed Session preview proofs
 
@@ -12,10 +12,10 @@ The EVOUT-35/36 compatibility rows use a separate integration command:
 ```sh
 TETRAL_ENGINE_ROOT=/path/to/tetral \
 TETRAL_ENGINE_REVISION=<full-clean-Engine-commit> \
-yarn test:compatibility:integration
+pnpm test:compatibility:integration
 ```
 
-Run from a clean SDK checkout after frozen Yarn installation; no SDK build is
+Run from a clean SDK checkout after a frozen-lockfile pnpm install; no SDK build is
 required. The Engine checkout must be clean and match the full requested revision.
 The caller must supply an active dependency environment: an administrative
 PostgreSQL test URL with private database/role creation, a reachable isolated MinIO
@@ -39,14 +39,8 @@ provider stream and the actual SDK parser. Source revisions are checked before
 and after execution, and the child Go JSONL is retained on stdout. Go workspace
 and flag overrides are disabled for this execution.
 
-SDK CI contract tests use fixture responses to verify request construction,
-parsing, helper reconciliation and type boundaries. They do not establish Engine
-production eligibility or broker behavior. `test:compatibility:static` remains
-infrastructure-free and checks the other source contracts; it no longer treats
-Runtime writer absence as proof that previews are unsupported. The generic live
-resource suite above does not supply the streaming topology. Engine's owning
-streaming compositions separately cover recovery/error/interrupt Ends, child
-visibility, loss and backpressure against the identified SDK revision.
+Engine's own streaming compositions, not this command, cover recovery, error
+and interrupt Ends, child visibility, loss and backpressure.
 
 ## Observed OIDC and Memory actor proofs
 
@@ -82,8 +76,8 @@ Keycloak or Engine integration.
 | Session events                           | `tetral.integration.test.ts` | `BetaManagedAgentsSendSessionEvents`, `BetaManagedAgentsSessionEvent`                                                          | `assertSendSessionEvents`, `assertSessionEvent`                                                                                                                                                                                                         |
 | Session threads and thread events        | `tetral.integration.test.ts` | `BetaManagedAgentsSessionThread`, `BetaManagedAgentsSessionEvent`                                                              | `assertThread`, `assertSessionEvent`                                                                                                                                                                                                                    |
 | Session resources                        | `tetral.integration.test.ts` | `BetaManagedAgentsFileResource`, `BetaManagedAgentsSessionResource`, `BetaManagedAgentsDeleteSessionResource`                  | `assertFileResource`, `assertSessionResource`, `assertDeletedSessionResource`                                                                                                                                                                           |
-| Files                                    | `tetral.integration.test.ts` | `FileMetadata`                                                                                                                 | `assertFile` checks `id`, `created_at`, `filename`, `mime_type`, `size_bytes`, `type`                                                                                                                                                                   |
-| Skills and versions                      | `tetral.integration.test.ts` | `SkillCreateResponse`, `VersionCreateResponse`                                                                                 | `assertSkill`, `assertSkillVersion`                                                                                                                                                                                                                     |
+| Files                                    | `tetral.integration.test.ts` | `BetaFileMetadata`                                                                                                             | `assertFile` checks `id`, `created_at`, `filename`, `mime_type`, `size_bytes`, `type`                                                                                                                                                                   |
+| Skills and versions                      | `tetral.integration.test.ts` | `BetaSkill`, `BetaSkillVersion`                                                                                                | `assertSkill`, `assertSkillVersion`                                                                                                                                                                                                                     |
 | Memory stores, memories, memory versions | `tetral.integration.test.ts` | `BetaManagedAgentsMemoryStore`, `BetaManagedAgentsMemory`, `BetaManagedAgentsMemoryListItem`, `BetaManagedAgentsMemoryVersion` | `assertMemoryStore`, `assertMemory`, `assertMemoryListItem`, `assertMemoryVersion`                                                                                                                                                                      |
 | Environments                             | `tetral.integration.test.ts` | `BetaEnvironment`, `BetaEnvironmentDeleteResponse`                                                                             | `assertEnvironment`, `assertDeletedEnvironment` checks `id`, `type`                                                                                                                                                                                     |
 

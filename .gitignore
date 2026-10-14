@@ -1,4 +1,3 @@
-.prism.log
 .stdy.log
 node_modules
 yarn-error.log
@@ -9,9 +8,4 @@ dist-deno
 /*.tgz
 .idea/
 .eslintcache
-oidc
-.plan/
 
-# local development artifacts (not part of the shipped repository)
-closeout-report.md
-.claude/

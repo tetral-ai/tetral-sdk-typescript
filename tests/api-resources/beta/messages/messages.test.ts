@@ -1,6 +1,4 @@
-// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
-
-import Anthropic from '@tetral-ai/sdk';
+import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({
   apiKey: 'my-anthropic-api-key',
@@ -12,7 +10,7 @@ describe('resource messages', () => {
     const responsePromise = client.beta.messages.create({
       max_tokens: 1024,
       messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-5',
     });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -26,9 +24,17 @@ describe('resource messages', () => {
   test('create: required and optional params', async () => {
     const response = await client.beta.messages.create({
       max_tokens: 1024,
-      messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      messages: [
+        {
+          content: 'Hello, world',
+          role: 'user',
+          clear_at: 'next_user_message',
+          output_config: { effort: 'low' },
+        },
+      ],
+      model: 'claude-opus-5',
       cache_control: { type: 'ephemeral', ttl: '5m' },
+      compaction: { type: 'summarize', instructions: 'instructions' },
       container: {
         id: 'id',
         skills: [
@@ -53,30 +59,7 @@ describe('resource messages', () => {
       },
       diagnostics: { previous_message_id: 'previous_message_id' },
       fallback_credit_token: 'x',
-      fallbacks: [
-        {
-          model: 'claude-sonnet-5',
-          max_tokens: 0,
-          output_config: {
-            effort: 'low',
-            format: {
-              schema: { foo: 'bar' },
-              type: 'json_schema',
-            },
-            task_budget: {
-              total: 1024,
-              type: 'tokens',
-              remaining: 0,
-            },
-          },
-          speed: 'standard',
-          thinking: {
-            budget_tokens: 1024,
-            type: 'enabled',
-            display: 'summarized',
-          },
-        },
-      ],
+      fallbacks: 'default',
       inference_geo: 'inference_geo',
       mcp_servers: [
         {
@@ -111,7 +94,7 @@ describe('resource messages', () => {
           cache_control: { type: 'ephemeral', ttl: '5m' },
           citations: [
             {
-              cited_text: 'cited_text',
+              cited_text: 'The grass is green. The sky is blue.',
               document_index: 0,
               document_title: 'x',
               end_char_index: 0,
@@ -122,7 +105,11 @@ describe('resource messages', () => {
         },
       ],
       temperature: 1,
-      thinking: { type: 'adaptive', display: 'summarized' },
+      thinking: {
+        type: 'adaptive',
+        block_binding: { prefix_mismatch_behavior: 'error' },
+        display: 'summarized',
+      },
       tool_choice: { type: 'auto', disable_parallel_tool_use: true },
       tools: [
         {
@@ -146,13 +133,14 @@ describe('resource messages', () => {
       top_p: 0.7,
       betas: ['message-batches-2024-09-24'],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
   });
 
   test('countTokens: only required params', async () => {
     const responsePromise = client.beta.messages.countTokens({
       messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-5',
     });
     const rawResponse = await responsePromise.asResponse();
     expect(rawResponse).toBeInstanceOf(Response);
@@ -165,9 +153,17 @@ describe('resource messages', () => {
 
   test('countTokens: required and optional params', async () => {
     const response = await client.beta.messages.countTokens({
-      messages: [{ content: 'Hello, world', role: 'user' }],
-      model: 'claude-opus-4-6',
+      messages: [
+        {
+          content: 'Hello, world',
+          role: 'user',
+          clear_at: 'next_user_message',
+          output_config: { effort: 'low' },
+        },
+      ],
+      model: 'claude-opus-5',
       cache_control: { type: 'ephemeral', ttl: '5m' },
+      compaction: { type: 'summarize', instructions: 'instructions' },
       context_management: {
         edits: [
           {
@@ -209,7 +205,7 @@ describe('resource messages', () => {
           cache_control: { type: 'ephemeral', ttl: '5m' },
           citations: [
             {
-              cited_text: 'cited_text',
+              cited_text: 'The grass is green. The sky is blue.',
               document_index: 0,
               document_title: 'x',
               end_char_index: 0,
@@ -219,7 +215,11 @@ describe('resource messages', () => {
           ],
         },
       ],
-      thinking: { type: 'adaptive', display: 'summarized' },
+      thinking: {
+        type: 'adaptive',
+        block_binding: { prefix_mismatch_behavior: 'error' },
+        display: 'summarized',
+      },
       tool_choice: { type: 'auto', disable_parallel_tool_use: true },
       tools: [
         {
@@ -241,6 +241,68 @@ describe('resource messages', () => {
       ],
       betas: ['message-batches-2024-09-24'],
       user_profile_id: 'anthropic-user-profile-id',
+      workspace_id: 'wrkspc_011CZkZaBF1tNoB5wlCeusgy',
     });
+  });
+});
+
+describe('create: non-streaming timeout', () => {
+  const message = {
+    id: 'msg_1',
+    type: 'message',
+    role: 'assistant',
+    model: 'claude-sonnet-4-5',
+    content: [{ type: 'text', text: 'hi' }],
+    stop_reason: 'end_turn',
+    stop_sequence: null,
+    usage: { input_tokens: 1, output_tokens: 1 },
+  };
+
+  function makeClient(opts: { timeout?: number } = {}) {
+    const requests: RequestInit[] = [];
+    const fetch = async (_url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      requests.push(init ?? {});
+      return new Response(JSON.stringify(message), { headers: { 'Content-Type': 'application/json' } });
+    };
+    const client = new Anthropic({ apiKey: 'test-key', fetch, ...opts });
+    return { client, requests };
+  }
+
+  const sentTimeoutSeconds = (init: RequestInit | undefined) =>
+    new Headers(init?.headers).get('x-stainless-timeout');
+
+  // max_tokens large enough that the estimated non-streaming duration exceeds the 10 minute default
+  const longParams = {
+    model: 'claude-sonnet-5-5',
+    max_tokens: 128_000,
+    messages: [{ role: 'user' as const, content: 'hi' }],
+  };
+
+  test('throws for long requests when no timeout is configured', async () => {
+    const { client, requests } = makeClient();
+    await expect(async () => client.beta.messages.create(longParams)).rejects.toThrow(
+      /Streaming is required/,
+    );
+    expect(requests).toHaveLength(0);
+  });
+
+  test('a per-request timeout bypasses the long-request check', async () => {
+    const { client, requests } = makeClient();
+    await client.beta.messages.create(longParams, { timeout: 20 * 60 * 1000 });
+    expect(requests).toHaveLength(1);
+    expect(sentTimeoutSeconds(requests[0])).toBe('1200');
+  });
+
+  test('a client-level timeout bypasses the long-request check', async () => {
+    const { client, requests } = makeClient({ timeout: 20 * 60 * 1000 });
+    await client.beta.messages.create(longParams);
+    expect(requests).toHaveLength(1);
+    expect(sentTimeoutSeconds(requests[0])).toBe('1200');
+  });
+
+  test('short requests still get the computed default timeout', async () => {
+    const { client, requests } = makeClient();
+    await client.beta.messages.create({ ...longParams, max_tokens: 1024 });
+    expect(sentTimeoutSeconds(requests[0])).toBe('600');
   });
 });
