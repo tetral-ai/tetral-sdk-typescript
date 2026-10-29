@@ -285,3 +285,25 @@ const uploadWithBothPreconditions: import('@tetral-ai/sdk/resources/beta/drives'
   must_not_exist: true,
 };
 void uploadWithBothPreconditions;
+
+const restoreOfNothing: import('@tetral-ai/sdk/resources/beta/drives').BetaDriveRestoreResult = {
+  seq: null,
+  restored: 0,
+  redacted_paths: [],
+  removed_paths: [],
+};
+void restoreOfNothing;
+const deletionVersion: import('@tetral-ai/sdk/resources/beta/drives').BetaDriveVersion = {
+  version_id: 'dver_deleted',
+  path: 'notes/plan.md',
+  operation: 'deleted',
+  // @ts-expect-error A deletion's size is 0, never null.
+  size_bytes: null,
+  content_sha256: null,
+  executable: false,
+  writer: { type: 'api_actor', api_key_id: 'apikey_example' },
+  created_at: '2026-10-29T00:00:00Z',
+  redacted: false,
+  redacted_by: null,
+};
+void deletionVersion;

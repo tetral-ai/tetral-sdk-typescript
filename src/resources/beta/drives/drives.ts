@@ -219,9 +219,9 @@ export type BetaDriveWriter =
 
 export interface BetaDriveRestoreResult {
   /**
-   * The restore commit's sequence number.
+   * The restore commit's sequence number; `null` when nothing was restored.
    */
-  seq: number;
+  seq: number | null;
 
   /**
    * The number of files restored.

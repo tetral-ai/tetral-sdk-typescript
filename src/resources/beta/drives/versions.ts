@@ -98,9 +98,9 @@ export interface BetaDriveVersion {
   operation: 'created' | 'modified' | 'deleted';
 
   /**
-   * `null` for a deletion.
+   * `0` for a deletion.
    */
-  size_bytes: number | null;
+  size_bytes: number;
 
   /**
    * `null` for a deletion.
