@@ -777,6 +777,19 @@ export {
   type BetaFileMetadataPageCursor,
 } from './files';
 export {
+  Drives,
+  type BetaDrive,
+  type BetaDriveLimits,
+  type BetaDriveMemory,
+  type BetaDriveRestoreResult,
+  type BetaDriveWriter,
+  type BetaDrivesPageCursor,
+  type DriveCreateParams,
+  type DriveListParams,
+  type DriveRestoreParams,
+  type DriveUpdateParams,
+} from './drives/index';
+export {
   MemoryStores,
   type BetaManagedAgentsDeletedMemoryStore,
   type BetaManagedAgentsMemoryStore,

@@ -1182,6 +1182,131 @@ export interface BetaManagedAgentsSessionBudgetReached {
 }
 
 /**
+ * A computer's machine could not prepare the Session, for example because the
+ * working directory does not exist (`code` `cwd_not_found`). It is an event of
+ * the Session on its primary stream, with no `session_thread_id`, whichever
+ * thread's call met the failure. `retry_status` is always `retrying`: the Session
+ * keeps running without that computer, and its next call prepares it again.
+ */
+export interface BetaManagedAgentsComputerPreparationError {
+  /**
+   * The machine's error code, for example `cwd_not_found`, `binding_conflict` or
+   * `resource_exhausted`.
+   */
+  code: string;
+
+  computer_id: string;
+
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  retry_status: BetaManagedAgentsRetryStatusRetrying;
+
+  type: 'computer_preparation_error';
+}
+
+/**
+ * A computer's machine cannot enforce the sandbox, for example because platform
+ * isolation is unavailable there, so no command runs on it. It is an event of the
+ * Session on its primary stream, with no `session_thread_id`, whichever thread's
+ * call met the failure. `retry_status` is always `retrying`: the Session keeps
+ * running without that computer.
+ */
+export interface BetaManagedAgentsComputerSandboxError {
+  computer_id: string;
+
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  retry_status: BetaManagedAgentsRetryStatusRetrying;
+
+  type: 'computer_sandbox_error';
+}
+
+/**
+ * A bound drive did not mount on a computer's machine, for example because the
+ * machine cannot mount drives or the system refused the mount. It is an event of
+ * the Session on its primary stream, with no `session_thread_id`, whichever
+ * thread's call met the failure. `retry_status` is always `retrying`: the Session
+ * keeps running without that drive on that computer.
+ */
+export interface BetaManagedAgentsDriveMountError {
+  computer_id: string;
+
+  drive_id: string;
+
+  /**
+   * Human-readable error description.
+   */
+  message: string;
+
+  retry_status: BetaManagedAgentsRetryStatusRetrying;
+
+  type: 'drive_mount_error';
+}
+
+/**
+ * Changes to a drive on a computer's machine could not be confirmed saved, for
+ * example "3 changes to drive drive_team_ai could not be confirmed saved before
+ * computer comp_example was removed." It is an event of the Session on its
+ * primary stream, with no `session_thread_id`, whichever thread made the
+ * changes. `retry_status` is always `terminal`: the named changes are gone and
+ * nothing retries them.
+ */
+export interface BetaManagedAgentsDriveChangesLostError {
+  computer_id: string;
+
+  drive_id: string;
+
+  /**
+   * Human-readable error description naming `paths_total`, the drive and the
+   * computer.
+   */
+  message: string;
+
+  /**
+   * Paths of the lost changes, relative to the drive root.
+   */
+  paths: Array<string>;
+
+  /**
+   * The number of lost changes, including any that `paths` leaves out.
+   */
+  paths_total: number;
+
+  retry_status: BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'drive_changes_lost_error';
+}
+
+/**
+ * The current machine of an attached cloud computer was deregistered, for
+ * example by its Controller after the provider lost the machine: its local files
+ * and running commands are gone, and the Session's drives are not. It is an event
+ * of the Session on its primary stream, with no `session_thread_id`. The computer
+ * keeps its `computer_id`, and its next command gets a new machine.
+ */
+export interface BetaManagedAgentsSessionComputerReplacedEvent {
+  /**
+   * Unique identifier for this event.
+   */
+  id: string;
+
+  computer_id: string;
+
+  /**
+   * Timestamp when Engine wrote the notice.
+   */
+  processed_at: string;
+
+  type: 'session.computer_replaced';
+}
+
+/**
  * Emitted when a session has been deleted. Terminates any active event stream — no
  * further events will be emitted for this session.
  */
@@ -1228,7 +1353,11 @@ export interface BetaManagedAgentsSessionErrorEvent {
     | BetaManagedAgentsRepositoryForbiddenError
     | BetaManagedAgentsRepositoryNotFoundError
     | BetaManagedAgentsRepositoryCheckoutError
-    | BetaManagedAgentsRepositoryCloneError;
+    | BetaManagedAgentsRepositoryCloneError
+    | BetaManagedAgentsComputerPreparationError
+    | BetaManagedAgentsComputerSandboxError
+    | BetaManagedAgentsDriveMountError
+    | BetaManagedAgentsDriveChangesLostError;
 
   /**
    * Timestamp when the error occurred.
@@ -1269,6 +1398,7 @@ export type BetaManagedAgentsSessionEvent =
   | BetaManagedAgentsSpanOutcomeEvaluationOngoingEvent
   | BetaManagedAgentsUserDefineOutcomeEvent
   | BetaManagedAgentsSessionDeletedEvent
+  | BetaManagedAgentsSessionComputerReplacedEvent
   | BetaManagedAgentsSessionThreadStatusRunningEvent
   | BetaManagedAgentsSessionThreadStatusIdleEvent
   | BetaManagedAgentsSessionThreadStatusTerminatedEvent
@@ -1321,6 +1451,7 @@ export type BetaManagedAgentsSessionEventType =
   | 'user.tool_result'
   | 'session.thread_status_rescheduled'
   | 'session.updated'
+  | 'session.computer_replaced'
   | 'system.message'
   | 'session.usage'
   | 'workflow_run.created'
@@ -1895,6 +2026,7 @@ export type BetaManagedAgentsStreamSessionEvents =
   | BetaManagedAgentsSpanOutcomeEvaluationOngoingEvent
   | BetaManagedAgentsUserDefineOutcomeEvent
   | BetaManagedAgentsSessionDeletedEvent
+  | BetaManagedAgentsSessionComputerReplacedEvent
   | BetaManagedAgentsSessionThreadStatusRunningEvent
   | BetaManagedAgentsSessionThreadStatusIdleEvent
   | BetaManagedAgentsSessionThreadStatusTerminatedEvent
@@ -2815,6 +2947,11 @@ export declare namespace Events {
     type BetaManagedAgentsRepositoryAuthenticationError as BetaManagedAgentsRepositoryAuthenticationError,
     type BetaManagedAgentsRepositoryCheckoutError as BetaManagedAgentsRepositoryCheckoutError,
     type BetaManagedAgentsRepositoryCloneError as BetaManagedAgentsRepositoryCloneError,
+    type BetaManagedAgentsComputerPreparationError as BetaManagedAgentsComputerPreparationError,
+    type BetaManagedAgentsComputerSandboxError as BetaManagedAgentsComputerSandboxError,
+    type BetaManagedAgentsDriveMountError as BetaManagedAgentsDriveMountError,
+    type BetaManagedAgentsDriveChangesLostError as BetaManagedAgentsDriveChangesLostError,
+    type BetaManagedAgentsSessionComputerReplacedEvent as BetaManagedAgentsSessionComputerReplacedEvent,
     type BetaManagedAgentsRepositoryForbiddenError as BetaManagedAgentsRepositoryForbiddenError,
     type BetaManagedAgentsRepositoryNotFoundError as BetaManagedAgentsRepositoryNotFoundError,
     type BetaManagedAgentsRetryStatusExhausted as BetaManagedAgentsRetryStatusExhausted,

@@ -1681,8 +1681,12 @@ Types:
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsBase64DocumentSource</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsBase64ImageSource</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsBillingError</a></code>
+- <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsComputerPreparationError</a></code>
+- <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsComputerSandboxError</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsCredentialHostUnreachableError</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsDocumentBlock</a></code>
+- <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsDriveChangesLostError</a></code>
+- <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsDriveMountError</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsEventParams</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsFileDocumentSource</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsFileImageSource</a></code>
@@ -1711,6 +1715,7 @@ Types:
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSearchResultContent</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSendSessionEvents</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSessionBudgetReached</a></code>
+- <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSessionComputerReplacedEvent</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSessionDeletedEvent</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSessionEndTurn</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsSessionErrorEvent</a></code>
@@ -1778,6 +1783,36 @@ Methods:
 - <code title="post /v1/sessions/{session_id}/events?beta=true">client.beta.sessions.events.<a href="./src/resources/beta/sessions/events.ts">send</a>(sessionID, { ...params }) -> BetaManagedAgentsSendSessionEvents</code>
 - <code title="get /v1/sessions/{session_id}/events/stream?beta=true">client.beta.sessions.events.<a href="./src/resources/beta/sessions/events.ts">stream</a>(sessionID, { ...params }) -> BetaManagedAgentsStreamSessionEvents</code>
 
+### Computers
+
+Types:
+
+- <code><a href="./src/resources/beta/sessions/computers.ts">BetaCloudComputerParams</a></code>
+- <code><a href="./src/resources/beta/sessions/computers.ts">BetaComputer</a></code>
+- <code><a href="./src/resources/beta/sessions/computers.ts">BetaComputerRepository</a></code>
+- <code><a href="./src/resources/beta/sessions/computers.ts">BetaComputerRepositoryParams</a></code>
+- <code><a href="./src/resources/beta/sessions/computers.ts">BetaDriveExclude</a></code>
+- <code><a href="./src/resources/beta/sessions/computers.ts">BetaUserComputerParams</a></code>
+
+Methods:
+
+- <code title="post /v1/sessions/{session_id}/computers?beta=true">client.beta.sessions.computers.<a href="./src/resources/beta/sessions/computers.ts">create</a>(sessionID, entry, { idempotencyKey }) -> BetaComputer</code>
+- <code title="get /v1/sessions/{session_id}/computers/{computer_id}?beta=true">client.beta.sessions.computers.<a href="./src/resources/beta/sessions/computers.ts">retrieve</a>(sessionID, computerID) -> BetaComputer</code>
+- <code title="delete /v1/sessions/{session_id}/computers/{computer_id}?beta=true">client.beta.sessions.computers.<a href="./src/resources/beta/sessions/computers.ts">delete</a>(sessionID, computerID) -> BetaComputer | null</code>
+
+### SessionDrives
+
+Types:
+
+- <code><a href="./src/resources/beta/sessions/drives.ts">BetaSessionDrive</a></code>
+- <code><a href="./src/resources/beta/sessions/drives.ts">BetaSessionDriveAccess</a></code>
+
+Methods:
+
+- <code title="post /v1/sessions/{session_id}/drives?beta=true">client.beta.sessions.drives.<a href="./src/resources/beta/sessions/drives.ts">create</a>(sessionID, { ...params }) -> BetaSessionDrive</code>
+- <code title="post /v1/sessions/{session_id}/drives/{drive_id}?beta=true">client.beta.sessions.drives.<a href="./src/resources/beta/sessions/drives.ts">update</a>(sessionID, driveID, { ...params }) -> BetaSessionDrive</code>
+- <code title="delete /v1/sessions/{session_id}/drives/{drive_id}?beta=true">client.beta.sessions.drives.<a href="./src/resources/beta/sessions/drives.ts">delete</a>(sessionID, driveID) -> void</code>
+
 ### Resources
 
 Session Resources bind already-created resources into a Session. File resources
@@ -1827,6 +1862,89 @@ Methods:
 
 - <code title="get /v1/sessions/{session_id}/threads/{thread_id}/events?beta=true">client.beta.sessions.threads.events.<a href="./src/resources/beta/sessions/threads/events.ts">list</a>(threadID, { ...params }) -> BetaManagedAgentsSessionEventsPageCursor</code>
 - <code title="get /v1/sessions/{session_id}/threads/{thread_id}/stream?beta=true">client.beta.sessions.threads.events.<a href="./src/resources/beta/sessions/threads/events.ts">stream</a>(threadID, { ...params }) -> BetaManagedAgentsStreamSessionThreadEvents</code>
+
+## Drives
+
+Types:
+
+- <code><a href="./src/resources/beta/drives/drives.ts">BetaDrive</a></code>
+- <code><a href="./src/resources/beta/drives/drives.ts">BetaDriveLimits</a></code>
+- <code><a href="./src/resources/beta/drives/drives.ts">BetaDriveMemory</a></code>
+- <code><a href="./src/resources/beta/drives/drives.ts">BetaDriveRestoreResult</a></code>
+- <code><a href="./src/resources/beta/drives/drives.ts">BetaDriveWriter</a></code>
+
+Methods:
+
+- <code title="post /v1/drives?beta=true">client.beta.drives.<a href="./src/resources/beta/drives/drives.ts">create</a>({ ...params }) -> BetaDrive</code>
+- <code title="get /v1/drives/{drive_id}?beta=true">client.beta.drives.<a href="./src/resources/beta/drives/drives.ts">retrieve</a>(driveID) -> BetaDrive</code>
+- <code title="get /v1/drives?beta=true">client.beta.drives.<a href="./src/resources/beta/drives/drives.ts">list</a>({ ...params }) -> BetaDrivesPageCursor</code>
+- <code title="post /v1/drives/{drive_id}?beta=true">client.beta.drives.<a href="./src/resources/beta/drives/drives.ts">update</a>(driveID, { ...params }) -> BetaDrive</code>
+- <code title="delete /v1/drives/{drive_id}?beta=true">client.beta.drives.<a href="./src/resources/beta/drives/drives.ts">delete</a>(driveID) -> void</code>
+- <code title="post /v1/drives/{drive_id}/restore?beta=true">client.beta.drives.<a href="./src/resources/beta/drives/drives.ts">restore</a>(driveID, { ...params }) -> BetaDriveRestoreResult</code>
+
+### Usage
+
+Types:
+
+- <code><a href="./src/resources/beta/drives/usage.ts">BetaDriveUsage</a></code>
+
+Methods:
+
+- <code title="get /v1/drives/usage?beta=true">client.beta.drives.usage.<a href="./src/resources/beta/drives/usage.ts">retrieve</a>() -> BetaDriveUsage</code>
+
+### Files
+
+Types:
+
+- <code><a href="./src/resources/beta/drives/files.ts">BetaDriveDeleteResult</a></code>
+- <code><a href="./src/resources/beta/drives/files.ts">BetaDriveFile</a></code>
+- <code><a href="./src/resources/beta/drives/files.ts">BetaDriveUploadResult</a></code>
+
+Methods:
+
+- <code title="post /v1/drives/{drive_id}/files?beta=true">client.beta.drives.files.<a href="./src/resources/beta/drives/files.ts">upload</a>(driveID, { ...params }) -> BetaDriveUploadResult</code>
+- <code title="get /v1/drives/{drive_id}/files?beta=true">client.beta.drives.files.<a href="./src/resources/beta/drives/files.ts">list</a>(driveID, { ...params }) -> BetaDriveFilesPageCursor</code>
+- <code title="get /v1/drives/{drive_id}/files/content?beta=true">client.beta.drives.files.<a href="./src/resources/beta/drives/files.ts">download</a>(driveID, { ...params }) -> Response</code>
+- <code title="delete /v1/drives/{drive_id}/files?beta=true">client.beta.drives.files.<a href="./src/resources/beta/drives/files.ts">delete</a>(driveID, { ...params }) -> BetaDriveDeleteResult</code>
+
+#### Versions
+
+Types:
+
+- <code><a href="./src/resources/beta/drives/versions.ts">BetaDriveVersion</a></code>
+
+Methods:
+
+- <code title="get /v1/drives/{drive_id}/files/versions?beta=true">client.beta.drives.files.versions.<a href="./src/resources/beta/drives/versions.ts">list</a>(driveID, { ...params }) -> BetaDriveVersionsPageCursor</code>
+- <code title="get /v1/drives/{drive_id}/versions/{version_id}?beta=true">client.beta.drives.files.versions.<a href="./src/resources/beta/drives/versions.ts">retrieve</a>(driveID, versionID) -> BetaDriveVersion</code>
+- <code title="get /v1/drives/{drive_id}/versions/{version_id}/content?beta=true">client.beta.drives.files.versions.<a href="./src/resources/beta/drives/versions.ts">content</a>(driveID, versionID) -> Response</code>
+- <code title="post /v1/drives/{drive_id}/versions/{version_id}/redact?beta=true">client.beta.drives.files.versions.<a href="./src/resources/beta/drives/versions.ts">redact</a>(driveID, versionID) -> BetaDriveVersion</code>
+
+### Skills
+
+Types:
+
+- <code><a href="./src/resources/beta/drives/skills.ts">BetaDriveSkill</a></code>
+
+Methods:
+
+- <code title="post /v1/drives/{drive_id}/skills?beta=true">client.beta.drives.skills.<a href="./src/resources/beta/drives/skills.ts">upload</a>(driveID, { ...params }) -> BetaDriveSkill</code>
+- <code title="get /v1/drives/{drive_id}/skills?beta=true">client.beta.drives.skills.<a href="./src/resources/beta/drives/skills.ts">list</a>(driveID, { ...params }) -> BetaDriveSkillsPageCursor</code>
+- <code title="get /v1/drives/{drive_id}/skills/{name}?beta=true">client.beta.drives.skills.<a href="./src/resources/beta/drives/skills.ts">retrieve</a>(driveID, name) -> BetaDriveSkill</code>
+- <code title="delete /v1/drives/{drive_id}/skills/{name}?beta=true">client.beta.drives.skills.<a href="./src/resources/beta/drives/skills.ts">delete</a>(driveID, name) -> void</code>
+
+### Changes
+
+Types:
+
+- <code><a href="./src/resources/beta/drives/changes.ts">BetaDriveChange</a></code>
+- <code><a href="./src/resources/beta/drives/changes.ts">BetaDriveChangeList</a></code>
+- <code><a href="./src/resources/beta/drives/changes.ts">BetaDriveChangeNotice</a></code>
+
+Methods:
+
+- <code title="get /v1/drives/{drive_id}/changes?beta=true">client.beta.drives.changes.<a href="./src/resources/beta/drives/changes.ts">list</a>(driveID, { ...params }) -> BetaDriveChangeList</code>
+- <code title="get /v1/drives/{drive_id}/changes/stream?beta=true">client.beta.drives.changes.<a href="./src/resources/beta/drives/changes.ts">stream</a>(driveID) -> Stream&lt;BetaDriveChangeNotice&gt;</code>
 
 ## Deployments
 

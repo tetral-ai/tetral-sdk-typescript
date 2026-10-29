@@ -5,7 +5,7 @@
     "surface": "Sessions.create (SessionCreateParams + Session)",
     "status": "supported",
     "proof": "documented",
-    "expectation": "POST /v1/sessions; aligned param fields agent(3 subfields)/environment_id/metadata/title/providers(+credential_id)/vault_ids(required,[] ok)/betas + resources file{file_id,mount_path}/memory_store{memory_store_id,access,instructions}/github{url,mount_path,authorization_token(REQUIRED,write-only,request-only)}"
+    "expectation": "POST /v1/sessions in one of two forms: computers[] (cloud computers {environment_id, working_directory, repositories, drive_exclude}; user computers {instance_id, working_directory, networking, drive_exclude}) without environment_id or resources; or the top-level environment_id as a one-computer list with optional github_repository resources {url, mount_path, authorization_token (required, write-only)}; drives[] {drive_id, access} in both; agent(3 subfields)/metadata/title/providers(+credential_id)/vault_ids(required,[] ok)/betas aligned; the Session object adds computers[] and drives[], and environment_id is the first attached cloud computer's Environment or \"\""
   },
   {
     "id": "T-COMPAT-SESS-2",
@@ -142,6 +142,38 @@
     "status": "rejected",
     "proof": "rejection",
     "expectation": "two resources with the same comparison key (owner/repo case-folded, optional `.git` trimmed first; stored/echoed URLs stay verbatim) in one create → 400 invalid_request_error; duplicate mounts with independent tokens are unresolvable at git time"
+  },
+  {
+    "id": "T-COMPAT-SESS-19",
+    "name": "T-COMPAT-SESS-19 Sessions.create without a cloud computer",
+    "surface": "Sessions.create without a cloud computer",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "computers[] holding only user computers → 400 invalid_request_error; every Session has at least one cloud computer"
+  },
+  {
+    "id": "T-COMPAT-SESS-20",
+    "name": "T-COMPAT-SESS-20 Sessions.create with one drive listed twice",
+    "surface": "Sessions.create with one drive listed twice",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "two drives[] entries with the same drive_id → 400 invalid_request_error"
+  },
+  {
+    "id": "T-COMPAT-SESS-21",
+    "name": "T-COMPAT-SESS-21 computer with two repositories at one path",
+    "surface": "computer with two repositories at one path",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "two repositories of one cloud computer resolving to the same clone path, at Sessions.create or sessions.computers.create → 400 invalid_request_error"
+  },
+  {
+    "id": "T-COMPAT-SESS-22",
+    "name": "T-COMPAT-SESS-22 Session file and memory_store resources",
+    "surface": "Session file and memory_store resources",
+    "status": "rejected",
+    "proof": "rejection",
+    "expectation": "a file or memory_store resource, or mount_path on a file resource, at Sessions.create or sessions.resources.add → 400 invalid_request_error; drives replace them"
   },
   {
     "id": "T-COMPAT-THREAD-1",
@@ -2928,6 +2960,14 @@
     "status": "not-produced",
     "proof": "not-produced",
     "expectation": "Not produced."
+  },
+  {
+    "id": "T-COMPAT-EVOUT-87",
+    "name": "T-COMPAT-EVOUT-87 session.computer_replaced",
+    "surface": "session.computer_replaced",
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Engine addition to the Session event union: one notice on the primary stream in the deregistration transaction that retires an attached cloud computer's current instance; only type, id, processed_at and computer_id; never a session.error"
   },
   {
     "id": "T-COMPAT-UPSTREAM-107",

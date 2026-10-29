@@ -42,6 +42,11 @@ export {
   type BetaManagedAgentsRepositoryAuthenticationError,
   type BetaManagedAgentsRepositoryCheckoutError,
   type BetaManagedAgentsRepositoryCloneError,
+  type BetaManagedAgentsComputerPreparationError,
+  type BetaManagedAgentsComputerSandboxError,
+  type BetaManagedAgentsDriveMountError,
+  type BetaManagedAgentsDriveChangesLostError,
+  type BetaManagedAgentsSessionComputerReplacedEvent,
   type BetaManagedAgentsRepositoryForbiddenError,
   type BetaManagedAgentsRepositoryNotFoundError,
   type BetaManagedAgentsRetryStatusExhausted,
@@ -179,6 +184,9 @@ export {
   type TetralSessionProviderSelector,
   type TetralSessionProviderSelectors,
   type SessionCreateParams,
+  type SessionCreateParamsBase,
+  type SessionCreateWithComputersParams,
+  type SessionCreateWithEnvironmentParams,
   type SessionRetrieveParams,
   type SessionUpdateParams,
   type SessionListParams,
@@ -186,6 +194,23 @@ export {
   type SessionArchiveParams,
   type BetaManagedAgentsSessionsBidirectionalPageCursor,
 } from './sessions';
+export {
+  Computers,
+  type BetaCloudComputerParams,
+  type BetaComputer,
+  type BetaComputerRepository,
+  type BetaComputerRepositoryParams,
+  type BetaDriveExclude,
+  type BetaUserComputerParams,
+  type ComputerCreateOptions,
+} from './computers';
+export {
+  SessionDrives,
+  type BetaSessionDrive,
+  type BetaSessionDriveAccess,
+  type BetaSessionDriveParams,
+  type SessionDriveUpdateParams,
+} from './drives';
 export {
   Threads,
   type BetaManagedAgentsInlineAgent,

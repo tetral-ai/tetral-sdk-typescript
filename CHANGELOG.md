@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.133.0-alpha.2 (unreleased)
+
+Sessions run on computers that developers supply, and share files through
+drives.
+
+- Session creation takes `computers`, a list of cloud computers (by
+  Environment) and user computers (by registered instance), and `drives`, the
+  drives the Session binds. The top-level `environment_id` remains as a
+  one-computer list and is the only form that takes `resources`.
+- Session objects carry `computers` and `drives`. `environment_id` is the
+  Environment of the first attached cloud computer, and `""` when there is none.
+- `client.beta.sessions.computers` adds, reads and removes a Session's
+  computers; `create` requires an `idempotencyKey`.
+- `client.beta.sessions.drives` adds, changes and removes drive bindings.
+- `client.beta.drives` manages drives, their files and versions, Skills,
+  change lists and restores.
+- The Session event union adds `session.computer_replaced`; the `session.error`
+  union adds `computer_preparation_error`, `computer_sandbox_error`,
+  `drive_mount_error` and `drive_changes_lost_error`.
+
 ## 0.133.0-alpha.1 (2026-10-14)
 
 Upgrade callers and Engine together. This release adopts upstream 0.133.0,

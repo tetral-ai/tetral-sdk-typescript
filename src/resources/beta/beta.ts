@@ -346,6 +346,20 @@ import {
   EnvironmentUpdateParams,
   Environments,
 } from './environments/environments';
+import * as DrivesAPI from './drives/drives';
+import {
+  BetaDrive,
+  BetaDriveLimits,
+  BetaDriveMemory,
+  BetaDriveRestoreResult,
+  BetaDriveWriter,
+  BetaDrivesPageCursor,
+  DriveCreateParams,
+  DriveListParams,
+  DriveRestoreParams,
+  DriveUpdateParams,
+  Drives,
+} from './drives/drives';
 import * as MemoryStoresAPI from './memory-stores/memory-stores';
 import {
   BetaManagedAgentsDeletedMemoryStore,
@@ -952,6 +966,7 @@ export class Beta extends APIResource {
   agents: AgentsAPI.Agents = new AgentsAPI.Agents(this._client);
   environments: EnvironmentsAPI.Environments = new EnvironmentsAPI.Environments(this._client);
   sessions: SessionsAPI.Sessions = new SessionsAPI.Sessions(this._client);
+  drives: DrivesAPI.Drives = new DrivesAPI.Drives(this._client);
   deployments: DeploymentsAPI.Deployments = new DeploymentsAPI.Deployments(this._client);
   deploymentRuns: DeploymentRunsAPI.DeploymentRuns = new DeploymentRunsAPI.DeploymentRuns(this._client);
   vaults: VaultsAPI.Vaults = new VaultsAPI.Vaults(this._client);
@@ -1117,6 +1132,7 @@ Beta.Messages = Messages;
 Beta.Agents = Agents;
 Beta.Environments = Environments;
 Beta.Sessions = Sessions;
+Beta.Drives = Drives;
 Beta.Deployments = Deployments;
 Beta.DeploymentRuns = DeploymentRuns;
 Beta.Vaults = Vaults;
@@ -1946,6 +1962,20 @@ export declare namespace Beta {
     type VaultListParams as VaultListParams,
     type VaultDeleteParams as VaultDeleteParams,
     type VaultArchiveParams as VaultArchiveParams,
+  };
+
+  export {
+    Drives as Drives,
+    type BetaDrive as BetaDrive,
+    type BetaDriveLimits as BetaDriveLimits,
+    type BetaDriveMemory as BetaDriveMemory,
+    type BetaDriveRestoreResult as BetaDriveRestoreResult,
+    type BetaDriveWriter as BetaDriveWriter,
+    type BetaDrivesPageCursor as BetaDrivesPageCursor,
+    type DriveCreateParams as DriveCreateParams,
+    type DriveListParams as DriveListParams,
+    type DriveRestoreParams as DriveRestoreParams,
+    type DriveUpdateParams as DriveUpdateParams,
   };
 
   export {

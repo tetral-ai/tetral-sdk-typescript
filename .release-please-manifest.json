@@ -1,5 +1,5 @@
 {
-  ".": "0.133.0-alpha.1",
+  ".": "0.133.0-alpha.2",
   "packages/vertex-sdk": "0.20.4",
   "packages/bedrock-sdk": "0.34.4",
   "packages/foundry-sdk": "0.5.4",
