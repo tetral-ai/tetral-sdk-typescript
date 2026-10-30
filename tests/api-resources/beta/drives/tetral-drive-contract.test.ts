@@ -302,8 +302,8 @@ const ROWS: RouteRow[] = [
     search: '?beta=true',
     response: () =>
       new Response(
-        'event: changed\ndata: {"drive_id":"drive_team_ai","seq":42}\n\n' +
-          'event: changed\ndata: {"drive_id":"drive_team_ai","seq":44}\n\n',
+        'event: drive.changed\ndata: {"drive_id":"drive_team_ai","seq":42}\n\n' +
+          'event: drive.changed\ndata: {"drive_id":"drive_team_ai","seq":44}\n\n',
         { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
       ),
     read: async (stream: AsyncIterable<unknown>) => {
