@@ -98,7 +98,7 @@ export class Drives extends APIResource {
   }
 
   /**
-   * Update Drive. Each given field replaces the stored one, `memory` as a whole;
+   * Update Drive. Each given field replaces the stored one, `memory` and `limits` as whole objects;
    * `metadata` merges keys and deletes a key given as `null`.
    *
    * @example
@@ -250,6 +250,7 @@ export interface DriveCreateParams {
    */
   memory?: { path?: string; instructions?: string | null };
 
+  /** Omitted members default to null (no cap). */
   limits?: Partial<BetaDriveLimits>;
 
   metadata?: { [key: string]: string };
@@ -260,6 +261,7 @@ export interface DriveUpdateParams {
 
   memory?: { path?: string; instructions?: string | null };
 
+  /** Replaces all limits on update; omitted members become null (no cap). */
   limits?: Partial<BetaDriveLimits>;
 
   metadata?: { [key: string]: string | null };

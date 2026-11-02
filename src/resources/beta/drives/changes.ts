@@ -13,7 +13,8 @@ import { path } from '../../../internal/utils/path';
  */
 export class DriveChanges extends APIResource {
   /**
-   * List change records in sequence order after `after`.
+   * List records in (seq, index) order. Pass both `after` and `after_index`
+   * to resume within a commit; `after` alone skips that entire commit.
    *
    * @example
    * ```ts
@@ -39,7 +40,8 @@ export class DriveChanges extends APIResource {
    * ```ts
    * const stream = await client.beta.drives.changes.stream('drive_team_ai');
    * for await (const notice of stream) {
-   *   // list changes after the last seq read
+   *   // Drain changes.list after the last processed (seq, index).
+   *   // Also list again after the stream ends or throws, before reopening it.
    * }
    * ```
    */
@@ -54,6 +56,9 @@ export class DriveChanges extends APIResource {
 
 export interface BetaDriveChange {
   seq: number;
+
+  /** Zero-based position within this commit. */
+  index: number;
 
   path: string;
 
@@ -84,23 +89,24 @@ export interface BetaDriveChangeNotice {
   seq: number;
 }
 
-export interface DriveChangeListParams {
-  /**
-   * List records after this sequence number; without it, from the drive's oldest
-   * kept record.
-   */
-  after?: number;
-
-  /**
-   * Only records that this Session's computers made.
-   */
+export type DriveChangeListParams = {
+  /** Only records that this Session's computers made. */
   session_id?: string;
 
-  /**
-   * 1 to 1,000; defaults to 20.
-   */
+  /** 1 to 1,000; defaults to 20. */
   limit?: number;
-}
+} & (
+  | {
+      /** Skip every record in this commit; omit to start at the oldest kept record. */
+      after?: number;
+      after_index?: never;
+    }
+  | {
+      /** Resume strictly after this (sequence, index) pair. */
+      after: number;
+      after_index: number;
+    }
+);
 
 export declare namespace DriveChanges {
   export {

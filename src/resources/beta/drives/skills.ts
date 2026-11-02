@@ -103,9 +103,9 @@ export interface BetaDriveSkill {
   name: string;
 
   /**
-   * From `SKILL.md`.
+   * From `SKILL.md`, or null when a description is missing or invalid.
    */
-  description: string;
+  description: string | null;
 
   /**
    * `null`, or the reason `SKILL.md` is invalid.

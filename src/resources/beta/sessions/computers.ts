@@ -244,7 +244,8 @@ export interface BetaComputerRepository {
 
   mount_path: string | null;
 
-  git_identity?: SessionsAPI.TetralGitIdentity;
+  /** Declared Git authorship, or null to use the Engine default. */
+  git_identity: SessionsAPI.TetralGitIdentity | null;
 
   /**
    * The resolved clone path.

@@ -53,6 +53,7 @@ const SKILL: BetaDriveSkill = { name: 'review', description: 'Reviews pull reque
 
 const CHANGE: BetaDriveChange = {
   seq: 42,
+  index: 0,
   path: 'notes/plan.md',
   operation: 'modified',
   version_id: 'dver_2',
@@ -262,9 +263,9 @@ const ROWS: RouteRow[] = [
     method: 'GET',
     path: '/v1/drives/drive_team_ai/skills',
     search: '?beta=true&limit=5',
-    response: () => jsonResponse(page({ ...SKILL, error: 'SKILL.md has no description' })),
+    response: () => jsonResponse(page({ ...SKILL, description: null, error: 'SKILL.md has no description' })),
     read: readPage,
-    result: page({ ...SKILL, error: 'SKILL.md has no description' }),
+    result: page({ ...SKILL, description: null, error: 'SKILL.md has no description' }),
   },
   {
     operation: 'drives.skills.retrieve',
@@ -287,10 +288,15 @@ const ROWS: RouteRow[] = [
   {
     operation: 'drives.changes.list',
     call: (client) =>
-      client.beta.drives.changes.list('drive_team_ai', { after: 41, session_id: 'sesn_example', limit: 2 }),
+      client.beta.drives.changes.list('drive_team_ai', {
+        after: 41,
+        after_index: 2,
+        session_id: 'sesn_example',
+        limit: 2,
+      }),
     method: 'GET',
     path: '/v1/drives/drive_team_ai/changes',
-    search: '?beta=true&after=41&session_id=sesn_example&limit=2',
+    search: '?beta=true&after=41&after_index=2&session_id=sesn_example&limit=2',
     response: () => jsonResponse({ data: [CHANGE], has_more: true }),
     result: { data: [CHANGE], has_more: true },
   },

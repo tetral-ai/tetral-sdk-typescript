@@ -161,6 +161,7 @@ const sessionComputers: Pick<SessionObject, 'computers' | 'environment_id'> = {
           url: 'https://github.com/acme/backend',
           checkout: null,
           mount_path: null,
+          git_identity: null,
           path: '/workspace/backend',
         },
       ],
@@ -307,3 +308,36 @@ const deletionVersion: import('@tetral-ai/sdk/resources/beta/drives').BetaDriveV
   redacted_by: null,
 };
 void deletionVersion;
+
+type DriveSkill = import('@tetral-ai/sdk/resources/beta/drives/skills').BetaDriveSkill;
+const invalidSkill: DriveSkill = { name: 'review', description: null, error: 'SKILL.md has no description' };
+function skillLabel(skill: DriveSkill): string {
+  return skill.description ?? skill.error ?? skill.name;
+}
+void skillLabel(invalidSkill);
+function unsafeSkillLabel(skill: DriveSkill): string {
+  // @ts-expect-error Invalid Skills can have a null description.
+  return skill.description.toUpperCase();
+}
+void unsafeSkillLabel;
+
+type Repository = import('@tetral-ai/sdk/resources/beta/sessions/computers').BetaComputerRepository;
+function repositoryAuthor(repository: Repository): string {
+  return repository.git_identity?.name ?? 'Default identity';
+}
+// @ts-expect-error Response identity is required, although it can be null.
+const missingResponseIdentity: Repository = {
+  id: 'res_1',
+  url: 'https://github.com/acme/app',
+  checkout: null,
+  mount_path: null,
+  path: '/workspace/app',
+};
+void [repositoryAuthor, missingResponseIdentity];
+
+type ChangeParams = import('@tetral-ai/sdk/resources/beta/drives/changes').DriveChangeListParams;
+const pairedChangeCursor: ChangeParams = { after: 42, after_index: 19, limit: 20 };
+const wholeCommitCursor: ChangeParams = { after: 42 };
+// @ts-expect-error An index needs its sequence number.
+const unpairedChangeCursor: ChangeParams = { after_index: 19 };
+void [pairedChangeCursor, wholeCommitCursor, unpairedChangeCursor];

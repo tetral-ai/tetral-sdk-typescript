@@ -2989,41 +2989,41 @@
     "id": "T-COMPAT-UPSTREAM-109",
     "name": "T-COMPAT-UPSTREAM-109 BetaManagedAgentsRepositoryAuthenticationError.type",
     "surface": "BetaManagedAgentsRepositoryAuthenticationError.type",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "Not produced; generic existing failure/stop projection remains."
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Computer preparation reports emit this Session-level repository error with repository_url, message and retry_status {type: retrying}; identical report replay emits no duplicate."
   },
   {
     "id": "T-COMPAT-UPSTREAM-110",
     "name": "T-COMPAT-UPSTREAM-110 BetaManagedAgentsRepositoryCheckoutError.type",
     "surface": "BetaManagedAgentsRepositoryCheckoutError.type",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "Not produced; generic existing failure/stop projection remains."
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Computer preparation reports emit this Session-level repository error with repository_url, message and retry_status {type: retrying}; identical report replay emits no duplicate."
   },
   {
     "id": "T-COMPAT-UPSTREAM-111",
     "name": "T-COMPAT-UPSTREAM-111 BetaManagedAgentsRepositoryCloneError.type",
     "surface": "BetaManagedAgentsRepositoryCloneError.type",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "Not produced; generic existing failure/stop projection remains."
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Computer preparation reports emit this Session-level repository error with repository_url, message and retry_status {type: retrying}; identical report replay emits no duplicate."
   },
   {
     "id": "T-COMPAT-UPSTREAM-112",
     "name": "T-COMPAT-UPSTREAM-112 BetaManagedAgentsRepositoryForbiddenError.type",
     "surface": "BetaManagedAgentsRepositoryForbiddenError.type",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "Not produced; generic existing failure/stop projection remains."
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Computer preparation reports emit this Session-level repository error with repository_url, message and retry_status {type: retrying}; identical report replay emits no duplicate."
   },
   {
     "id": "T-COMPAT-UPSTREAM-113",
     "name": "T-COMPAT-UPSTREAM-113 BetaManagedAgentsRepositoryNotFoundError.type",
     "surface": "BetaManagedAgentsRepositoryNotFoundError.type",
-    "status": "not-produced",
-    "proof": "not-produced",
-    "expectation": "Not produced; generic existing failure/stop projection remains."
+    "status": "supported",
+    "proof": "documented",
+    "expectation": "Computer preparation reports emit this Session-level repository error with repository_url, message and retry_status {type: retrying}; identical report replay emits no duplicate."
   },
   {
     "id": "T-COMPAT-UPSTREAM-114",
