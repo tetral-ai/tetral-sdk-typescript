@@ -1208,6 +1208,23 @@ export interface BetaManagedAgentsComputerPreparationError {
 }
 
 /**
+ * Execution and binding access ended, but owned local data could not be deleted.
+ * The bounded cleanup sample lists one first error per failed root. Residual
+ * paths need operator cleanup; automatic deletion has ended.
+ */
+export interface BetaManagedAgentsComputerCleanupError {
+  computer_id: string;
+
+  cleanup_failures: Array<{ path: string; message: string }>;
+
+  message: string;
+
+  retry_status: BetaManagedAgentsRetryStatusTerminal;
+
+  type: 'computer_cleanup_error';
+}
+
+/**
  * A computer's machine cannot enforce the sandbox, for example because platform
  * isolation is unavailable there, so no command runs on it. It is an event of the
  * Session on its primary stream, with no `session_thread_id`, whichever thread's
@@ -1354,6 +1371,7 @@ export interface BetaManagedAgentsSessionErrorEvent {
     | BetaManagedAgentsRepositoryNotFoundError
     | BetaManagedAgentsRepositoryCheckoutError
     | BetaManagedAgentsRepositoryCloneError
+    | BetaManagedAgentsComputerCleanupError
     | BetaManagedAgentsComputerPreparationError
     | BetaManagedAgentsComputerSandboxError
     | BetaManagedAgentsDriveMountError
@@ -2947,6 +2965,7 @@ export declare namespace Events {
     type BetaManagedAgentsRepositoryAuthenticationError as BetaManagedAgentsRepositoryAuthenticationError,
     type BetaManagedAgentsRepositoryCheckoutError as BetaManagedAgentsRepositoryCheckoutError,
     type BetaManagedAgentsRepositoryCloneError as BetaManagedAgentsRepositoryCloneError,
+    type BetaManagedAgentsComputerCleanupError as BetaManagedAgentsComputerCleanupError,
     type BetaManagedAgentsComputerPreparationError as BetaManagedAgentsComputerPreparationError,
     type BetaManagedAgentsComputerSandboxError as BetaManagedAgentsComputerSandboxError,
     type BetaManagedAgentsDriveMountError as BetaManagedAgentsDriveMountError,

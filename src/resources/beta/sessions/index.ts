@@ -42,6 +42,7 @@ export {
   type BetaManagedAgentsRepositoryAuthenticationError,
   type BetaManagedAgentsRepositoryCheckoutError,
   type BetaManagedAgentsRepositoryCloneError,
+  type BetaManagedAgentsComputerCleanupError,
   type BetaManagedAgentsComputerPreparationError,
   type BetaManagedAgentsComputerSandboxError,
   type BetaManagedAgentsDriveMountError,

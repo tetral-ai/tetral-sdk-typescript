@@ -1681,6 +1681,7 @@ Types:
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsBase64DocumentSource</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsBase64ImageSource</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsBillingError</a></code>
+- <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsComputerCleanupError</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsComputerPreparationError</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsComputerSandboxError</a></code>
 - <code><a href="./src/resources/beta/sessions/events.ts">BetaManagedAgentsCredentialHostUnreachableError</a></code>
