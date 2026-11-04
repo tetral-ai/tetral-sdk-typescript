@@ -45,6 +45,12 @@ import {
   BetaManagedAgentsRepositoryAuthenticationError,
   BetaManagedAgentsRepositoryCheckoutError,
   BetaManagedAgentsRepositoryCloneError,
+  BetaManagedAgentsComputerCleanupError,
+  BetaManagedAgentsComputerPreparationError,
+  BetaManagedAgentsComputerSandboxError,
+  BetaManagedAgentsDriveMountError,
+  BetaManagedAgentsDriveChangesLostError,
+  BetaManagedAgentsSessionComputerReplacedEvent,
   BetaManagedAgentsRepositoryForbiddenError,
   BetaManagedAgentsRepositoryNotFoundError,
   BetaManagedAgentsRetryStatusExhausted,
@@ -121,6 +127,25 @@ import {
   EventStreamParams,
   Events,
 } from './events';
+import * as ComputersAPI from './computers';
+import {
+  BetaCloudComputerParams,
+  BetaComputer,
+  BetaComputerRepository,
+  BetaComputerRepositoryParams,
+  BetaDriveExclude,
+  BetaUserComputerParams,
+  ComputerCreateOptions,
+  Computers,
+} from './computers';
+import * as SessionDrivesAPI from './drives';
+import {
+  BetaSessionDrive,
+  BetaSessionDriveAccess,
+  BetaSessionDriveParams,
+  SessionDriveUpdateParams,
+  SessionDrives,
+} from './drives';
 import * as ResourcesAPI from './resources';
 import {
   BetaManagedAgentsDeleteSessionResource,
@@ -164,6 +189,8 @@ import { path } from '../../../internal/utils/path';
 
 export class Sessions extends APIResource {
   events: EventsAPI.Events = new EventsAPI.Events(this._client);
+  computers: ComputersAPI.Computers = new ComputersAPI.Computers(this._client);
+  drives: SessionDrivesAPI.SessionDrives = new SessionDrivesAPI.SessionDrives(this._client);
   resources: ResourcesAPI.Resources = new ResourcesAPI.Resources(this._client);
   threads: ThreadsAPI.Threads = new ThreadsAPI.Threads(this._client);
 
@@ -748,10 +775,27 @@ export interface BetaManagedAgentsSession {
   budget: BetaManagedAgentsBudgetLimit | null;
 
   /**
+   * The Session's attached computers in the order they were added. A removed
+   * computer leaves this list and stays readable through
+   * `client.beta.sessions.computers.retrieve`.
+   */
+  computers: Array<ComputersAPI.BetaComputer>;
+
+  /**
    * A timestamp in RFC 3339 format
    */
   created_at: string;
 
+  /**
+   * The drives the Session binds, in `drive_id` order.
+   */
+  drives: Array<SessionDrivesAPI.BetaSessionDrive>;
+
+  /**
+   * The Environment of the first attached cloud computer, and `""` when the
+   * Session has none, for example once it is archived. It is not the Session's
+   * own Environment.
+   */
   environment_id: string;
 
   metadata: { [key: string]: string };
@@ -1216,19 +1260,13 @@ export interface BetaManagedAgentsUserToolResultEvent {
   session_thread_id?: string | null;
 }
 
-export interface SessionCreateParams {
+export interface SessionCreateParamsBase {
   /**
    * Body param: Agent identifier. Accepts the `agent` ID string, which pins the
    * latest version for the session, or an `agent` object with both id and version
    * specified.
    */
   agent: string | BetaManagedAgentsAgentParams;
-
-  /**
-   * Body param: ID of the `environment` defining the container configuration for
-   * this session.
-   */
-  environment_id: string;
 
   /**
    * Body param: Enforced spend ceiling for the session. Omit to create an uncapped
@@ -1255,21 +1293,17 @@ export interface SessionCreateParams {
   metadata?: { [key: string]: string };
 
   /**
-   * Body param: Resources (e.g. repositories, files) to mount into the session's
-   * container.
-   */
-  resources?: Array<
-    | BetaManagedAgentsGitHubRepositoryResourceParams
-    | BetaManagedAgentsFileResourceParams
-    | BetaManagedAgentsMemoryStoreResourceParam
-  >;
-
-  /**
    * Body param: Human-readable session title.
    */
   title?: string | null;
 
   providers?: TetralSessionProviderSelectors;
+
+  /**
+   * Body param: The drives the Session binds. Without them the Session has no
+   * drive, and files stay on the machine that wrote them.
+   */
+  drives?: Array<SessionDrivesAPI.BetaSessionDriveParams>;
 
   /**
    * Body param: Vault IDs for stored credentials the agent can use during the
@@ -1292,6 +1326,47 @@ export interface SessionCreateParams {
    */
   workspace_id?: string;
 }
+
+/**
+ * Session creation with one cloud computer named by its Environment. Only this
+ * form takes `resources`; its `github_repository` items become that computer's
+ * repositories.
+ */
+export interface SessionCreateWithEnvironmentParams extends SessionCreateParamsBase {
+  /**
+   * Body param: Environment of the Session's one cloud computer.
+   */
+  environment_id: string;
+
+  /**
+   * Body param: Resources (e.g. repositories, files) to mount into the session's
+   * container.
+   */
+  resources?: Array<
+    | BetaManagedAgentsGitHubRepositoryResourceParams
+    | BetaManagedAgentsFileResourceParams
+    | BetaManagedAgentsMemoryStoreResourceParam
+  >;
+
+  computers?: never;
+}
+
+/**
+ * Session creation with its computers listed. At least one must be a cloud
+ * computer.
+ */
+export interface SessionCreateWithComputersParams extends SessionCreateParamsBase {
+  /**
+   * Body param: The Session's computers, in the order they are attached.
+   */
+  computers: Array<ComputersAPI.BetaCloudComputerParams | ComputersAPI.BetaUserComputerParams>;
+
+  environment_id?: never;
+
+  resources?: never;
+}
+
+export type SessionCreateParams = SessionCreateWithEnvironmentParams | SessionCreateWithComputersParams;
 
 export interface SessionRetrieveParams {
   /**
@@ -1476,6 +1551,8 @@ export interface SessionArchiveParams {
 }
 
 Sessions.Events = Events;
+Sessions.Computers = Computers;
+Sessions.SessionDrives = SessionDrives;
 Sessions.Resources = Resources;
 Sessions.Threads = Threads;
 
@@ -1526,6 +1603,9 @@ export declare namespace Sessions {
     type TetralSessionProviderSelectors as TetralSessionProviderSelectors,
     type BetaManagedAgentsSessionsBidirectionalPageCursor as BetaManagedAgentsSessionsBidirectionalPageCursor,
     type SessionCreateParams as SessionCreateParams,
+    type SessionCreateParamsBase as SessionCreateParamsBase,
+    type SessionCreateWithComputersParams as SessionCreateWithComputersParams,
+    type SessionCreateWithEnvironmentParams as SessionCreateWithEnvironmentParams,
     type SessionRetrieveParams as SessionRetrieveParams,
     type SessionUpdateParams as SessionUpdateParams,
     type SessionListParams as SessionListParams,
@@ -1577,6 +1657,12 @@ export declare namespace Sessions {
     type BetaManagedAgentsRepositoryAuthenticationError as BetaManagedAgentsRepositoryAuthenticationError,
     type BetaManagedAgentsRepositoryCheckoutError as BetaManagedAgentsRepositoryCheckoutError,
     type BetaManagedAgentsRepositoryCloneError as BetaManagedAgentsRepositoryCloneError,
+    type BetaManagedAgentsComputerCleanupError as BetaManagedAgentsComputerCleanupError,
+    type BetaManagedAgentsComputerPreparationError as BetaManagedAgentsComputerPreparationError,
+    type BetaManagedAgentsComputerSandboxError as BetaManagedAgentsComputerSandboxError,
+    type BetaManagedAgentsDriveMountError as BetaManagedAgentsDriveMountError,
+    type BetaManagedAgentsDriveChangesLostError as BetaManagedAgentsDriveChangesLostError,
+    type BetaManagedAgentsSessionComputerReplacedEvent as BetaManagedAgentsSessionComputerReplacedEvent,
     type BetaManagedAgentsRepositoryForbiddenError as BetaManagedAgentsRepositoryForbiddenError,
     type BetaManagedAgentsRepositoryNotFoundError as BetaManagedAgentsRepositoryNotFoundError,
     type BetaManagedAgentsRetryStatusExhausted as BetaManagedAgentsRetryStatusExhausted,
@@ -1651,6 +1737,25 @@ export declare namespace Sessions {
     type EventListParams as EventListParams,
     type EventSendParams as EventSendParams,
     type EventStreamParams as EventStreamParams,
+  };
+
+  export {
+    Computers as Computers,
+    type BetaCloudComputerParams as BetaCloudComputerParams,
+    type BetaComputer as BetaComputer,
+    type BetaComputerRepository as BetaComputerRepository,
+    type BetaComputerRepositoryParams as BetaComputerRepositoryParams,
+    type BetaDriveExclude as BetaDriveExclude,
+    type BetaUserComputerParams as BetaUserComputerParams,
+    type ComputerCreateOptions as ComputerCreateOptions,
+  };
+
+  export {
+    SessionDrives as SessionDrives,
+    type BetaSessionDrive as BetaSessionDrive,
+    type BetaSessionDriveAccess as BetaSessionDriveAccess,
+    type BetaSessionDriveParams as BetaSessionDriveParams,
+    type SessionDriveUpdateParams as SessionDriveUpdateParams,
   };
 
   export {

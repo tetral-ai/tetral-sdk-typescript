@@ -102,6 +102,8 @@ export class Stream<Item> implements AsyncIterable<Item> {
             sse.event === 'session.status_terminated' ||
             sse.event === 'session.error' ||
             sse.event === 'session.deleted' ||
+            sse.event === 'session.computer_replaced' ||
+            sse.event === 'drive.changed' ||
             sse.event === 'session.updated' ||
             sse.event === 'span.model_request_start' ||
             sse.event === 'span.model_request_end' ||

@@ -4,6 +4,15 @@ import { APIError } from '@anthropic-ai/sdk/core/error';
 import { ReadableStreamFrom } from '@anthropic-ai/sdk/internal/shims';
 
 describe('streaming decoding', () => {
+  test('heartbeat comments produce no values and later data still decodes', async () => {
+    const response = new Response(
+      ': heartbeat\n\n: another heartbeat\n\nevent: drive.changed\ndata: {"drive_id":"drive_1","seq":2}\n\n',
+    );
+    const values = [];
+    for await (const value of Stream.fromSSEResponse(response, new AbortController())) values.push(value);
+    expect(values).toEqual([{ drive_id: 'drive_1', seq: 2 }]);
+  });
+
   test('basic', async () => {
     async function* body(): AsyncGenerator<Buffer> {
       yield Buffer.from('event: completion\n');

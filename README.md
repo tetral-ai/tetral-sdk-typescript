@@ -136,7 +136,10 @@ await client.beta.sessions.events.send(session.id, {
 });
 ```
 
-More runnable examples live in `examples/`.
+More runnable examples live in `examples/`. The [Drive change watcher](examples/drive-changes.ts)
+drains pages using `(seq, index)` and lists again after a stream ends or fails,
+before reopening it. The legacy `after`-only cursor skips a whole commit; use
+`after_index` as well when resuming a partially read commit.
 
 ## Session streaming
 
