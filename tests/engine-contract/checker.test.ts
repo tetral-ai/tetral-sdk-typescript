@@ -1,0 +1,340 @@
+/**
+ * The contract checker itself: each kind of departure from the copy is found,
+ * and a conforming exchange is not. Layer 1. If the checker stopped finding
+ * one of these, every contract test that relies on it would pass in silence.
+ */
+import { checkAnswer, checkEvents, checkRequest, type CheckedRequest } from './checker';
+import { findOperation } from './spec';
+
+const BASE = 'https://api.tetral.example';
+
+function request(method: string, path: string, body?: unknown, headers: Record<string, string> = {}) {
+  const checked: CheckedRequest = {
+    method,
+    url: BASE + path,
+    headers: new Headers(headers),
+    body: body === undefined ? undefined : JSON.stringify(body),
+  };
+  return checkRequest(checked).violations;
+}
+
+function answer(
+  method: string,
+  path: string,
+  status: number,
+  body: unknown,
+  headers: Record<string, string> = {},
+) {
+  return checkAnswer(findOperation(method, path), `${method} ${path}`, {
+    status,
+    headers: new Headers({ 'content-type': 'application/json', ...headers }),
+    text: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+const drive = {
+  id: 'drive_1',
+  skills_path: 'skills/',
+  memory: { path: 'memory/', instructions: 'Keep notes short.' },
+  limits: { max_bytes: 1_000_000_000, max_files: null },
+  usage: { bytes: 2048, files: 3 },
+  stored_bytes: null,
+  metadata: { team: 'ai' },
+  created_at: '2026-10-01T00:00:00Z',
+};
+const error = { type: 'error', error: { type: 'not_found_error', message: 'no drive' }, request_id: 'req_1' };
+
+describe('requests', () => {
+  test.each([
+    ['a conforming request', request('GET', '/v1/drives/drive_1/changes?limit=5'), []],
+    [
+      'an undeclared path',
+      request('GET', '/v1/deployments'),
+      ['GET /v1/deployments: the copy declares no such operation'],
+    ],
+    [
+      'an undeclared query name on a closed query',
+      request('GET', '/v1/drives?order=desc'),
+      ['GET /v1/drives request query: undeclared parameter "order"'],
+    ],
+    [
+      'a query value of the wrong type',
+      request('GET', '/v1/drives/drive_1/changes?limit=many'),
+      ['GET /v1/drives/{drive_id}/changes request query limit/: must be integer'],
+    ],
+    [
+      'a query parameter that takes one value, sent twice',
+      request('GET', '/v1/drives/drive_1/changes?limit=5&limit=6'),
+      ['GET /v1/drives/{drive_id}/changes request query limit: sent 2 times'],
+    ],
+    [
+      'a missing required query parameter',
+      request('GET', '/v1/sessions'),
+      ['GET /v1/sessions request query: missing required beta'],
+    ],
+    [
+      'a missing required header',
+      request('POST', '/v1/sessions/sesn_1/computers?beta=true', { environment_id: 'env_1' }),
+      ['POST /v1/sessions/{session_id}/computers request header: missing required Idempotency-Key'],
+    ],
+    [
+      'an undeclared body field',
+      request('POST', '/v1/sessions/sesn_1?beta=true', { providers: {} }),
+      ['POST /v1/sessions/{session_id} request body/: undeclared field "providers"'],
+    ],
+    [
+      'a body field of the wrong type',
+      request('POST', '/v1/sessions/sesn_1?beta=true', { title: 7 }),
+      ['POST /v1/sessions/{session_id} request body/title: must be string,null'],
+    ],
+    [
+      'a missing required body field',
+      request('POST', '/v1/sessions/sesn_1/drives?beta=true', { drive_id: 'drive_1' }),
+      ['POST /v1/sessions/{session_id}/drives request body/: missing required field "access"'],
+    ],
+    [
+      'a body on an operation that takes none',
+      request('POST', '/v1/sessions/sesn_1/archive?beta=true', {}),
+      ['POST /v1/sessions/{session_id}/archive request body: the operation takes none'],
+    ],
+    // A metadata value is a string, and on an update also null; free JSON stays free.
+    [
+      'a metadata key with a string value',
+      request('POST', '/v1/sessions/sesn_1?beta=true', { metadata: { k: 'v' } }),
+      [],
+    ],
+    [
+      'a null metadata value on an update',
+      request('POST', '/v1/sessions/sesn_1?beta=true', { metadata: { k: null } }),
+      [],
+    ],
+    [
+      'a number as a metadata value',
+      request('POST', '/v1/sessions/sesn_1?beta=true', { metadata: { k: 1 } }),
+      ['POST /v1/sessions/{session_id} request body/metadata/k: must be string,null'],
+    ],
+  ])('%s', (_name, found, expected) => {
+    expect(found).toEqual(expected);
+  });
+});
+
+test('a multipart part sent twice is checked as a list, not as its last value', () => {
+  const form = new FormData();
+  form.append('path', 'notes/a.md');
+  form.append('path', 'notes/b.md');
+  form.append('file', new Blob(['a']), 'a.md');
+  const found = checkRequest({
+    method: 'POST',
+    url: `${BASE}/v1/drives/drive_1/files`,
+    headers: new Headers(),
+    body: form,
+  }).violations;
+  expect(found).toEqual(['POST /v1/drives/{drive_id}/files request body/path: must be string']);
+});
+
+describe('answers', () => {
+  test.each([
+    ['a conforming answer', answer('GET', '/v1/drives/drive_1', 200, drive), []],
+    [
+      'an undeclared status',
+      answer('GET', '/v1/drives/drive_1', 418, error),
+      ['GET /v1/drives/{drive_id} answer: 418 is not a declared status'],
+    ],
+    [
+      'an undeclared field',
+      answer('GET', '/v1/drives/drive_1', 200, { ...drive, owner: 'me' }),
+      ['GET /v1/drives/{drive_id} answer 200 body/: undeclared field "owner"'],
+    ],
+    [
+      'a missing required field',
+      answer('GET', '/v1/drives/drive_1', 200, { ...drive, usage: undefined }),
+      ['GET /v1/drives/{drive_id} answer 200 body/: missing required field "usage"'],
+    ],
+    [
+      'a field of the wrong type',
+      answer('GET', '/v1/drives/drive_1', 200, { ...drive, skills_path: 7 }),
+      ['GET /v1/drives/{drive_id} answer 200 body/skills_path: must be string'],
+    ],
+    [
+      'an error type the status does not list',
+      answer('GET', '/v1/drives/drive_1', 404, { ...error, error: { type: 'conflict_error', message: 'x' } }),
+      [
+        'GET /v1/drives/{drive_id} answer 404 body/error/type: "conflict_error" is not one of ["not_found_error"]',
+      ],
+    ],
+    [
+      'a contract header on an answer that does not declare it',
+      answer('GET', '/v1/drives/drive_1', 404, error, { 'x-should-retry': 'false' }),
+      ['GET /v1/drives/{drive_id} answer 404 header: x-should-retry is not declared for this answer'],
+    ],
+    [
+      'the same header where it is declared',
+      answer(
+        'DELETE',
+        '/v1/drives/drive_1/files',
+        409,
+        { ...error, error: { type: 'invalid_request_error', message: 'x' } },
+        { 'x-should-retry': 'false' },
+      ),
+      [],
+    ],
+    [
+      'a body on an answer that declares none',
+      answer('DELETE', '/v1/drives/drive_1', 204, {}),
+      ['DELETE /v1/drives/{drive_id} answer 204 body: the answer declares none'],
+    ],
+    [
+      'a JSON answer under another content type',
+      answer('GET', '/v1/drives/drive_1', 200, drive, { 'content-type': 'text/plain' }),
+      ['GET /v1/drives/{drive_id} answer 200 content type: "text/plain", declared application/json'],
+    ],
+    [
+      'a stream answered without its content type',
+      answer('GET', '/v1/drives/drive_1/changes/stream', 200, undefined, { 'content-type': '' }),
+      ['GET /v1/drives/{drive_id}/changes/stream answer 200 content type: "", declared text/event-stream'],
+    ],
+    [
+      'an error envelope on a path the copy lists as unsupported',
+      answer('GET', '/v1/deployments', 400, {
+        ...error,
+        error: { type: 'invalid_request_error', message: 'x' },
+      }),
+      [],
+    ],
+    [
+      'an unsupported path answered as not found',
+      answer('GET', '/v1/deployments', 404, error),
+      ['GET /v1/deployments answer: 404, and the copy states 400 for this path'],
+    ],
+    [
+      'a path the copy does not know, answered as a bad request',
+      answer('GET', '/v1/nothing', 400, { ...error, error: { type: 'invalid_request_error', message: 'x' } }),
+      ['GET /v1/nothing answer: 400, and the copy states 404 for this path'],
+    ],
+    [
+      'an unsupported path refused under an error type the copy does not state for it',
+      answer('GET', '/v1/deployments', 400, error),
+      ['GET /v1/deployments answer 400 body/error/type: "not_found_error" is not invalid_request_error'],
+    ],
+    [
+      'a declared path under a method it does not have, answered as not found',
+      answer('PATCH', '/v1/drives/drive_1', 404, error),
+      ['PATCH /v1/drives/drive_1 answer: 404, and the copy states 405 for this path'],
+    ],
+    [
+      'any undeclared path without valid credentials',
+      answer('GET', '/v1/nothing', 401, { ...error, error: { type: 'authentication_error', message: 'x' } }),
+      [],
+    ],
+    [
+      'any undeclared path without valid credentials, under another error type',
+      answer('GET', '/v1/nothing', 401, error),
+      ['GET /v1/nothing answer 401 body/error/type: "not_found_error" is not authentication_error'],
+    ],
+    [
+      'a file of JSON where the answer declares */*',
+      answer('GET', '/v1/files/file_1/content', 200, { any: 'json' }),
+      [],
+    ],
+    [
+      'bytes of any type where the answer declares */*',
+      answer('GET', '/v1/files/file_1/content', 200, undefined, { 'content-type': 'application/pdf' }),
+      [],
+    ],
+    [
+      'a success on an undeclared path',
+      answer('GET', '/v1/deployments', 200, {}),
+      [
+        'GET /v1/deployments answer: 200 is not an answer of an undeclared path',
+        'GET /v1/deployments answer 200 body/: missing required field "type"',
+        'GET /v1/deployments answer 200 body/: missing required field "error"',
+        'GET /v1/deployments answer 200 body/: missing required field "request_id"',
+      ],
+    ],
+    [
+      "the edge's own answer, on an operation that declares no 503",
+      answer('GET', '/v1/drives/drive_1', 503, undefined, { 'content-type': 'text/plain' }),
+      [],
+    ],
+    [
+      "the edge's own answer, on an operation that declares a 503 of its own",
+      answer('GET', '/v1/instance_requests', 503, undefined, { 'content-type': 'text/plain' }),
+      [],
+    ],
+    [
+      "the edge's own answer, on a path the copy does not know",
+      answer('GET', '/v1/nothing', 503, undefined, { 'content-type': 'text/plain' }),
+      [],
+    ],
+    [
+      'a 503 in JSON on an operation that declares one',
+      answer('GET', '/v1/instance_requests', 503, {
+        ...error,
+        error: { type: 'api_error', message: 'x' },
+      }),
+      [],
+    ],
+    [
+      'a 503 in JSON on an operation that declares none',
+      answer('GET', '/v1/drives/drive_1', 503, { ...error, error: { type: 'api_error', message: 'x' } }),
+      ['GET /v1/drives/{drive_id} answer: 503 is not a declared status'],
+    ],
+    [
+      'an answer of the edge that carries a request id',
+      answer('GET', '/v1/drives/drive_1', 503, undefined, {
+        'content-type': 'text/plain',
+        'request-id': 'req_1',
+      }),
+      ["GET /v1/drives/{drive_id} answer 503 header: request-id is not part of the edge's answer"],
+    ],
+    [
+      'an error envelope sent without its content type',
+      answer('GET', '/v1/instance_requests', 503, error, { 'content-type': '' }),
+      ['GET /v1/instance_requests answer 503 body: an error envelope, which the edge does not send'],
+    ],
+  ])('%s', (_name, found, expected) => {
+    expect(found).toEqual(expected);
+  });
+});
+
+describe('stream events', () => {
+  const stream = findOperation('GET', '/v1/drives/drive_1/changes/stream')!;
+  const frame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+
+  test.each([
+    ['a declared event', frame('drive.changed', { drive_id: 'drive_1', seq: 1 }), []],
+    ['a comment line, which carries no event', ': heartbeat\n\n', []],
+    [
+      'an undeclared event',
+      frame('drive.deleted', { drive_id: 'drive_1' }),
+      ['GET /v1/drives/{drive_id}/changes/stream answer 200 stream: undeclared event "drive.deleted"'],
+    ],
+    [
+      'an undeclared field in an event',
+      frame('drive.changed', { drive_id: 'drive_1', seq: 1, path: 'a' }),
+      [
+        'GET /v1/drives/{drive_id}/changes/stream answer 200 stream event drive.changed/: undeclared field "path"',
+      ],
+    ],
+  ])('%s', (_name, text, expected) => {
+    expect(checkEvents(stream, 200, text)).toEqual(expected);
+  });
+
+  test('a union member is reported by the member its type names', () => {
+    const events = findOperation('GET', '/v1/sessions/sesn_1/events/stream')!;
+    const text = frame('session.error', {
+      type: 'session.error',
+      id: 'evt_1',
+      processed_at: '2026-11-01T00:00:00Z',
+      error: {
+        type: 'drive_mount_error',
+        message: 'm',
+        retry_status: { type: 'retrying' },
+        computer_id: 'c',
+      },
+    });
+    expect(checkEvents(events, 200, text)).toEqual([
+      'GET /v1/sessions/{session_id}/events/stream answer 200 stream event session.error/error: missing required field "drive_id"',
+    ]);
+  });
+});

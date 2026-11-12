@@ -1,6 +1,9 @@
+// Layer 1: a handler inside the test answers every request, and each request and
+// answer is checked against the SDK's copy of Engine's OpenAPI file.
 import Anthropic from '@tetral-ai/sdk';
 import { accumulateManagedAgentsEvent, type AccumulatedEvent } from '@tetral-ai/sdk/lib/sessions/accumulate';
 import type { BetaManagedAgentsStreamSessionEvents } from '@tetral-ai/sdk/resources/beta/sessions/events';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const final = (id: string, text: string): BetaManagedAgentsStreamSessionEvents => ({
   id,
@@ -31,10 +34,10 @@ const preview: BetaManagedAgentsStreamSessionEvents[] = [
   final('message-b', '😀 complete'),
 ];
 
-// This fixture proves SDK construction/parsing/helper behavior. Actual production
-// eligibility and formal-only delivery are proved by the integration registry.
+// The answers are fixtures: the tests show what the SDK sends, parses and reconciles,
+// not which previews Engine chooses to send.
 function fixtureClient(events: BetaManagedAgentsStreamSessionEvents[], observed: URL[]): Anthropic {
-  return new Anthropic({
+  return contractClient({
     apiKey: 'fixture-key',
     baseURL: 'http://sdk.fixture',
     maxRetries: 0,

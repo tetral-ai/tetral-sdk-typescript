@@ -1,3 +1,5 @@
+// Layer 1: a handler inside the test answers every request, and each request and
+// answer is checked against the SDK's copy of Engine's OpenAPI file.
 import Anthropic, { toFile } from '@tetral-ai/sdk';
 import type { BetaDrive, BetaDriveRestoreResult } from '@tetral-ai/sdk/resources/beta/drives/drives';
 import type { BetaDriveChange } from '@tetral-ai/sdk/resources/beta/drives/changes';
@@ -6,6 +8,7 @@ import type { BetaDriveSkill } from '@tetral-ai/sdk/resources/beta/drives/skills
 import type { BetaDriveUsage } from '@tetral-ai/sdk/resources/beta/drives/usage';
 import type { BetaDriveVersion } from '@tetral-ai/sdk/resources/beta/drives/versions';
 import { jsonResponse, parseMaybeJSONBody } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const SHA = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 
@@ -343,7 +346,7 @@ async function multipartFieldNames(body: RequestInit['body']): Promise<string[]>
 describe('Tetral drive routes', () => {
   test.each(ROWS)('$operation sends its contract request', async (row) => {
     const requests: Array<{ method: string; url: URL; init: RequestInit | undefined }> = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {

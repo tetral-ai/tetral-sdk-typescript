@@ -1,4 +1,3 @@
-import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsDeletedMemoryStore,
   BetaManagedAgentsMemoryStore,
@@ -18,11 +17,12 @@ import type {
   MemoryVersionRedactParams,
 } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
-import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { errorResponse, jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
 import { retrieveAttributedMemoryVersion, redactAttributedMemoryVersion } from './memory-actors';
 import type { MemoryStores } from '@tetral-ai/sdk/resources/beta/memory-stores';
 import type { MemoryVersions } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 import type { BetaManagedAgentsServiceAccountActor } from '@tetral-ai/sdk/resources/beta/memory-stores';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const MEMORY_STORE: BetaManagedAgentsMemoryStore = {
   id: 'memstore_123',
@@ -72,7 +72,7 @@ describe('Tetral Memory SDK contract', () => {
   test('memory store lifecycle and list pagination stay on explicit store paths', async () => {
     const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
     let listCalls = 0;
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -137,7 +137,7 @@ describe('Tetral Memory SDK contract', () => {
   test('memories require store scoping and serialize view, preconditions, and expected hashes', async () => {
     const requests: Array<{ method: string; url: URL; body?: unknown }> = [];
     let listCalls = 0;
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -228,7 +228,7 @@ describe('Tetral Memory SDK contract', () => {
   test('memory versions keep store-scoped retrieve/list/redact and session_id filtering', async () => {
     const requests: Array<{ method: string; url: URL }> = [];
     let listCalls = 0;
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -305,7 +305,7 @@ describe('Tetral Memory SDK contract', () => {
     { type: 'api_actor', api_key_id: 'key_123' },
     { type: 'session_actor', session_id: 'sesn_123' },
   ])('received $type attribution retains its exact identity on retrieve and redact', async (actor) => {
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (_url: any, init?: RequestInit) =>
@@ -348,7 +348,7 @@ describe('Tetral Memory SDK contract', () => {
   });
 
   test('typed received service attribution rejects an upstream selector used as the stable identity', async () => {
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async () =>
@@ -369,19 +369,13 @@ describe('Tetral Memory SDK contract', () => {
 
   test('memory write conflicts parse backend 409 invalid_request_error without SDK preflight', async () => {
     const captured: unknown[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       maxRetries: 0,
       fetch: async (_url: any, init?: RequestInit) => {
         captured.push(parseJSONBody(init));
-        return jsonResponse(
-          {
-            type: 'error',
-            error: { type: 'invalid_request_error', message: 'memory precondition failed' },
-          },
-          409,
-        );
+        return errorResponse(409, 'invalid_request_error', 'memory precondition failed');
       },
     });
 

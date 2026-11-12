@@ -16,21 +16,12 @@ async function main() {
   });
   console.log('Created environment:', environment.id);
 
-  // Create an agent with the built-in toolset and an always-allow permission policy
+  // Create an agent with the built-in toolset; `full_access` runs its tools without asking
   const agent = await client.beta.agents.create({
     name: 'files-example-agent',
     model: 'anthropic/claude-opus-4-8',
-    approval_mode: 'ask_for_approval',
-    tools: [
-      {
-        type: 'tetral_agent_toolset',
-        family: 'claude',
-        default_config: {
-          enabled: true,
-          permission_policy: { type: 'always_allow' },
-        },
-      },
-    ],
+    approval_mode: 'full_access',
+    tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
   });
   console.log('Created agent:', agent.id);
 

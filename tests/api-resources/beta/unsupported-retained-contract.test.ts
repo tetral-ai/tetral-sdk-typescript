@@ -6,7 +6,8 @@ import type {
 } from '@tetral-ai/sdk/resources/beta/agents';
 import type { DeploymentCreateParams } from '@tetral-ai/sdk/resources/beta/deployments';
 import type { BetaManagedAgentsEventParams } from '@tetral-ai/sdk/resources/beta/sessions';
-import { jsonResponse, parseMaybeJSONBody } from './tetral-contract-helpers';
+import { errorResponse, parseMaybeJSONBody } from './tetral-contract-helpers';
+import { contractClient } from '../../engine-contract/contract-fetch';
 
 interface CapturedRequest {
   url: string;
@@ -15,24 +16,21 @@ interface CapturedRequest {
 }
 
 function makeUnsupportedClient(captured: CapturedRequest[]): Anthropic {
-  return new Anthropic({
-    apiKey: 'test-tetral-key',
-    baseURL: 'https://api.tetral.example',
-    fetch: async (url: any, init?: RequestInit) => {
-      captured.push({
-        url: String(url),
-        method: init?.method,
-        body: parseMaybeJSONBody(init),
-      });
-      return jsonResponse(
-        {
-          type: 'error',
-          error: { type: 'invalid_request_error', message: 'Tetral deferred compatibility surface' },
-        },
-        400,
-      );
+  return contractClient(
+    {
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url: any, init?: RequestInit) => {
+        captured.push({
+          url: String(url),
+          method: init?.method,
+          body: parseMaybeJSONBody(init),
+        });
+        return errorResponse(400, 'invalid_request_error', 'Tetral deferred compatibility surface');
+      },
     },
-  });
+    { requestOutsideContract: 'the copy declares no such operation' },
+  );
 }
 
 describe('Tetral retained unsupported SDK surface contract', () => {

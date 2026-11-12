@@ -792,6 +792,11 @@ export interface BetaManagedAgentsSession {
   drives: Array<SessionDrivesAPI.BetaSessionDrive>;
 
   /**
+   * The credential the Session uses for each model provider, by provider ID.
+   */
+  providers: TetralSessionProviderSelectors;
+
+  /**
    * The Environment of the first attached cloud computer, and `""` when the
    * Session has none, for example once it is archived. It is not the Session's
    * own Environment.
@@ -1415,8 +1420,6 @@ export interface SessionUpdateParams {
    * Body param: Human-readable session title.
    */
   title?: string | null;
-
-  providers?: TetralSessionProviderSelectors;
 
   /**
    * Body param: Vault IDs (`vlt_*`) to attach to the session. Not yet supported;

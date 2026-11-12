@@ -109,6 +109,23 @@ export function findOperation(method: string, pathname: string): MatchedOperatio
   return matches[0];
 }
 
+/** Whether a path is one Engine refuses as unsupported: a pattern of `x-undeclared-paths`, `*` for any text. */
+export function isUnsupportedPath(pathname: string): boolean {
+  return engineAPI['x-undeclared-paths'].unsupported.some((pattern) =>
+    new RegExp(
+      `^${pattern
+        .split('*')
+        .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*')}$`,
+    ).test(pathname),
+  );
+}
+
+/** Whether the copy declares the path with any method. */
+export function isDeclaredPath(pathname: string): boolean {
+  return operations.some((candidate) => candidate.pattern.test(pathname));
+}
+
 function parameterCount(template: string): number {
   return template.split('{').length - 1;
 }
