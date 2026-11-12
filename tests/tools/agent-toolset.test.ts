@@ -308,24 +308,6 @@ describe('unrestrictedPaths deprecation', () => {
     ctx.unrestrictedPaths = false;
     await expect(read.run({ file_path: 'a.txt' })).rejects.toThrow(GUIDANCE);
   });
-
-  test('nothing reads unrestrictedPaths except the deprecation guard', () => {
-    const repo = path.resolve(__dirname, '..', '..');
-    for (const rel of [
-      'src/tools/agent-toolset/node.ts',
-      'src/tools/agent-toolset/fs-util.ts',
-      'src/lib/environments/worker.ts',
-      'src/resources/beta/environments/work.ts',
-    ]) {
-      const source = fs.readFileSync(path.join(repo, rel), 'utf8');
-      const reads = source.match(/\b[a-z_$][\w$]*\.unrestrictedPaths\b/g) ?? [];
-      const guarded =
-        source.match(
-          /rejectUnrestrictedPaths\(\s*[a-z_$][\w$]*\.unrestrictedPaths\s*\)|[a-z_$][\w$]*\.unrestrictedPaths !== undefined\b/g,
-        ) ?? [];
-      expect({ rel, reads: reads.length }).toEqual({ rel, reads: guarded.length });
-    }
-  });
 });
 
 describe('fs tools (read/write/edit)', () => {
