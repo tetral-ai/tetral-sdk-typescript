@@ -1,3 +1,6 @@
+// Layer 1: a handler inside the test answers every request, and each request and
+// answer is checked against the SDK's copy of Engine's OpenAPI file.
+import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsEventParams,
   SessionCreateParams,
@@ -184,17 +187,16 @@ describe('Tetral Session SDK contract', () => {
 
   test('list forward pagination is unchanged under BidirectionalPageCursor and prev_page degrades to null', async () => {
     const captured: string[] = [];
-    const pages = [
-      { data: [SESSION_ANSWER], next_page: 'cursor_page_2' },
-      { data: [SESSION_ANSWER], next_page: null },
-    ];
+    const first = { data: [SESSION_ANSWER], next_page: 'cursor_page_2' };
+    const last = { data: [SESSION_ANSWER], next_page: null };
     const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any) => {
-        const urlStr = String(url);
-        captured.push(urlStr);
-        return jsonResponse(urlStr.includes('page=') ? pages[1]! : pages[0]!);
+        captured.push(String(url));
+        // One read of the first page, then the iteration. From the third request on there is no
+        // further page, so an iteration that loses its cursor ends and fails below.
+        return jsonResponse(captured.length <= 2 ? first : last);
       },
     });
 
@@ -216,6 +218,70 @@ describe('Tetral Session SDK contract', () => {
     expect(captured[captured.length - 1]).toBe(
       'https://api.tetral.example/v1/sessions?beta=true&limit=1&page=cursor_page_2',
     );
+  });
+
+  test.each([
+    {
+      list: 'Session events, newest first',
+      read: (client: Anthropic) => client.beta.sessions.events.list('sesn_123', { limit: 1, order: 'desc' }),
+      first: '/v1/sessions/sesn_123/events?beta=true&limit=1&order=desc',
+    },
+    {
+      list: 'thread events',
+      read: (client: Anthropic) =>
+        client.beta.sessions.threads.events.list('sthr_123', { session_id: 'sesn_123', limit: 1 }),
+      first: '/v1/sessions/sesn_123/threads/sthr_123/events?beta=true&limit=1',
+    },
+  ])('a list of $list sends its query and follows next_page', async ({ read, first }) => {
+    const event = (id: string) => ({
+      id,
+      type: 'agent.message',
+      content: [{ type: 'text', text: id }],
+      processed_at: '2026-10-04T00:00:00Z',
+    });
+    const captured: string[] = [];
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url) => {
+        const { pathname, search } = new URL(url);
+        captured.push(pathname + search);
+        // Only the first request gets a cursor, so a list that loses it ends and fails below.
+        return jsonResponse(
+          captured.length === 1 ?
+            { data: [event('sevt_1')], next_page: 'cursor_page_2' }
+          : { data: [event('sevt_2')], next_page: null },
+        );
+      },
+    });
+
+    const ids = [];
+    for await (const item of read(client)) ids.push(item.id);
+
+    expect(ids).toEqual(['sevt_1', 'sevt_2']);
+    expect(captured).toEqual([first, `${first}&page=cursor_page_2`]);
+  });
+
+  test("the edge's answer while Engine cannot be reached is tried again, then raised with its status and no request id", async () => {
+    let requests = 0;
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      maxRetries: 1,
+      fetch: async () => {
+        requests++;
+        return new Response('no healthy upstream', {
+          status: 503,
+          headers: { 'content-type': 'text/plain' },
+        });
+      },
+    });
+
+    const failure = await client.beta.sessions.retrieve('sesn_123').catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Anthropic.InternalServerError);
+    expect(failure).toMatchObject({ status: 503, requestID: null, message: '503 no healthy upstream' });
+    expect(requests).toBe(2);
   });
 });
 

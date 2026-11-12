@@ -7,7 +7,7 @@ import type { BetaDriveFile } from '@tetral-ai/sdk/resources/beta/drives/files';
 import type { BetaDriveSkill } from '@tetral-ai/sdk/resources/beta/drives/skills';
 import type { BetaDriveUsage } from '@tetral-ai/sdk/resources/beta/drives/usage';
 import type { BetaDriveVersion } from '@tetral-ai/sdk/resources/beta/drives/versions';
-import { jsonResponse, parseMaybeJSONBody } from '../tetral-contract-helpers';
+import { errorResponse, jsonResponse, parseMaybeJSONBody } from '../tetral-contract-helpers';
 import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const SHA = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
@@ -375,5 +375,70 @@ describe('Tetral drive routes', () => {
       expect(parseMaybeJSONBody(request.init)).toEqual(row.body);
     }
     expect(result).toEqual(row.result);
+  });
+});
+
+describe('Tetral drive uploads that Engine refuses or fails', () => {
+  test.each([
+    {
+      upload: 'a file whose path must not exist yet',
+      call: async (client: Anthropic) =>
+        client.beta.drives.files.upload('drive_team_ai', {
+          path: 'notes/plan.md',
+          file: await toFile(Buffer.from('plan contents'), 'plan.md'),
+          must_not_exist: true,
+        }),
+    },
+    {
+      upload: 'a Skill archive',
+      call: async (client: Anthropic) =>
+        client.beta.drives.skills.upload('drive_team_ai', {
+          archive: await toFile(Buffer.from('PK\u0003\u0004'), 'review.zip'),
+        }),
+    },
+  ])('a conflict on $upload that Engine marks final is not sent again', async ({ call }) => {
+    let requests = 0;
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url: any) => {
+        if (String(url).startsWith('data:')) return new Response('');
+        requests++;
+        // A 409 is retried by default; `x-should-retry: false` says the answer will not change.
+        const refusal = errorResponse(409, 'invalid_request_error', 'the path already exists');
+        refusal.headers.set('x-should-retry', 'false');
+        return refusal;
+      },
+    });
+
+    await expect(call(client)).rejects.toBeInstanceOf(Anthropic.ConflictError);
+    expect(requests).toBe(1);
+  });
+
+  test('an upload that meets a server error is sent again with its whole multipart body', async () => {
+    const bodies: Array<{ path: unknown; file: string }> = [];
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url: any, init?: RequestInit) => {
+        if (String(url).startsWith('data:')) return new Response('');
+        const form = init?.body as FormData;
+        bodies.push({ path: form.get('path'), file: await (form.get('file') as File).text() });
+        return bodies.length === 1 ?
+            errorResponse(500, 'api_error', 'storage is unavailable')
+          : jsonResponse({ version_id: 'dver_2', content_sha256: SHA }, 201);
+      },
+    });
+
+    await expect(
+      client.beta.drives.files.upload('drive_team_ai', {
+        path: 'notes/plan.md',
+        file: await toFile(Buffer.from('plan contents'), 'plan.md'),
+      }),
+    ).resolves.toEqual({ version_id: 'dver_2', content_sha256: SHA });
+    expect(bodies).toEqual([
+      { path: 'notes/plan.md', file: 'plan contents' },
+      { path: 'notes/plan.md', file: 'plan contents' },
+    ]);
   });
 });

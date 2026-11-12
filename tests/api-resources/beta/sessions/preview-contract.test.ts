@@ -103,3 +103,32 @@ test('default Session and typed Thread streams send no delta query and parse com
     expect(url.searchParams.get('beta')).toBe('true');
   }
 });
+
+test('a data line of several mebibytes that arrives in pieces is parsed whole', async () => {
+  const text = 'x'.repeat(3 * 1024 * 1024);
+  const event = final('message-large', text);
+  const bytes = new TextEncoder().encode(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+  const client = contractClient({
+    apiKey: 'fixture-key',
+    baseURL: 'http://sdk.fixture',
+    maxRetries: 0,
+    fetch: async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            // The line is far longer than one network read.
+            for (let at = 0; at < bytes.length; at += 64 * 1024) {
+              controller.enqueue(bytes.subarray(at, at + 64 * 1024));
+            }
+            controller.close();
+          },
+        }),
+        { headers: { 'Content-Type': 'text/event-stream' } },
+      ),
+  });
+  const received = [];
+  for await (const item of await client.beta.sessions.events.stream('session')) received.push(item);
+  expect(received).toHaveLength(1);
+  expect(received[0]).toMatchObject({ id: 'message-large', type: 'agent.message' });
+  expect((received[0] as typeof event & { content: Array<{ text: string }> }).content[0]!.text).toBe(text);
+});
