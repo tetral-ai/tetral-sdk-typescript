@@ -16,9 +16,38 @@ drives.
 - `client.beta.sessions.drives` adds, changes and removes drive bindings.
 - `client.beta.drives` manages drives, their files and versions, Skills,
   change lists and restores.
-- The Session event union adds `session.computer_replaced`; the `session.error`
-  union adds `computer_preparation_error`, `computer_sandbox_error`,
-  `drive_mount_error` and `drive_changes_lost_error`.
+- The Session event union and the thread stream union add
+  `session.computer_replaced`; the `session.error` union adds
+  `computer_preparation_error`, `computer_cleanup_error`,
+  `computer_sandbox_error`, `drive_mount_error` and `drive_changes_lost_error`.
+
+The SDK's types follow Engine's OpenAPI file, of which the SDK keeps a copy in
+`api/`.
+
+- A Tetral toolset on Agent create and update, and in a Session's agent
+  update, takes `type` and `family` only. `configs` and `default_config` are no
+  longer parameters, and the types
+  `BetaManagedAgentsTetralClaudeToolConfigParams` and
+  `BetaManagedAgentsTetralGPTToolConfigParams` are removed.
+- In a returned Tetral toolset, a tool config's `name` may be one this SDK
+  version does not know, and `default_config.permission_policy` is
+  `always_allow` or `always_ask`; `auto` is no longer part of its type.
+- Session creation no longer takes `budget` and `initial_events`; Engine
+  refuses them.
+- Session objects carry `providers`. `SessionUpdateParams` no longer takes
+  `providers`; Engine refuses it on update.
+- A memory store resource of a Session carries `id`, `created_at` and
+  `updated_at`.
+- `agent.thread_message_received` events may carry `processed_at: null`, until
+  the receiving thread has taken the message up. In `session.thread_created`
+  events `agent_name` may be absent; it is absent on the Session's primary
+  thread.
+- In a Session's and a thread's usage, `cache_creation` always carries
+  `ephemeral_1h_input_tokens` and `ephemeral_5m_input_tokens`, which are `null`
+  until the first model request of the Session, or of the thread, has settled.
+- `ErrorType` and `ErrorObject` add the error types only Engine answers with.
+- Updates of provider credentials no longer accept `null` for `token`,
+  `access_token`, `refresh_token` and `expires_at`.
 
 ## 0.133.0-alpha.1 (2026-10-14)
 
