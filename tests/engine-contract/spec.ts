@@ -97,6 +97,19 @@ export function allOperations(): MatchedOperation[] {
   return operations;
 }
 
+/** The streams of the copy that the SDK has no method for. */
+export const STREAMS_WITHOUT_A_METHOD = ['GET /v1/instance_requests/stream', 'GET /v1/instances/stream'];
+
+/** The event names of each operation the copy answers as a stream, by operation name. */
+export function streamEvents(): Record<string, string[]> {
+  return Object.fromEntries(
+    operations.flatMap(({ name, operation }) => {
+      const events = operation.responses['200']?.content?.['text/event-stream']?.['x-events'];
+      return events ? [[name, Object.keys(events)]] : [];
+    }),
+  );
+}
+
 /**
  * The operation a request addresses. A literal path segment wins over a path
  * parameter, as `/v1/drives/usage` wins over `/v1/drives/{drive_id}`.
