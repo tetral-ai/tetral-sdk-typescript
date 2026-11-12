@@ -35,9 +35,7 @@
     "prepare": "if ./scripts/utils/check-is-in-git-install.sh; then ./scripts/build && ./scripts/utils/git-swap.sh; fi",
     "lint": "./scripts/lint",
     "fix": "./scripts/format",
-    "test:compatibility": "vitest run tests/compatibility",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:compatibility:integration": "bun scripts/test-compatibility-integration.ts"
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "standardwebhooks": "^1.0.0",

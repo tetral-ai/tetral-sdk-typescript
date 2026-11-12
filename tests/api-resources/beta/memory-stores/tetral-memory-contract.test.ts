@@ -19,10 +19,7 @@ import type {
 } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
 import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
-import {
-  retrieveAttributedMemoryVersion,
-  redactAttributedMemoryVersion,
-} from '../../../integration/fixtures/oidc-memory-actors';
+import { retrieveAttributedMemoryVersion, redactAttributedMemoryVersion } from './memory-actors';
 import type { MemoryStores } from '@tetral-ai/sdk/resources/beta/memory-stores';
 import type { MemoryVersions } from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 import type { BetaManagedAgentsServiceAccountActor } from '@tetral-ai/sdk/resources/beta/memory-stores';
