@@ -251,8 +251,8 @@ export function checkRequest(request: CheckedRequest): RequestCheck {
   else if (typeof body === 'string') {
     try {
       value = JSON.parse(body);
-    } catch {
-      add('body: not JSON');
+    } catch (error) {
+      add(`body: not JSON (${(error as Error).message})`);
       return { operation: matched, violations };
     }
   } else {
@@ -321,7 +321,8 @@ export function checkAnswer(
     const violations = CONTRACT_HEADERS.filter((header) => answer.headers.has(header)).map(
       (header) => `${name} answer ${status} header: ${header} is not part of the edge's answer`,
     );
-    if (validate(ajv, '#/components/schemas/ErrorResponse', parseJSON(answer.text)).length === 0) {
+    const body = readJSON(answer.text);
+    if ('value' in body && validate(ajv, '#/components/schemas/ErrorResponse', body.value).length === 0) {
       violations.push(`${name} answer ${status} body: an error envelope, which the edge does not send`);
     }
     return violations;
@@ -343,13 +344,18 @@ export function checkAnswer(
     }
     // The copy names the error type of two of them.
     const stated = { '401': 'authentication_error', '400': 'invalid_request_error' }[status];
-    const errorType = (parseJSON(answer.text) as { error?: { type?: unknown } } | undefined)?.error?.type;
+    const body = readJSON(answer.text);
+    if ('notJSON' in body) {
+      violations.push(`${label} answer ${status} body: not JSON (${body.notJSON})`);
+      return violations;
+    }
+    const errorType = (body.value as { error?: { type?: unknown } } | undefined)?.error?.type;
     if (stated && typeof errorType === 'string' && errorType !== stated) {
       violations.push(
         `${label} answer ${status} body/error/type: ${JSON.stringify(errorType)} is not ${stated}`,
       );
     }
-    for (const problem of validate(ajv, '#/components/schemas/ErrorResponse', parseJSON(answer.text))) {
+    for (const problem of validate(ajv, '#/components/schemas/ErrorResponse', body.value)) {
       violations.push(`${label} answer ${status} body${problem}`);
     }
     return violations;
@@ -383,7 +389,12 @@ export function checkAnswer(
     return violations;
   }
   if (declared === 'application/json') {
-    const body = parseJSON(answer.text);
+    const read = readJSON(answer.text);
+    if ('notJSON' in read) {
+      add(`body: not JSON (${read.notJSON})`);
+      return violations;
+    }
+    const body = read.value;
     const pointer = `${operationPointer(matched)}/responses/${status}/content/application~1json/schema`;
     for (const problem of validate(ajv, pointer, body)) add(`body${problem}`);
     const errorTypes = response['x-error-types'];
@@ -412,18 +423,24 @@ export function checkEvents(matched: MatchedOperation, status: number, text: str
       add(`stream: undeclared event ${JSON.stringify(frame.event)}`);
       continue;
     }
-    for (const problem of validate(ajv, `${base}/${pointerToken(frame.event)}`, parseJSON(frame.data))) {
+    const data = readJSON(frame.data);
+    if ('notJSON' in data) {
+      add(`stream event ${frame.event} data: not JSON (${data.notJSON})`);
+      continue;
+    }
+    for (const problem of validate(ajv, `${base}/${pointerToken(frame.event)}`, data.value)) {
       add(`stream event ${frame.event}${problem}`);
     }
   }
   return violations;
 }
 
-function parseJSON(text: string | undefined): unknown {
-  if (text === undefined || text === '') return undefined;
+/** The JSON value of `text` (none for no text), or the parser's reason it is not JSON. */
+function readJSON(text: string | undefined): { value: unknown } | { notJSON: string } {
+  if (text === undefined || text === '') return { value: undefined };
   try {
-    return JSON.parse(text);
-  } catch {
-    return undefined;
+    return { value: JSON.parse(text) };
+  } catch (error) {
+    return { notJSON: (error as Error).message };
   }
 }

@@ -93,6 +93,16 @@ describe('requests', () => {
       ['POST /v1/sessions/{session_id}/drives request body/: missing required field "access"'],
     ],
     [
+      'a body that is not JSON, with the reason the parser gives',
+      checkRequest({
+        method: 'POST',
+        url: `${BASE}/v1/sessions/sesn_1?beta=true`,
+        headers: new Headers(),
+        body: '{"title":',
+      }).violations,
+      [expect.stringMatching(/^POST \/v1\/sessions\/\{session_id\} request body: not JSON \(.+\)$/)],
+    ],
+    [
       'a body on an operation that takes none',
       request('POST', '/v1/sessions/sesn_1/archive?beta=true', {}),
       ['POST /v1/sessions/{session_id}/archive request body: the operation takes none'],
@@ -261,6 +271,24 @@ describe('answers', () => {
       [],
     ],
     [
+      'an answer body that is not JSON, with the reason the parser gives',
+      checkAnswer(findOperation('GET', '/v1/drives/drive_1'), 'GET /v1/drives/drive_1', {
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: '{"id":',
+      }),
+      [expect.stringMatching(/^GET \/v1\/drives\/\{drive_id\} answer 200 body: not JSON \(.+\)$/)],
+    ],
+    [
+      'an answer on an undeclared path that is not JSON',
+      checkAnswer(undefined, 'GET /v1/deployments', {
+        status: 400,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: 'no such path',
+      }),
+      [expect.stringMatching(/^GET \/v1\/deployments answer 400 body: not JSON \(.+\)$/)],
+    ],
+    [
       'a success on an undeclared path',
       answer('GET', '/v1/deployments', 200, {}),
       [
@@ -326,6 +354,15 @@ describe('stream events', () => {
       'an undeclared event',
       frame('drive.deleted', { drive_id: 'drive_1' }),
       ['GET /v1/drives/{drive_id}/changes/stream answer 200 stream: undeclared event "drive.deleted"'],
+    ],
+    [
+      'event data that is not JSON',
+      'event: drive.changed\ndata: {"drive_id":\n\n',
+      [
+        expect.stringMatching(
+          /^GET \/v1\/drives\/\{drive_id\}\/changes\/stream answer 200 stream event drive.changed data: not JSON \(.+\)$/,
+        ),
+      ],
     ],
     [
       'an undeclared field in an event',
