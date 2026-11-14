@@ -152,8 +152,9 @@ describe('every name the copy answers with is typed by the SDK', () => {
 
   test.each(EVENT_ANSWERS)('events of %s', (name, typed) => {
     const sent = Object.keys(copyEvents(name));
+    const sdkEvents = typed();
     expect(sent.length).toBeGreaterThan(0);
-    expect(sent.filter((event) => !(event in typed()))).toEqual([]);
+    expect(sent.filter((event) => !(event in sdkEvents))).toEqual([]);
   });
 
   test('what the fork wrote by hand is still in the copy', () => {
