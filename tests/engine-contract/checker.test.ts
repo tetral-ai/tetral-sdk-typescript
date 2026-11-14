@@ -43,6 +43,11 @@ const drive = {
   created_at: '2026-10-01T00:00:00Z',
 };
 const error = { type: 'error', error: { type: 'not_found_error', message: 'no drive' }, request_id: 'req_1' };
+const edgeError = (type: string, id = 'req_edge') => ({
+  type: 'error',
+  error: { type, message: 'x' },
+  request_id: id,
+});
 
 describe('requests', () => {
   test.each([
@@ -332,19 +337,37 @@ describe('answers', () => {
       ],
     ],
     [
-      "the edge's own answer, on an operation that declares no 503",
-      answer('GET', '/v1/drives/drive_1', 503, undefined, { 'content-type': 'text/plain' }),
+      "the edge's own 503, on an operation that declares none",
+      answer('GET', '/v1/drives/drive_1', 503, edgeError('api_error'), { 'request-id': 'req_edge' }),
       [],
     ],
     [
-      "the edge's own answer, on an operation that declares a 503 of its own",
-      answer('GET', '/v1/instance_requests', 503, undefined, { 'content-type': 'text/plain' }),
+      "the edge's own 503, on an operation that declares a 503 of its own",
+      answer('GET', '/v1/instance_requests', 503, edgeError('api_error'), { 'request-id': 'req_edge' }),
       [],
     ],
     [
-      "the edge's own answer, on a path the copy does not know",
-      answer('GET', '/v1/nothing', 503, undefined, { 'content-type': 'text/plain' }),
+      "the edge's own 503, on a path the copy does not know",
+      answer('GET', '/v1/nothing', 503, edgeError('api_error'), { 'request-id': 'req_edge' }),
       [],
+    ],
+    [
+      "the edge's own 400, to a path it refuses",
+      checkAnswer(undefined, 'GET /v1/models/openai%2Fgpt-5.5', {
+        status: 400,
+        headers: new Headers({ 'content-type': 'application/json', 'request-id': 'edge-1' }),
+        text: JSON.stringify(edgeError('invalid_request_error', 'edge-1')),
+      }),
+      [],
+    ],
+    [
+      'a path the edge refuses, answered other than with 400',
+      checkAnswer(undefined, 'GET /v1/models/openai%2Fgpt-5.5', {
+        status: 404,
+        headers: new Headers({ 'content-type': 'application/json', 'request-id': 'edge-1' }),
+        text: JSON.stringify({ ...edgeError('not_found_error', 'edge-1') }),
+      }),
+      ['GET /v1/models/openai%2Fgpt-5.5 answer: 404, and the edge answers a path it refuses with 400'],
     ],
     [
       'a 503 in JSON on an operation that declares one',
@@ -355,22 +378,50 @@ describe('answers', () => {
       [],
     ],
     [
-      'a 503 in JSON on an operation that declares none',
-      answer('GET', '/v1/drives/drive_1', 503, { ...error, error: { type: 'api_error', message: 'x' } }),
-      ['GET /v1/drives/{drive_id} answer: 503 is not a declared status'],
+      "an edge's 503 without a request-id header",
+      answer('GET', '/v1/drives/drive_1', 503, edgeError('api_error')),
+      [
+        'GET /v1/drives/{drive_id} answer 503 header request-id: null, and the body\'s request_id is "req_edge"',
+      ],
     ],
     [
-      'an answer of the edge that carries a request id',
-      answer('GET', '/v1/drives/drive_1', 503, undefined, {
-        'content-type': 'text/plain',
-        'request-id': 'req_1',
+      "an edge's 503 whose request-id header is not its request_id",
+      answer('GET', '/v1/drives/drive_1', 503, edgeError('api_error'), { 'request-id': 'req_other' }),
+      [
+        'GET /v1/drives/{drive_id} answer 503 header request-id: "req_other", and the body\'s request_id is "req_edge"',
+      ],
+    ],
+    [
+      "an edge's 503 of another error type",
+      answer('GET', '/v1/drives/drive_1', 503, edgeError('invalid_request_error'), {
+        'request-id': 'req_edge',
       }),
-      ["GET /v1/drives/{drive_id} answer 503 header: request-id is not part of the edge's answer"],
+      ['GET /v1/drives/{drive_id} answer 503 body/error/type: "invalid_request_error" is not api_error'],
     ],
     [
-      'an error envelope sent without its content type',
-      answer('GET', '/v1/instance_requests', 503, error, { 'content-type': '' }),
-      ['GET /v1/instance_requests answer 503 body: an error envelope, which the edge does not send'],
+      "an edge's 503 with another response header of its operation",
+      answer('POST', '/v1/drives/drive_1/files', 503, edgeError('api_error'), {
+        'request-id': 'req_edge',
+        'retry-after': '1',
+      }),
+      ["POST /v1/drives/{drive_id}/files answer 503 header: Retry-After is not part of the edge's answer"],
+    ],
+    [
+      "an edge's 503 with a header its operation does not declare",
+      answer('GET', '/v1/drives/drive_1', 503, edgeError('api_error'), {
+        'request-id': 'req_edge',
+        'retry-after': '1',
+      }),
+      [],
+    ],
+    [
+      "an edge's 503 in plain text, which is no ErrorResponse",
+      checkAnswer(findOperation('GET', '/v1/drives/drive_1'), 'GET /v1/drives/drive_1', {
+        status: 503,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: 'no healthy upstream',
+      }),
+      [expect.stringMatching(/^GET \/v1\/drives\/\{drive_id\} answer 503 body: not JSON \(.+\)$/)],
     ],
   ])('%s', (_name, found, expected) => {
     expect(found).toEqual(expected);

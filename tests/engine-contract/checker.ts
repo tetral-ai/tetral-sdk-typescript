@@ -324,6 +324,49 @@ export function parseEventStream(text: string): Frame[] {
   return frames;
 }
 
+/**
+ * What is wrong with an answer as the edge's own: an ErrorResponse of the error
+ * type `x-edge-answers` gives its status, a request-id header equal to its
+ * request_id, and none of the operation's other response headers.
+ */
+function edgeAnswer(
+  matched: MatchedOperation | undefined,
+  name: string,
+  status: string,
+  answer: CheckedAnswer,
+): string[] {
+  const violations: string[] = [];
+  const add = (message: string) => violations.push(`${name} answer ${status} ${message}`);
+  const others = new Map<string, string>();
+  for (const response of Object.values(matched?.operation.responses ?? {})) {
+    for (const header of Object.keys(response.headers ?? {})) others.set(header.toLowerCase(), header);
+  }
+  others.delete('request-id');
+  for (const header of others.values()) {
+    if (answer.headers.has(header)) add(`header: ${header} is not part of the edge's answer`);
+  }
+  const body = readJSON(answer.text);
+  if ('notJSON' in body) {
+    add(`body: not JSON (${body.notJSON})`);
+    return violations;
+  }
+  const problems = validate(ajv, '#/components/schemas/ErrorResponse', body.value);
+  for (const problem of problems) add(`body${problem}`);
+  if (problems.length > 0) return violations;
+  const { error, request_id } = body.value as { error: { type: string }; request_id: string };
+  const type = engineAPI['x-edge-answers'].types[status];
+  if (error.type !== type) add(`body/error/type: ${JSON.stringify(error.type)} is not ${type}`);
+  const header = answer.headers.get('request-id');
+  if (header !== request_id) {
+    add(
+      `header request-id: ${JSON.stringify(header)}, and the body's request_id is ${JSON.stringify(
+        request_id,
+      )}`,
+    );
+  }
+  return violations;
+}
+
 export function checkAnswer(
   matched: MatchedOperation | undefined,
   label: string,
@@ -331,26 +374,25 @@ export function checkAnswer(
 ): string[] {
   const status = String(answer.status);
   const contentType = (answer.headers.get('content-type') ?? '').split(';')[0]!.trim().toLowerCase();
-  // While a service behind Engine's edge cannot be reached, the edge answers for
-  // any request: its answer is not JSON, is no error envelope, and carries none of
-  // the headers the copy defines. A JSON answer of such a status is the operation's own.
-  if (engineAPI['x-edge-answers'].statuses.includes(status) && contentType !== 'application/json') {
-    const name = matched?.name ?? label;
-    const violations = CONTRACT_HEADERS.filter((header) => answer.headers.has(header)).map(
-      (header) => `${name} answer ${status} header: ${header} is not part of the edge's answer`,
-    );
-    const body = readJSON(answer.text);
-    if ('value' in body && validate(ajv, '#/components/schemas/ErrorResponse', body.value).length === 0) {
-      violations.push(`${name} answer ${status} body: an error envelope, which the edge does not send`);
-    }
-    return violations;
+  const pathname = label.slice(label.indexOf(' ') + 1);
+  // The edge answers for itself (x-edge-answers): with 400 to a path it refuses,
+  // which no operation receives, and with 503 to any request while the service
+  // behind it cannot be reached. A 503 that is not the edge's is the operation's own.
+  if (pathRefusal(pathname)) {
+    return status === '400' ?
+        edgeAnswer(undefined, label, status, answer)
+      : [`${label} answer: ${status}, and the edge answers a path it refuses with 400`];
+  }
+  if (status === '503') {
+    const edge = edgeAnswer(matched, matched?.name ?? label, status, answer);
+    if (edge.length === 0 || !matched?.operation.responses[status]) return edge;
   }
   if (!matched) {
     // An undeclared path has one stated set of answers, each an error envelope:
     // 401 without valid credentials; otherwise 400 on a path the copy lists as
     // unsupported, 405 on a path declared with other methods, and 404 on any other.
     const violations: string[] = [];
-    const routed = routedPath(label.slice(label.indexOf(' ') + 1));
+    const routed = routedPath(pathname);
     const refusal =
       isUnsupportedPath(routed) ? '400'
       : isDeclaredPath(routed) ? '405'

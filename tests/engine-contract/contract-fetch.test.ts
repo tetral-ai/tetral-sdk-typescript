@@ -94,15 +94,12 @@ const ROWS: Row[] = [
     fails: 'POST /v1/sessions/{session_id} request body/: undeclared field "providers"',
   },
   {
-    name: "an error envelope as the edge's answer fails, whatever content type it is sent under",
+    name: "an edge's 503 that is no ErrorResponse fails",
     path: '/v1/drives/drive_1?beta=true',
     init: { method: 'GET' },
     answer: () =>
-      new Response(
-        JSON.stringify({ type: 'error', error: { type: 'api_error', message: 'x' }, request_id: 'req_1' }),
-        { status: 503 },
-      ),
-    fails: 'GET /v1/drives/{drive_id} answer 503 body: an error envelope, which the edge does not send',
+      new Response('no healthy upstream', { status: 503, headers: { 'content-type': 'text/plain' } }),
+    fails: 'GET /v1/drives/{drive_id} answer 503 body: not JSON',
   },
   {
     name: 'a marked request that the copy takes fails',

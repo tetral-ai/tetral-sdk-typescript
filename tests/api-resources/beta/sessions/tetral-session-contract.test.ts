@@ -286,7 +286,7 @@ describe('Tetral Session SDK contract', () => {
     expect(captured).toEqual([first, `${first}&page=cursor_page_2`]);
   });
 
-  test("the edge's answer while Engine cannot be reached is tried again, then raised with its status and no request id", async () => {
+  test("the edge's answer while Engine cannot be reached is tried again, then raised with its status, type and request id", async () => {
     let requests = 0;
     const client = contractClient({
       apiKey: 'test-tetral-key',
@@ -294,17 +294,14 @@ describe('Tetral Session SDK contract', () => {
       maxRetries: 1,
       fetch: async () => {
         requests++;
-        return new Response('no healthy upstream', {
-          status: 503,
-          headers: { 'content-type': 'text/plain' },
-        });
+        return errorResponse(503, 'api_error', 'no healthy upstream');
       },
     });
 
     const failure = await client.beta.sessions.retrieve('sesn_123').catch((error: unknown) => error);
 
     expect(failure).toBeInstanceOf(Anthropic.InternalServerError);
-    expect(failure).toMatchObject({ status: 503, requestID: null, message: '503 no healthy upstream' });
+    expect(failure).toMatchObject({ status: 503, type: 'api_error', requestID: 'req_123' });
     expect(requests).toBe(2);
   });
 });

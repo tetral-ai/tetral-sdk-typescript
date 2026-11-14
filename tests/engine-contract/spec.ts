@@ -35,7 +35,7 @@ export interface OpenAPIDocument {
   paths: Record<string, Record<string, OpenAPIOperation>>;
   components: { schemas: Record<string, JSONSchema> };
   'x-undeclared-paths': { statuses: string[]; unsupported: string[] };
-  'x-edge-answers': { statuses: string[] };
+  'x-edge-answers': { statuses: string[]; types: Record<string, string> };
 }
 
 export const copyPath = path.resolve(__dirname, '../../api/engine-v1.openapi.json');
