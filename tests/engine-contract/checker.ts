@@ -6,7 +6,7 @@
  * copy states.
  * `checkAnswer` holds what a test is given: a declared status, a body of the
  * declared schema, an error type the status lists, and for a stream every
- * event name and its data. Both return the violations they found, each a
+ * event name and its data, in frames of only an event and a data line. Both return the violations they found, each a
  * sentence naming the operation and the place.
  */
 import Ajv2020, { type ErrorObject, type ValidateFunction } from 'ajv/dist/2020';
@@ -216,7 +216,13 @@ export function checkRequest(request: CheckedRequest): RequestCheck {
   matched.template.split('/').forEach((part, index) => {
     const parameter = parametersOf(matched, 'path').find(({ name }) => part === `{${name}}`);
     if (!parameter?.schema) return;
-    const value = decodeURIComponent(segments[index]!);
+    let value: string;
+    try {
+      value = decodeURIComponent(segments[index]!);
+    } catch (error) {
+      add(`path ${parameter.name}: not percent-encoded (${(error as Error).message})`);
+      return;
+    }
     for (const problem of validate(queryAjv, pointerOf(parameter), value))
       add(`path ${parameter.name}${problem}`);
   });
@@ -417,7 +423,7 @@ export function checkEvents(matched: MatchedOperation, status: number, text: str
   const base = `${operationPointer(matched)}/responses/${status}/content/text~1event-stream/x-events`;
   for (const frame of parseEventStream(text)) {
     for (const field of frame.others)
-      add(`stream: a ${JSON.stringify(field)} line, which no frame of the copy has`);
+      add(`stream: a line of field ${JSON.stringify(field)}, which no frame of the copy has`);
     if (frame.others.length > 0 && frame.event === undefined && frame.data === '') continue;
     if (frame.event === undefined || !(frame.event in events)) {
       add(`stream: undeclared event ${JSON.stringify(frame.event)}`);

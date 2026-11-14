@@ -124,6 +124,15 @@ describe('requests', () => {
       ['GET /v1/files/{file_id} request path file_id/: must match pattern "^file_"'],
     ],
     [
+      'a path parameter that is not percent-encoded',
+      request('GET', '/v1/files/file_%zz?beta=true'),
+      [
+        expect.stringMatching(
+          /^GET \/v1\/files\/\{file_id\} request path file_id: not percent-encoded \(.+\)$/,
+        ),
+      ],
+    ],
+    [
       'a header value against its schema',
       request(
         'POST',
@@ -375,14 +384,14 @@ describe('stream events', () => {
       'an id line, which no frame of the copy has',
       'id: 7\n' + frame('drive.changed', { drive_id: 'drive_1', seq: 1 }),
       [
-        'GET /v1/drives/{drive_id}/changes/stream answer 200 stream: a "id" line, which no frame of the copy has',
+        'GET /v1/drives/{drive_id}/changes/stream answer 200 stream: a line of field "id", which no frame of the copy has',
       ],
     ],
     [
       'an id line on a Thread stream, whose description says it sends none',
       'id: 7\n\n',
       [
-        'GET /v1/sessions/{session_id}/threads/{thread_id}/stream answer 200 stream: a "id" line, which no frame of the copy has',
+        'GET /v1/sessions/{session_id}/threads/{thread_id}/stream answer 200 stream: a line of field "id", which no frame of the copy has',
       ],
       '/v1/sessions/sesn_1/threads/sthr_1/stream',
     ],
