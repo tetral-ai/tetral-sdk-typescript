@@ -207,7 +207,7 @@ Repository authentication, checkout, clone, forbidden and not-found errors are p
 
 This list is generated in the SDK repository by `scripts/compatibility-list.cjs`. It compares the
 upstream spec that the SDK's types are generated from with Engine's OpenAPI file at Engine commit
-`19dc5f11f7d89afcf0f5e001deec7d4064fba1e6`. A place is written as a path into the request body or
+`6a2205b42855a74b6278ea2d366a1a182912307e`. A place is written as a path into the request body or
 the answer: `[]` is an item of a list, `<name>` the object whose `type` is `name`. Where the fork
 writes a type by hand (§2), that type may no longer offer what a line names.
 
