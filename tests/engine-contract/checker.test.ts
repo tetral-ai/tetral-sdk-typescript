@@ -109,6 +109,25 @@ describe('requests', () => {
       [],
     ],
     [
+      'a path parameter against its schema',
+      request('GET', '/v1/files/doc_1?beta=true'),
+      ['GET /v1/files/{file_id} request path file_id/: must match pattern "^file_"'],
+    ],
+    [
+      'a header value against its schema',
+      request(
+        'POST',
+        '/v1/sessions/sesn_1/computers?beta=true',
+        { environment_id: 'env_1' },
+        {
+          'Idempotency-Key': 'k'.repeat(256),
+        },
+      ),
+      [
+        'POST /v1/sessions/{session_id}/computers request header Idempotency-Key/: must NOT have more than 255 characters',
+      ],
+    ],
+    [
       'a number as a metadata value',
       request('POST', '/v1/sessions/sesn_1?beta=true', { metadata: { k: 1 } }),
       ['POST /v1/sessions/{session_id} request body/metadata/k: must be string,null'],
@@ -298,7 +317,6 @@ describe('answers', () => {
 });
 
 describe('stream events', () => {
-  const stream = findOperation('GET', '/v1/drives/drive_1/changes/stream')!;
   const frame = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 
   test.each([
@@ -316,8 +334,23 @@ describe('stream events', () => {
         'GET /v1/drives/{drive_id}/changes/stream answer 200 stream event drive.changed/: undeclared field "path"',
       ],
     ],
-  ])('%s', (_name, text, expected) => {
-    expect(checkEvents(stream, 200, text)).toEqual(expected);
+    [
+      'an id line, which no frame of the copy has',
+      'id: 7\n' + frame('drive.changed', { drive_id: 'drive_1', seq: 1 }),
+      [
+        'GET /v1/drives/{drive_id}/changes/stream answer 200 stream: a "id" line, which no frame of the copy has',
+      ],
+    ],
+    [
+      'an id line on a Thread stream, whose description says it sends none',
+      'id: 7\n\n',
+      [
+        'GET /v1/sessions/{session_id}/threads/{thread_id}/stream answer 200 stream: a "id" line, which no frame of the copy has',
+      ],
+      '/v1/sessions/sesn_1/threads/sthr_1/stream',
+    ],
+  ])('%s', (_name, text, expected, path = '/v1/drives/drive_1/changes/stream') => {
+    expect(checkEvents(findOperation('GET', path)!, 200, text)).toEqual(expected);
   });
 
   test('a union member is reported by the member its type names', () => {

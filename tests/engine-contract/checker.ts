@@ -1,8 +1,9 @@
 /**
  * Checks one HTTP exchange against the SDK's copy of Engine's OpenAPI file.
  *
- * `checkRequest` holds what a test sends: the operation exists, its query
- * names and values, its required headers and its body are as the copy states.
+ * `checkRequest` holds what a test sends: the operation exists, its path
+ * parameters, its query names and values, its headers and its body are as the
+ * copy states.
  * `checkAnswer` holds what a test is given: a declared status, a body of the
  * declared schema, an error type the status lists, and for a stream every
  * event name and its data. Both return the violations they found, each a
@@ -207,10 +208,27 @@ export function checkRequest(request: CheckedRequest): RequestCheck {
   for (const parameter of query) {
     if (parameter.required && !sent.has(parameter.name)) add(`query: missing required ${parameter.name}`);
   }
+  const pointerOf = (parameter: OpenAPIParameter) =>
+    `${operationPointer(matched)}/parameters/${(matched.operation.parameters ?? []).indexOf(
+      parameter,
+    )}/schema`;
+  const segments = url.pathname.split('/');
+  matched.template.split('/').forEach((part, index) => {
+    const parameter = parametersOf(matched, 'path').find(({ name }) => part === `{${name}}`);
+    if (!parameter?.schema) return;
+    const value = decodeURIComponent(segments[index]!);
+    for (const problem of validate(queryAjv, pointerOf(parameter), value))
+      add(`path ${parameter.name}${problem}`);
+  });
   for (const parameter of parametersOf(matched, 'header')) {
-    if (parameter.required && !request.headers.has(parameter.name)) {
-      add(`header: missing required ${parameter.name}`);
+    const value = request.headers.get(parameter.name);
+    if (value === null) {
+      if (parameter.required) add(`header: missing required ${parameter.name}`);
+      continue;
     }
+    if (!parameter.schema) continue;
+    for (const problem of validate(queryAjv, pointerOf(parameter), value))
+      add(`header ${parameter.name}${problem}`);
   }
 
   const declared = matched.operation.requestBody;
@@ -258,12 +276,20 @@ const CONTRACT_HEADERS = Object.keys(
   (engineAPI.components as unknown as { headers: Record<string, unknown> }).headers,
 );
 
+interface Frame {
+  event: string | undefined;
+  data: string;
+  /** Fields other than `event` and `data` (`id`, `retry`), which a frame of the copy has none of. */
+  others: string[];
+}
+
 /** The frames of a `text/event-stream` body, as the copy's `x-event-streams` states them. */
-export function parseEventStream(text: string): Array<{ event: string | undefined; data: string }> {
-  const frames: Array<{ event: string | undefined; data: string }> = [];
+export function parseEventStream(text: string): Frame[] {
+  const frames: Frame[] = [];
   for (const block of text.split(/\r?\n\r?\n/)) {
     let event: string | undefined;
     const data: string[] = [];
+    const others: string[] = [];
     for (const line of block.split(/\r?\n/)) {
       if (line === '' || line.startsWith(':')) continue;
       const colon = line.indexOf(':');
@@ -271,8 +297,11 @@ export function parseEventStream(text: string): Array<{ event: string | undefine
       const value = colon === -1 ? '' : line.slice(colon + 1).replace(/^ /, '');
       if (field === 'event') event = value;
       else if (field === 'data') data.push(value);
+      else others.push(field);
     }
-    if (event !== undefined || data.length > 0) frames.push({ event, data: data.join('\n') });
+    if (event !== undefined || data.length > 0 || others.length > 0) {
+      frames.push({ event, data: data.join('\n'), others });
+    }
   }
   return frames;
 }
@@ -376,6 +405,9 @@ export function checkEvents(matched: MatchedOperation, status: number, text: str
   if (!events) return [`${matched.name} answer ${status}: no event stream is declared`];
   const base = `${operationPointer(matched)}/responses/${status}/content/text~1event-stream/x-events`;
   for (const frame of parseEventStream(text)) {
+    for (const field of frame.others)
+      add(`stream: a ${JSON.stringify(field)} line, which no frame of the copy has`);
+    if (frame.others.length > 0 && frame.event === undefined && frame.data === '') continue;
     if (frame.event === undefined || !(frame.event in events)) {
       add(`stream: undeclared event ${JSON.stringify(frame.event)}`);
       continue;
