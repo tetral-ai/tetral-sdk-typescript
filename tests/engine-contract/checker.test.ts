@@ -415,6 +415,26 @@ describe('answers', () => {
       [],
     ],
     [
+      'an error answer whose request-id header is not its request_id',
+      answer('GET', '/v1/drives/drive_1', 404, error, { 'request-id': 'req_other' }),
+      [
+        'GET /v1/drives/{drive_id} answer 404 header request-id: "req_other", and the body\'s request_id is "req_1"',
+      ],
+    ],
+    ['an error answer without a request-id header', answer('GET', '/v1/drives/drive_1', 404, error), []],
+    [
+      'an error answer on an undeclared path whose request-id header is not its request_id',
+      answer('GET', '/v1/nothing', 404, error, { 'request-id': 'req_other' }),
+      ['GET /v1/nothing answer 404 header request-id: "req_other", and the body\'s request_id is "req_1"'],
+    ],
+    [
+      'a 503 of an operation that declares one, whose request-id header is not its request_id',
+      answer('GET', '/v1/instance_requests', 503, edgeError('api_error'), { 'request-id': 'req_other' }),
+      [
+        'GET /v1/instance_requests answer 503 header request-id: "req_other", and the body\'s request_id is "req_edge"',
+      ],
+    ],
+    [
       "an edge's 503 in plain text, which is no ErrorResponse",
       checkAnswer(findOperation('GET', '/v1/drives/drive_1'), 'GET /v1/drives/drive_1', {
         status: 503,

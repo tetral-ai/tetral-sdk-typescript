@@ -7,6 +7,7 @@ import path from 'node:path';
 
 import {
   SESSION_ANSWER,
+  errorResponse,
   getHeader,
   jsonResponse,
   parseJSONBody,
@@ -89,10 +90,7 @@ test('a write refused with 401 under a cached bearer is sent again once, with a 
         authorization: getHeader(init, 'authorization'),
       });
       if (sent.length === 1) {
-        return jsonResponse(
-          { type: 'error', error: { type: 'authentication_error', message: 'expired' }, request_id: 'req_1' },
-          401,
-        );
+        return errorResponse(401, 'authentication_error', 'expired');
       }
       return jsonResponse(SESSION_ANSWER);
     },

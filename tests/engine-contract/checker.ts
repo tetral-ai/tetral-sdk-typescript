@@ -325,6 +325,20 @@ export function parseEventStream(text: string): Frame[] {
 }
 
 /**
+ * An ErrorResponse's request_id equals the answer's request-id header, when
+ * the answer has one: what is wrong with it otherwise.
+ */
+function requestIdMismatch(answer: CheckedAnswer, body: unknown): string | undefined {
+  if (validate(ajv, '#/components/schemas/ErrorResponse', body).length > 0) return undefined;
+  const header = answer.headers.get('request-id');
+  const { request_id } = body as { request_id: string };
+  if (header === null || header === request_id) return undefined;
+  return `header request-id: ${JSON.stringify(header)}, and the body's request_id is ${JSON.stringify(
+    request_id,
+  )}`;
+}
+
+/**
  * What is wrong with an answer as the edge's own: an ErrorResponse of the error
  * type `x-edge-answers` gives its status, a request-id header equal to its
  * request_id, and none of the operation's other response headers.
@@ -418,6 +432,8 @@ export function checkAnswer(
     for (const problem of validate(ajv, '#/components/schemas/ErrorResponse', body.value)) {
       violations.push(`${label} answer ${status} body${problem}`);
     }
+    const mismatch = requestIdMismatch(answer, body.value);
+    if (mismatch) violations.push(`${label} answer ${status} ${mismatch}`);
     return violations;
   }
   const violations: string[] = [];
@@ -462,6 +478,8 @@ export function checkAnswer(
     if (errorTypes && typeof errorType === 'string' && !errorTypes.includes(errorType)) {
       add(`body/error/type: ${JSON.stringify(errorType)} is not one of ${JSON.stringify(errorTypes)}`);
     }
+    const mismatch = requestIdMismatch(answer, body);
+    if (mismatch) add(mismatch);
     return violations;
   }
   // Bytes (a file's content, an archive) have no schema to check.
