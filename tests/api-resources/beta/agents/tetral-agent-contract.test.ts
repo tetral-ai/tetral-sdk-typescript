@@ -168,41 +168,75 @@ describe('Tetral Agent SDK contract', () => {
     expect(retainedCustomTool.tools?.[0]?.type).toBe('custom');
   });
 
-  test('non-null multiagent create is sent as written and the 400 answer is parsed', async () => {
-    const captured: { url: string; body: unknown }[] = [];
-    const client = contractClient(
-      {
-        apiKey: 'test-tetral-key',
-        baseURL: 'https://api.tetral.example',
-        fetch: async (url: any, init?: RequestInit) => {
-          captured.push({ url: String(url), body: parseJSONBody(init) });
-          return errorResponse(400, 'invalid_request_error', 'multiagent is not supported by Tetral');
-        },
-      },
-      { requestOutsideContract: 'body/multiagent: must be null' },
-    );
-
-    await expect(
-      client.beta.agents.create({
-        name: 'retained multiagent compatibility agent',
-        model: 'anthropic/claude-opus-4-8',
+  // Each shape is one Engine refuses; the SDK sends it as written and parses the 400.
+  const refused: Array<{
+    shape: string;
+    departure: string;
+    params: Pick<AgentCreateParams, 'tools' | 'multiagent'>;
+  }> = [
+    {
+      shape: 'non-null multiagent',
+      departure: 'body/multiagent: must be null',
+      params: {
         tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
         multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
-      }),
-    ).rejects.toMatchObject({
-      status: 400,
-      type: 'invalid_request_error',
-    });
+      },
+    },
+    {
+      shape: 'an upstream agent toolset',
+      departure: 'body/tools/1: type "agent_toolset_20260401" is not a member of the union',
+      params: {
+        tools: [{ type: 'tetral_agent_toolset', family: 'claude' }, { type: 'agent_toolset_20260401' }],
+      },
+    },
+    {
+      shape: 'a custom tool',
+      departure: 'body/tools/1: type "custom" is not a member of the union',
+      params: {
+        tools: [
+          { type: 'tetral_agent_toolset', family: 'claude' },
+          {
+            type: 'custom',
+            name: 'lookup',
+            description: 'Look a name up.',
+            input_schema: { type: 'object', properties: {} },
+          },
+        ],
+      },
+    },
+  ];
+  // `%s` prints the whole name; `$shape` would quote it.
+  test.each(refused.map((row) => [row.shape, row] as const))(
+    '%s create is sent as written and the 400 answer is parsed',
+    async (_shape, { departure, params }) => {
+      const captured: { url: string; body: unknown }[] = [];
+      const client = contractClient(
+        {
+          apiKey: 'test-tetral-key',
+          baseURL: 'https://api.tetral.example',
+          fetch: async (url: any, init?: RequestInit) => {
+            captured.push({ url: String(url), body: parseJSONBody(init) });
+            return errorResponse(400, 'invalid_request_error', 'not supported by Tetral');
+          },
+        },
+        { requestOutsideContract: departure },
+      );
+      const request: AgentCreateParams = {
+        name: 'retained compatibility agent',
+        model: 'anthropic/claude-opus-4-8',
+        ...params,
+      };
 
-    expect(captured).toHaveLength(1);
-    expect(captured[0]!.url).toBe('https://api.tetral.example/v1/agents?beta=true');
-    expect(captured[0]!.body).toEqual({
-      name: 'retained multiagent compatibility agent',
-      model: 'anthropic/claude-opus-4-8',
-      tools: [{ type: 'tetral_agent_toolset', family: 'claude' }],
-      multiagent: { type: 'coordinator', agents: [{ type: 'self' }] },
-    });
-  });
+      await expect(client.beta.agents.create(request)).rejects.toMatchObject({
+        status: 400,
+        type: 'invalid_request_error',
+      });
+
+      expect(captured).toHaveLength(1);
+      expect(captured[0]!.url).toBe('https://api.tetral.example/v1/agents?beta=true');
+      expect(captured[0]!.body).toEqual(request);
+    },
+  );
 });
 
 const createApprovalCannotBeNull: AgentCreateParams = {
