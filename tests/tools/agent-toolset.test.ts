@@ -299,15 +299,39 @@ describe('unrestrictedPaths deprecation', () => {
     expect(construct).toThrow(GUIDANCE);
   });
 
-  test('resolvePath rejects a context still carrying unrestrictedPaths, including one mutated after construction', async () => {
+  test('resolvePath rejects a context still carrying unrestrictedPaths', async () => {
     await expect(resolvePath({ workdir: '/tmp/work', unrestrictedPaths: true }, 'a')).rejects.toThrow(
       GUIDANCE,
     );
-    const ctx: AgentToolContext = { workdir: '/tmp/work' };
-    const read = betaReadTool(ctx);
-    ctx.unrestrictedPaths = false;
-    await expect(read.run({ file_path: 'a.txt' })).rejects.toThrow(GUIDANCE);
   });
+
+  // Every tool that takes a path refuses a context given the option after construction.
+  const mutated = [
+    ['read', betaReadTool, { file_path: 'a.txt' }],
+    ['write', betaWriteTool, { file_path: 'a.txt', content: 'x' }],
+    ['edit', betaEditTool, { file_path: 'a.txt', old_string: 'x', new_string: 'y' }],
+    ['glob', betaGlobTool, { pattern: '*', path: '.' }],
+    ['grep', betaGrepTool, { pattern: 'x', path: '.' }],
+  ] as const;
+  test.each(
+    mutated.flatMap(([name, factory, input]) =>
+      [true, false].map((value) => [name, value, factory, input] as const),
+    ),
+  )(
+    '%s rejects a context given unrestrictedPaths=%s after construction',
+    async (_name, value, factory, input) => {
+      const workdir = tmpdir();
+      try {
+        const ctx: AgentToolContext = { workdir };
+        const tool = factory(ctx) as { run: (input: never) => Promise<unknown> };
+        ctx.unrestrictedPaths = value;
+        await expect(tool.run(input as never)).rejects.toThrow(GUIDANCE);
+        expect(fs.readdirSync(workdir)).toEqual([]);
+      } finally {
+        fs.rmSync(workdir, { recursive: true, force: true });
+      }
+    },
+  );
 });
 
 describe('fs tools (read/write/edit)', () => {
