@@ -333,6 +333,33 @@ describe('unrestrictedPaths deprecation', () => {
       }
     },
   );
+
+  // Without a path, glob and grep search the working directory; the option, set late, changes nothing.
+  const searches = [
+    ['glob', betaGlobTool, { pattern: '*' }],
+    ['grep', betaGrepTool, { pattern: 'needle' }],
+  ] as const;
+  test.each(
+    searches.flatMap(([name, factory, input]) =>
+      [true, false].map((value) => [name, value, factory, input] as const),
+    ),
+  )(
+    '%s without a path searches the working directory alone under unrestrictedPaths=%s set after construction',
+    async (_name, value, factory, input) => {
+      const workdir = tmpdir();
+      try {
+        fs.writeFileSync(path.join(workdir, 'a.txt'), 'needle\n');
+        const build = (ctx: AgentToolContext) => factory(ctx) as { run: (input: never) => Promise<unknown> };
+        const expected = await build({ workdir }).run(input as never);
+        const ctx: AgentToolContext = { workdir };
+        const tool = build(ctx);
+        ctx.unrestrictedPaths = value;
+        expect(await tool.run(input as never)).toEqual(expected);
+      } finally {
+        fs.rmSync(workdir, { recursive: true, force: true });
+      }
+    },
+  );
 });
 
 describe('fs tools (read/write/edit)', () => {
