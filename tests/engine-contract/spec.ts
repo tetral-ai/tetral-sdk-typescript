@@ -19,6 +19,8 @@ export interface OpenAPIParameter {
   in: 'path' | 'query' | 'header';
   required?: boolean;
   schema?: JSONSchema;
+  /** A path parameter that takes everything after the template's literal part: one segment or more. */
+  'x-rest-of-path'?: boolean;
 }
 
 export interface OpenAPIOperation {
@@ -79,7 +81,11 @@ for (const [template, item] of Object.entries(engineAPI.paths)) {
       '^' +
         template
           .split(/(\{[^}]+\})/)
-          .map((part) => (part.startsWith('{') ? '[^/]+' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+          .map((part) =>
+            !part.startsWith('{') ? part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            : restOfPath(operation, part) ? '[^/]+(?:/[^/]+)*'
+            : '[^/]+',
+          )
           .join('') +
         '$',
     );
@@ -91,6 +97,36 @@ for (const [template, item] of Object.entries(engineAPI.paths)) {
       pattern,
     });
   }
+}
+
+/** The path parameter a template part such as `{model_id}` names, when it is marked `x-rest-of-path`. */
+export function restOfPath(operation: OpenAPIOperation, part: string): OpenAPIParameter | undefined {
+  return operation.parameters?.find(
+    (parameter) => parameter.in === 'path' && `{${parameter.name}}` === part && parameter['x-rest-of-path'],
+  );
+}
+
+/**
+ * Why the edge refuses a path before it is routed (`x-path-handling`): an
+ * invalid percent-encoding, or an escaped slash or backslash.
+ */
+export function pathRefusal(pathname: string): string | undefined {
+  if (/%(?![0-9A-Fa-f]{2})/.test(pathname)) return 'an invalid percent-encoding';
+  if (/%(?:2F|5C)/i.test(pathname)) return 'an escaped slash or backslash';
+  return undefined;
+}
+
+/**
+ * The path Engine routes (`x-path-handling`): a percent-encoded unreserved
+ * character decoded, dot segments removed, then repeated slashes merged.
+ */
+export function routedPath(pathname: string): string {
+  const decoded = pathname.replace(/%([0-9A-Fa-f]{2})/g, (escape, hex: string) => {
+    const character = String.fromCharCode(parseInt(hex, 16));
+    return /[A-Za-z0-9\-._~]/.test(character) ? character : escape;
+  });
+  // Joined as text: as a relative reference, a path that starts with `//` would name a host.
+  return new URL(`http://path.invalid${decoded}`).pathname.replace(/\/{2,}/g, '/');
 }
 
 export function allOperations(): MatchedOperation[] {

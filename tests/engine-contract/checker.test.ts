@@ -124,13 +124,37 @@ describe('requests', () => {
       ['GET /v1/files/{file_id} request path file_id/: must match pattern "^file_"'],
     ],
     [
-      'a path parameter that is not percent-encoded',
-      request('GET', '/v1/files/file_%zz?beta=true'),
+      'a path parameter that is not UTF-8 once decoded',
+      request('GET', '/v1/files/file_%C3?beta=true'),
       [
         expect.stringMatching(
-          /^GET \/v1\/files\/\{file_id\} request path file_id: not percent-encoded \(.+\)$/,
+          /^GET \/v1\/files\/\{file_id\} request path file_id: not UTF-8 once decoded \(.+\)$/,
         ),
       ],
+    ],
+    [
+      'a path with an invalid percent-encoding, which the edge refuses',
+      request('GET', '/v1/files/file_%zz?beta=true'),
+      [
+        'GET /v1/files/file_%zz: the edge refuses the path, which has an invalid percent-encoding (x-path-handling)',
+      ],
+    ],
+    [
+      'a model ID with its slash escaped, which the edge refuses',
+      request('GET', '/v1/models/openai%2fgpt-5.5?beta=true'),
+      [
+        'GET /v1/models/openai%2fgpt-5.5: the edge refuses the path, which has an escaped slash or backslash (x-path-handling)',
+      ],
+    ],
+    [
+      'a model ID with its slash written as a path separator',
+      request('GET', '/v1/models/openai/gpt-5.5?beta=true'),
+      [],
+    ],
+    [
+      'a path as the edge routes it: an escaped unreserved character decoded, repeated slashes merged',
+      request('GET', '/v1//%66iles/file_1?beta=true'),
+      [],
     ],
     [
       'a header value against its schema',

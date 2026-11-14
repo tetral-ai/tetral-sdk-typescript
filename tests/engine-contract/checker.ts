@@ -1,9 +1,9 @@
 /**
  * Checks one HTTP exchange against the SDK's copy of Engine's OpenAPI file.
  *
- * `checkRequest` holds what a test sends: the operation exists, its path
- * parameters, its query names and values, its headers and its body are as the
- * copy states.
+ * `checkRequest` holds what a test sends: the edge takes its path, the
+ * operation exists, its path parameters, its query names and values, its
+ * headers and its body are as the copy states.
  * `checkAnswer` holds what a test is given: a declared status, a body of the
  * declared schema, an error type the status lists, and for a stream every
  * event name and its data, in frames of only an event and a data line. Both return the violations they found, each a
@@ -16,7 +16,10 @@ import {
   findOperation,
   isDeclaredPath,
   isUnsupportedPath,
+  pathRefusal,
   resolvePointer,
+  restOfPath,
+  routedPath,
   type JSONSchema,
   type MatchedOperation,
   type OpenAPIParameter,
@@ -170,8 +173,16 @@ function formObject(form: FormData): Record<string, unknown> {
 
 export function checkRequest(request: CheckedRequest): RequestCheck {
   const url = new URL(request.url);
-  const matched = findOperation(request.method, url.pathname);
   const label = `${request.method.toUpperCase()} ${url.pathname}`;
+  const refusal = pathRefusal(url.pathname);
+  if (refusal) {
+    return {
+      operation: undefined,
+      violations: [`${label}: the edge refuses the path, which has ${refusal} (x-path-handling)`],
+    };
+  }
+  const routed = routedPath(url.pathname);
+  const matched = findOperation(request.method, routed);
   if (!matched) {
     return { operation: undefined, violations: [`${label}: the copy declares no such operation`] };
   }
@@ -212,15 +223,16 @@ export function checkRequest(request: CheckedRequest): RequestCheck {
     `${operationPointer(matched)}/parameters/${(matched.operation.parameters ?? []).indexOf(
       parameter,
     )}/schema`;
-  const segments = url.pathname.split('/');
+  const segments = routed.split('/');
   matched.template.split('/').forEach((part, index) => {
     const parameter = parametersOf(matched, 'path').find(({ name }) => part === `{${name}}`);
     if (!parameter?.schema) return;
+    const sent = restOfPath(matched.operation, part) ? segments.slice(index).join('/') : segments[index]!;
     let value: string;
     try {
-      value = decodeURIComponent(segments[index]!);
+      value = decodeURIComponent(sent);
     } catch (error) {
-      add(`path ${parameter.name}: not percent-encoded (${(error as Error).message})`);
+      add(`path ${parameter.name}: not UTF-8 once decoded (${(error as Error).message})`);
       return;
     }
     for (const problem of validate(queryAjv, pointerOf(parameter), value))
@@ -338,10 +350,10 @@ export function checkAnswer(
     // 401 without valid credentials; otherwise 400 on a path the copy lists as
     // unsupported, 405 on a path declared with other methods, and 404 on any other.
     const violations: string[] = [];
-    const pathname = label.slice(label.indexOf(' ') + 1);
+    const routed = routedPath(label.slice(label.indexOf(' ') + 1));
     const refusal =
-      isUnsupportedPath(pathname) ? '400'
-      : isDeclaredPath(pathname) ? '405'
+      isUnsupportedPath(routed) ? '400'
+      : isDeclaredPath(routed) ? '405'
       : '404';
     if (!engineAPI['x-undeclared-paths'].statuses.includes(status)) {
       violations.push(`${label} answer: ${status} is not an answer of an undeclared path`);

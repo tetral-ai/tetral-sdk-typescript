@@ -48,6 +48,9 @@ The SDK's types follow Engine's OpenAPI file, of which the SDK keeps a copy in
 - `ErrorType` and `ErrorObject` add the error types only Engine answers with.
 - Updates of provider credentials no longer accept `null` for `token`,
   `access_token`, `refresh_token` and `expires_at`.
+- `client.models.retrieve` and `client.beta.models.retrieve` write a model
+  ID's `/` as a path separator (`/v1/models/openai/gpt-5.5`), no longer as
+  `%2F`, which Engine refuses.
 
 ## 0.133.0-alpha.1 (2026-10-14)
 

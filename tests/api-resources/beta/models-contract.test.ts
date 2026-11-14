@@ -46,3 +46,22 @@ test.each([
   expect(observed.map((url) => url.searchParams.get('beta'))).toEqual(['true']);
   expect(model).toMatchObject({ id: MODEL.id, allowed_fallback_models: null });
 });
+
+// Engine's edge refuses an escaped slash, so a model ID's `/` is written as a path separator.
+test.each([
+  ['client.models.retrieve', (client: Anthropic) => client.models.retrieve(MODEL.id), ''],
+  ['client.beta.models.retrieve', (client: Anthropic) => client.beta.models.retrieve(MODEL.id), '?beta=true'],
+] as const)('%s writes the slash of a model ID as a path separator', async (_call, retrieve, search) => {
+  const observed: URL[] = [];
+  const client = contractClient({
+    apiKey: 'fixture-key',
+    baseURL: 'http://sdk.fixture',
+    maxRetries: 0,
+    fetch: async (input) => {
+      observed.push(new URL(String(input)));
+      return jsonResponse(MODEL);
+    },
+  });
+  await retrieve(client);
+  expect(observed.map((url) => url.pathname + url.search)).toEqual([`/v1/models/openai/gpt-5.5${search}`]);
+});
