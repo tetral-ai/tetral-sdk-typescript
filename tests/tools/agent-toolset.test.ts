@@ -305,7 +305,8 @@ describe('unrestrictedPaths deprecation', () => {
     );
   });
 
-  // Every tool that takes a path refuses a context given the option after construction.
+  // Each tool refuses, for a path it is given, a context given the option after construction.
+  // Glob and grep without a path search the working directory and never resolve one.
   const mutated = [
     ['read', betaReadTool, { file_path: 'a.txt' }],
     ['write', betaWriteTool, { file_path: 'a.txt', content: 'x' }],
@@ -318,7 +319,7 @@ describe('unrestrictedPaths deprecation', () => {
       [true, false].map((value) => [name, value, factory, input] as const),
     ),
   )(
-    '%s rejects a context given unrestrictedPaths=%s after construction',
+    '%s rejects a path under a context given unrestrictedPaths=%s after construction',
     async (_name, value, factory, input) => {
       const workdir = tmpdir();
       try {
