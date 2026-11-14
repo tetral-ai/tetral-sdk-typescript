@@ -53,4 +53,31 @@ else
 fi
 
 echo "==> Running tests"
-./node_modules/.bin/vitest run "$@"
+# The run gets a process group of its own. A stop of this script is passed on to
+# the whole group, since vitest exits on a stop without ending its workers; the
+# script waits until the group has ended; and a run longer than the limit is stopped.
+limit="${TEST_RUN_LIMIT_SECONDS:-480}"
+set -m
+./node_modules/.bin/vitest run "$@" &
+test_pid=$!
+set +m
+run_is_alive() { kill -0 -- "-$test_pid" 2>/dev/null; }
+trap 'kill -TERM -- "-$test_pid" 2>/dev/null' TERM INT HUP
+(
+  for ((second = 0; second < limit; second++)); do
+    sleep 1
+    run_is_alive || exit 0
+  done
+  echo -e "${RED}ERROR:${NC} the test run took longer than ${limit}s and is stopped" >&2
+  kill -TERM -- "-$test_pid" 2>/dev/null
+) &
+watchdog_pid=$!
+status=0
+wait "$test_pid" || status=$?
+# A stop ends `wait` before the run has ended.
+while kill -0 "$test_pid" 2>/dev/null; do
+  wait "$test_pid" || status=$?
+done
+while run_is_alive; do sleep 0.2; done
+wait "$watchdog_pid" 2>/dev/null || true
+exit "$status"
