@@ -63,3 +63,47 @@ test('an OIDC federation client exchanges its JWT as the copy declares and sends
   ]);
   expect(authorizations).toEqual(['Bearer exchanged-token']);
 });
+
+test('a write refused with 401 under a cached bearer is sent again once, with a new token and the same body', async () => {
+  let tokens = 0;
+  const sent: Array<{
+    method: string | undefined;
+    path: string;
+    body: unknown;
+    authorization: string | null;
+  }> = [];
+  const client = contractClient({
+    apiKey: null,
+    baseURL: 'https://sdk.fixture',
+    maxRetries: 1,
+    credentials: async () => {
+      tokens++;
+      return { token: `tok-${tokens}`, expiresAt: Math.floor(Date.now() / 1000) + 3600 };
+    },
+    fetch: async (url, init) => {
+      const { pathname, search } = new URL(url);
+      sent.push({
+        method: init?.method,
+        path: pathname + search,
+        body: init?.body,
+        authorization: getHeader(init, 'authorization'),
+      });
+      if (sent.length === 1) {
+        return jsonResponse(
+          { type: 'error', error: { type: 'authentication_error', message: 'expired' }, request_id: 'req_1' },
+          401,
+        );
+      }
+      return jsonResponse(SESSION_ANSWER);
+    },
+  });
+
+  await client.beta.sessions.update('sesn_123', { title: 'renamed' });
+
+  const first = { method: 'POST', path: '/v1/sessions/sesn_123?beta=true', body: '{"title":"renamed"}' };
+  expect(sent).toEqual([
+    { ...first, authorization: 'Bearer tok-1' },
+    { ...first, authorization: 'Bearer tok-2' },
+  ]);
+  expect(tokens).toBe(2);
+});
