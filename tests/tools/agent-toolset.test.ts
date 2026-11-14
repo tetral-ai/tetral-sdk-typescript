@@ -346,9 +346,13 @@ describe('unrestrictedPaths deprecation', () => {
   )(
     '%s without a path searches the working directory alone under unrestrictedPaths=%s set after construction',
     async (_name, value, factory, input) => {
-      const workdir = tmpdir();
+      // A sibling of the working directory holds a match too, so a wider search shows.
+      const outer = tmpdir();
+      const workdir = path.join(outer, 'work');
+      fs.mkdirSync(workdir);
       try {
         fs.writeFileSync(path.join(workdir, 'a.txt'), 'needle\n');
+        fs.writeFileSync(path.join(outer, 'sibling.txt'), 'needle\n');
         const build = (ctx: AgentToolContext) => factory(ctx) as { run: (input: never) => Promise<unknown> };
         const expected = await build({ workdir }).run(input as never);
         const ctx: AgentToolContext = { workdir };
@@ -356,7 +360,7 @@ describe('unrestrictedPaths deprecation', () => {
         ctx.unrestrictedPaths = value;
         expect(await tool.run(input as never)).toEqual(expected);
       } finally {
-        fs.rmSync(workdir, { recursive: true, force: true });
+        fs.rmSync(outer, { recursive: true, force: true });
       }
     },
   );
