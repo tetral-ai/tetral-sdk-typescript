@@ -232,6 +232,13 @@ export interface BetaManagedAgentsGitHubRepositoryResource {
  * A memory store attached to an agent session.
  */
 export interface BetaManagedAgentsMemoryStoreResource {
+  id: string;
+
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  created_at: string;
+
   /**
    * The memory store ID (memstore\_...). Must belong to the caller's organization
    * and workspace.
@@ -239,6 +246,11 @@ export interface BetaManagedAgentsMemoryStoreResource {
   memory_store_id: string;
 
   type: 'memory_store';
+
+  /**
+   * A timestamp in RFC 3339 format
+   */
+  updated_at: string;
 
   /**
    * Access mode for the mounted store. Defaults to `read_write`. `read_only` mounts

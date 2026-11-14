@@ -93,3 +93,11 @@ export const createPathTagFunction = (pathEncoder = encodeURIPath) =>
  * URI-encodes path params and ensures that none before any ? or # is empty and none introduces an unsafe /./ or /../ path segment.
  */
 export const path = /* @__PURE__ */ createPathTagFunction(encodeURIPath);
+
+/**
+ * Like `path`, but a `/` in a parameter stays a path separator. Tetral's model IDs
+ * are written so (`/v1/models/openai/gpt-5.5`): Engine's edge refuses an escaped slash.
+ */
+export const restOfPath = /* @__PURE__ */ createPathTagFunction((str) =>
+  str.split('/').map(encodeURIPath).join('/'),
+);

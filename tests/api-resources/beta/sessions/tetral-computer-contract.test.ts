@@ -2,6 +2,7 @@ import Anthropic from '@tetral-ai/sdk';
 import type { BetaComputer } from '@tetral-ai/sdk/resources/beta/sessions/computers';
 import type { BetaSessionDrive } from '@tetral-ai/sdk/resources/beta/sessions/drives';
 import { getHeader, jsonResponse, parseMaybeJSONBody } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const COMPUTER: BetaComputer = {
   id: 'comp_example',
@@ -116,7 +117,7 @@ const ROWS: RouteRow[] = [
 describe('Tetral Session computer and drive binding routes', () => {
   test.each(ROWS)('$operation sends its contract request', async (row) => {
     const requests: Array<{ method: string; url: URL; init: RequestInit | undefined }> = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -146,7 +147,7 @@ describe('Tetral Session computer and drive binding routes', () => {
   });
 
   test('sessions.computers.delete resolves to null once the computer is closed', async () => {
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async () => new Response(null, { status: 204 }),

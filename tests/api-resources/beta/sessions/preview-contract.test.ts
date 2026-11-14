@@ -1,6 +1,9 @@
+// Layer 1: a handler inside the test answers every request, and each request and
+// answer is checked against the SDK's copy of Engine's OpenAPI file.
 import Anthropic from '@tetral-ai/sdk';
 import { accumulateManagedAgentsEvent, type AccumulatedEvent } from '@tetral-ai/sdk/lib/sessions/accumulate';
 import type { BetaManagedAgentsStreamSessionEvents } from '@tetral-ai/sdk/resources/beta/sessions/events';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const final = (id: string, text: string): BetaManagedAgentsStreamSessionEvents => ({
   id,
@@ -31,10 +34,10 @@ const preview: BetaManagedAgentsStreamSessionEvents[] = [
   final('message-b', '😀 complete'),
 ];
 
-// This fixture proves SDK construction/parsing/helper behavior. Actual production
-// eligibility and formal-only delivery are proved by the integration registry.
+// The answers are fixtures: the tests show what the SDK sends, parses and reconciles,
+// not which previews Engine chooses to send.
 function fixtureClient(events: BetaManagedAgentsStreamSessionEvents[], observed: URL[]): Anthropic {
-  return new Anthropic({
+  return contractClient({
     apiKey: 'fixture-key',
     baseURL: 'http://sdk.fixture',
     maxRetries: 0,
@@ -99,4 +102,33 @@ test('default Session and typed Thread streams send no delta query and parse com
     expect([...url.searchParams.keys()]).toEqual(['beta']);
     expect(url.searchParams.get('beta')).toBe('true');
   }
+});
+
+test('a data line of several mebibytes that arrives in pieces is parsed whole', async () => {
+  const text = 'x'.repeat(3 * 1024 * 1024);
+  const event = final('message-large', text);
+  const bytes = new TextEncoder().encode(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+  const client = contractClient({
+    apiKey: 'fixture-key',
+    baseURL: 'http://sdk.fixture',
+    maxRetries: 0,
+    fetch: async () =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            // The line is far longer than one network read.
+            for (let at = 0; at < bytes.length; at += 64 * 1024) {
+              controller.enqueue(bytes.subarray(at, at + 64 * 1024));
+            }
+            controller.close();
+          },
+        }),
+        { headers: { 'Content-Type': 'text/event-stream' } },
+      ),
+  });
+  const received = [];
+  for await (const item of await client.beta.sessions.events.stream('session')) received.push(item);
+  expect(received).toHaveLength(1);
+  expect(received[0]).toMatchObject({ id: 'message-large', type: 'agent.message' });
+  expect((received[0] as typeof event & { content: Array<{ text: string }> }).content[0]!.text).toBe(text);
 });

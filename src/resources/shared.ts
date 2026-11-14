@@ -34,7 +34,8 @@ export type ErrorObject =
   | GatewayTimeoutError
   | APIErrorObject
   | NotImplementedError
-  | OverloadedError;
+  | OverloadedError
+  | TetralEngineError;
 
 export interface ErrorResponse {
   error: ErrorObject;
@@ -56,7 +57,8 @@ export type ErrorType =
   | 'timeout_error'
   | 'overloaded_error'
   | 'api_error'
-  | 'billing_error';
+  | 'billing_error'
+  | TetralEngineError['type'];
 
 export interface GatewayTimeoutError {
   message: string;
@@ -104,4 +106,23 @@ export interface RequestTooLargeError {
   message: string;
 
   type: 'request_too_large';
+}
+
+/**
+ * An error whose type only Tetral Engine answers with.
+ */
+export interface TetralEngineError {
+  message: string;
+
+  type:
+    | 'idempotency_conflict_error'
+    | 'credential_limit_error'
+    | 'instance_offline_error'
+    | 'instance_unavailable_error'
+    | 'instance_not_attachable_error'
+    | 'computer_already_attached_error'
+    | 'request_already_claimed_error'
+    | 'request_not_pending_error'
+    | 'request_not_claimed_error'
+    | 'drive_cursor_expired_error';
 }

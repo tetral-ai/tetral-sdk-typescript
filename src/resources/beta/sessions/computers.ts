@@ -196,11 +196,7 @@ export interface BetaComputer {
    * On a user computer, as requested; on a cloud computer, the Environment's
    * networking when the computer was added.
    */
-  networking:
-    | { type: 'blocked' }
-    | { type: 'unrestricted' }
-    | EnvironmentsAPI.BetaEnvironmentNetworking
-    | EnvironmentsAPI.BetaLimitedNetwork;
+  networking: { type: 'blocked' } | { type: 'unrestricted' } | EnvironmentsAPI.BetaEnvironmentNetworking;
 
   repositories: Array<BetaComputerRepository>;
 

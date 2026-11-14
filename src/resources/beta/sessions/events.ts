@@ -411,9 +411,10 @@ export interface BetaManagedAgentsAgentThreadMessageReceivedEvent {
   from_session_thread_id: string;
 
   /**
-   * Timestamp when the message was received.
+   * Timestamp when the message was received; `null` until the receiving thread
+   * has taken the message up.
    */
-  processed_at: string;
+  processed_at: string | null;
 
   type: 'agent.thread_message_received';
 
@@ -1190,10 +1191,22 @@ export interface BetaManagedAgentsSessionBudgetReached {
  */
 export interface BetaManagedAgentsComputerPreparationError {
   /**
-   * The machine's error code, for example `cwd_not_found`, `binding_conflict` or
-   * `resource_exhausted`.
+   * The machine's error code.
    */
-  code: string;
+  code:
+    | 'cwd_not_found'
+    | 'cwd_not_directory'
+    | 'cwd_forbidden'
+    | 'cwd_inaccessible'
+    | 'cwd_check_timeout'
+    | 'invalid_input'
+    | 'stale_connection'
+    | 'binding_conflict'
+    | 'cleanup_pending'
+    | 'resource_exhausted'
+    | 'repository_path_exists'
+    | 'repository_path_forbidden'
+    | 'repository_preparation_failed';
 
   computer_id: string;
 
@@ -1304,8 +1317,9 @@ export interface BetaManagedAgentsDriveChangesLostError {
  * The current machine of an attached cloud computer was deregistered, for
  * example by its Controller after the provider lost the machine: its local files
  * and running commands are gone, and the Session's drives are not. It is an event
- * of the Session on its primary stream, with no `session_thread_id`. The computer
- * keeps its `computer_id`, and its next command gets a new machine.
+ * of the Session, with no `session_thread_id`; the Session's stream and each of
+ * its thread streams carry it. The computer keeps its `computer_id`, and its next
+ * command gets a new machine.
  */
 export interface BetaManagedAgentsSessionComputerReplacedEvent {
   /**
@@ -1623,9 +1637,9 @@ export interface BetaManagedAgentsSessionThreadCreatedEvent {
   id: string;
 
   /**
-   * Name of the callable agent the thread runs.
+   * The thread's task name; absent on the Session's primary thread.
    */
-  agent_name: string;
+  agent_name?: string;
 
   /**
    * Timestamp when the thread was created.

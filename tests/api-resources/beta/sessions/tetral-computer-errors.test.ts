@@ -1,9 +1,9 @@
-import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsComputerCleanupError,
   BetaManagedAgentsSessionErrorEvent,
 } from '@tetral-ai/sdk/resources/beta/sessions';
 import { jsonResponse } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const cleanup: BetaManagedAgentsComputerCleanupError = {
   type: 'computer_cleanup_error',
@@ -32,11 +32,10 @@ const retrying: BetaManagedAgentsComputerCleanupError['retry_status'] = { type: 
 void retrying;
 
 test('computer error events narrow to their typed diagnostics', async () => {
-  const client = new Anthropic({
+  const client = contractClient({
     apiKey: 'test-key',
     baseURL: 'https://api.tetral.example',
-    fetch: async () =>
-      jsonResponse({ data: events, has_more: false, first_id: events[0]!.id, last_id: events[1]!.id }),
+    fetch: async () => jsonResponse({ data: events, next_page: null }),
   });
   const page = await client.beta.sessions.events.list('sesn_example');
   const observed: string[] = [];

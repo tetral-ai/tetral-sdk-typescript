@@ -47,16 +47,16 @@ not fill defaults or sanitize values. See [Git commit identity](README.md#git-co
 | Surface                           | Tetral behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Managed Agent model catalog       | Known IDs are `openai/gpt-5.5`, `openai/gpt-5.6-sol`, `anthropic/claude-opus-4-8`, `anthropic/claude-fable-5`, `deepseek/deepseek-v4-pro`, `moonshotai/kimi-k3`, and `zai/glm-5.2`. `moonshotai/kimi-k2.7-code` is retired; the 5.6 generation uses the precise `openai/gpt-5.6-sol` variant ID.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Models resource                   | `client.models` and `client.beta.models` support list and retrieve. Page envelopes and `limit` / `before_id` / `after_id` match upstream; catalog contents use Tetral provider/model IDs rather than Anthropic `claude-*` IDs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Models resource                   | `client.models` and `client.beta.models` support list and retrieve. Page envelopes and `limit` / `before_id` / `after_id` match upstream; catalog contents use Tetral provider/model IDs rather than Anthropic `claude-*` IDs. Behavioural divergence from upstream's generated code: `retrieve` writes a model ID's `/` as a path separator (`/v1/models/openai/gpt-5.5`), as Engine reads it; the generated code sends `%2F`, which Engine's edge refuses with 400.                                                                                                                                                                                                                                                             |
 | Model effort                      | The upstream effort selector is retained but rejected by Engine admission. The engine applies its pinned platform default for each model.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `approval_mode`                   | Supported on Agents and as a Session-local `agent.approval_mode` update. Values are `full_access`, `ask_for_approval`, and `approve_for_me`. Omitted on Agent create, it resolves to `ask_for_approval`; omitted on an Agent or Session update, the current value is kept. A Session-local update applies from the next turn.                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `tetral_agent_toolset.family`     | Required on Tetral toolset declarations. Supported families are `claude` and `gpt`. Every Agent must declare exactly one `tetral_agent_toolset`: omitting it, declaring two (same or mixed family), or clearing `tools` so none remains (empty array or `null` — this supersedes the generated docstring's "send empty array or null to clear" for this entry) is a 400. A Session-local `agent.tools` update must keep the entry with the Session's pinned family — the family cannot change for a live Session; change it by updating the Agent (new version) and starting a new Session. Only the declared family's builtin tools are installed in the sandbox. `configs` / `default_config` on this declaration are rejected. |
 | MCP declarations                  | Supported as credential-free curated-catalog declarations. Admission accepts the curated catalog and rejects non-catalog URLs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | Agent skill references            | Supported for workspace `custom` skill references (created via `/v1/skills`). Read-only guidance, not model-facing tools.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | Session creation                  | Requires explicit `vault_ids`, using `[]` when no Vault is bound.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Session `providers`               | Supported as `{ [provider_id]: { credential_id } }` on create/update. The provider key must match the agent's canonical `provider/model` provider; credentials must come from a Session-bound Vault.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Session `providers`               | Supported as `{ [provider_id]: { credential_id } }` on create and returned on the Session; an update that names `providers` is refused. The provider key must match the agent's canonical `provider/model` provider; credentials must come from a Session-bound Vault.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | Session image input               | Accepts only Files API references (`source.type = "file"`) for `image/jpeg`, `image/png`, `image/gif`, and `image/webp`, up to 10 MB each. An events request may contain at most 32 file-backed image and document references combined, narrower than Anthropic's documented image allowance. Base64 and URL sources are rejected with an upload-first 400. Accepted `file_id` values are stored and echoed verbatim; media remains eligible to ride provider requests until a turn commits settled output.                                                                                                                                                                                                                       |
-| Session document input            | Accepts only Files API references for `application/pdf` and `text/plain`. PDFs in one events request are limited to 32 MB and 600 pages in aggregate; `text/plain` has no separate admission byte cap. Inline base64, text, and URL sources are rejected with an upload-first 400. Document `file_id`, `context`, and `title` are stored and echoed verbatim.                                                                                                                                                                                                                                                                                                                                                                     |
+| Session document input            | Accepts only Files API references for `application/pdf` and `text/plain`. PDFs in one events request are limited to 32 MB and 600 pages in aggregate; `text/plain` has no separate admission byte cap. Inline base64, text, and URL sources are rejected with an upload-first 400. The document `file_id` is stored and echoed verbatim; `context` and `title` are refused.                                                                                                                                                                                                                                                                                                                                                       |
 | Session resources                 | Supported subset: file add/list/retrieve/delete, memory-store attachment, and GitHub repository params with a required write-only `authorization_token`. GitHub resource tokens rotate through `client.beta.sessions.resources.update(...)` and are never echoed.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | GitHub resource URL uniqueness    | Session creation and computer addition reject a computer whose `repositories` repeat a repository by comparison key (trim an optional case-sensitive `.git` suffix first, then case-fold owner/repo) with `400`. The check is per computer: two computers of one Session may hold the same repository. Stored and echoed URLs remain verbatim.                                                                                                                                                                                                                                                                                                                                                                                    |
 | Session `environment_id`          | Behavioural divergence: on the Session object it is the `environment_id` of the first attached cloud computer, and `""` when the Session has none, for example once it is archived. Upstream, it names the Session's own Environment.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -181,152 +181,333 @@ store. Memory HTTP 409 responses use `invalid_request_error`. Memory store
 
 ## 4. Retained Unsupported Or Deferred Surface
 
-These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; unsupported requests are rejected by Tetral backend admission with SDK-compatible errors.
+These surfaces remain in the SDK for Anthropic compatibility or generated surface stability, but Tetral does not present them as working behavior. Generated request paths are kept unless a type-level divergence is listed above; Engine refuses an unsupported request with an SDK-compatible error. A type being available does not enable its behavior.
 
-| Surface                                                                  | Tetral status                                                                                                                                                                      |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Public multiagent topology                                               | Non-null topology, including coordinator, self and advisor variants, is rejected with 400 `invalid_request_error`. Responses use `null`.                                           |
-| Runtime custom tools, Agent `custom` tools, and `agent_toolset_20260401` | Retained unsupported/deferred.                                                                                                                                                     |
-| Upstream `anthropic` skill-catalog references                            | Retained unsupported. Backend admission rejects it with an SDK-compatible error.                                                                                                   |
-| Agent and deployment webhook event types                                 | Deferred with the Webhooks resource.                                                                                                                                               |
-| Session list reverse pagination                                          | Retained unsupported. `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged, and `prev_page` stays `null` until the engine implements reverse cursors. |
-| Generated Messages API resource and Message Batches                      | Retained unsupported/deferred. Use Session Events `user.message` instead.                                                                                                          |
-| Host allowlists, `limited`, `scope`, and self-host Environment work APIs | Retained unsupported/deferred.                                                                                                                                                     |
-| Vault `environment_variable` credentials                                 | Retained unsupported. The SDK transmits generated requests; backend admission rejects them.                                                                                        |
-| Deployments and Deployment Runs                                          | Retained unsupported/deferred.                                                                                                                                                     |
-| User Profiles                                                            | Retained unsupported/deferred.                                                                                                                                                     |
-| Webhooks                                                                 | Deferred.                                                                                                                                                                          |
-| SDK ToolRunner and SessionToolRunner flows                               | Retained unsupported/deferred for Tetral Cloud-hosted runtime.                                                                                                                     |
-| `user.tool_result`                                                       | Retained unsupported/deferred.                                                                                                                                                     |
-| `user.custom_tool_result`                                                | Retained unsupported/deferred.                                                                                                                                                     |
-| `user.define_outcome`                                                    | Retained unsupported/deferred.                                                                                                                                                     |
-| `system.message`                                                         | Retained unsupported/deferred.                                                                                                                                                     |
+### Helpers and surfaces outside the comparison
 
-### Additional retained resources and helpers
+The generated list below states what the two API descriptions say. These SDK helpers and surfaces are not operations of their own, so the comparison cannot list them:
 
-New rejected parameters and unproduced events are individually registered in
-`tests/compatibility/compat-cases.json`. GA `client.files` and `client.skills`
-are present but require the beta route shape; ordinary GA
-requests without `beta=true` return 400. `agents.update` without `version` and
-Memory store updates with `name: null` return 400 `invalid_request_error`.
+| Surface                                                                                | Scope                                                                                                           |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `WorkPoller.[Symbol.asyncIterator]`, `EnvironmentWorker.run`                           | Environment work requests return 400.                                                                           |
+| `SessionToolRunner.[Symbol.asyncIterator]`                                             | `user.tool_result` is refused; the hosted runtime owns tool execution.                                          |
+| `BetaToolRunner` (`addTools`, `removeTools`, `deferToolCall`, `compactBeforeNextTurn`) | Messages calls return 400; tool-runner orchestration is unsupported.                                            |
+| `SessionMemoryStores` (`download`, `finish`, `flushWrites`, `syncIfDue`)               | Underlying Memory CRUD routes exist; helper execution is retained unsupported/unverified.                       |
+| `setupSkills`                                                                          | Existing Session/Skill APIs; local Skill setup remains unsupported and unverified for the hosted Engine.        |
+| Webhooks, with Agent and deployment webhook event types                                | Deferred.                                                                                                       |
+| Session list reverse pagination                                                        | `sessions.list` uses `BidirectionalPageCursor`; forward iteration works unchanged and `prev_page` stays `null`. |
 
-| Surface                                                                 | Scope                                                                                                    |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `WorkPoller.[Symbol.asyncIterator]`                                     | Environment work requests return 400.                                                                    |
-| `EnvironmentWorker.run`                                                 | Environment work requests return 400.                                                                    |
-| `SessionToolRunner.[Symbol.asyncIterator]`                              | user.tool_result rejected; hosted runtime owns execution.                                                |
-| `SessionMemoryStores.download`                                          | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
-| `SessionMemoryStores.finish`                                            | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
-| `SessionMemoryStores.flushWrites`                                       | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
-| `SessionMemoryStores.syncIfDue`                                         | Underlying Memory CRUD routes exist; new helper execution is retained unsupported/unverified.            |
-| `setupSkills`                                                           | Existing Session/Skill APIs; local Skill setup remains unsupported and unverified for the hosted Engine. |
-| `beta/dreams (Dreams)`                                                  | No public Engine route for this resource.                                                                |
-| `beta/messages/messages (Messages)`                                     | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
-| `beta/organization/api-keys (APIKeys)`                                  | No public Engine route for this resource.                                                                |
-| `beta/organization/external-keys (ExternalKeys)`                        | No public Engine route for this resource.                                                                |
-| `beta/organization/federation/issuers (Issuers)`                        | No public Engine route for this resource.                                                                |
-| `beta/organization/federation/rules/rules (Rules)`                      | No public Engine route for this resource.                                                                |
-| `beta/organization/federation/rules/workspaces (Workspaces)`            | No public Engine route for this resource.                                                                |
-| `beta/organization/invites (Invites)`                                   | No public Engine route for this resource.                                                                |
-| `beta/organization/organization (Organization)`                         | No public Engine route for this resource.                                                                |
-| `beta/organization/rate-limits (RateLimits)`                            | No public Engine route for this resource.                                                                |
-| `beta/organization/service-accounts/service-accounts (ServiceAccounts)` | No public Engine route for this resource.                                                                |
-| `beta/organization/service-accounts/workspaces (Workspaces)`            | No public Engine route for this resource.                                                                |
-| `beta/organization/users (Users)`                                       | No public Engine route for this resource.                                                                |
-| `beta/organization/workspaces/members (Members)`                        | No public Engine route for this resource.                                                                |
-| `beta/organization/workspaces/rate-limits (RateLimits)`                 | No public Engine route for this resource.                                                                |
-| `beta/organization/workspaces/service-accounts (ServiceAccounts)`       | No public Engine route for this resource.                                                                |
-| `beta/organization/workspaces/workspaces (Workspaces)`                  | No public Engine route for this resource.                                                                |
-| `beta/tunnels/certificates (Certificates)`                              | No public Engine route for this resource.                                                                |
-| `beta/tunnels/tunnels (Tunnels)`                                        | No public Engine route for this resource.                                                                |
-| `beta/user-profiles (UserProfiles)`                                     | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
-| `messages/messages (Messages)`                                          | 400 `invalid_request_error`: unsupported SDK surface.                                                    |
+`setupSkills` resolves `latest` through GET and downloads by the returned version ID; Engine's own mount uses the uploaded package root as described in §3. GA `client.organization` is retained from upstream and does not expose Engine API-key or identity administration.
 
-### Retained Files and Skills parameters
+Repository authentication, checkout, clone, forbidden and not-found errors are produced by computer preparation reports as Session-level `session.error` events with `repository_url`, `message` and `retry_status: {type: "retrying"}`. Idle events emit `stop_details: null`; Thread-created events and Thread objects emit `workflow_run_id: null`. No workflow execution or refusal details are implied. GitHub repository tokens are write-only and rotatable. A Memory store update with `name: null` returns 400 `invalid_request_error`.
 
-- `FileListParams.ids` and `FileUploadParams.expires_in_seconds` are retained but
-  rejected with 400 `invalid_request_error`. `BetaFileMetadata.expires_at` is
-  optional upstream and is not produced by Engine.
-- `setupSkills GA version/name adaptation` remains unsupported for local setup
-  against the hosted Engine. Its upstream helper resolves `latest` through
-  GET and downloads by returned version ID; Engine's own mount uses the uploaded
-  package root as described in §3.
+### Generated list
 
-### Retained parameters, events and resources
+<!-- generated by scripts/compatibility-list.cjs: start -->
 
-GitHub repository `authorization_token` is optional in upstream SDK types, but
-Engine requires it, including for public repositories: omission returns
-400 `invalid_request_error` with `authorization_token is required`. Tokens are
-write-only and rotatable.
+This list is generated in the SDK repository by `scripts/compatibility-list.cjs`. It compares the
+upstream spec that the SDK's types are generated from with Engine's OpenAPI file at Engine commit
+`6a2205b42855a74b6278ea2d366a1a182912307e`. A place is written as a path into the request body or
+the answer: `[]` is an item of a list, `<name>` the object whose `type` is `name`. Where the fork
+writes a type by hand (§2), that type may no longer offer what a line names.
 
-`ThreadListParams.statuses`, model-list `lifecycle`, per-tool `permission_policy`
-with `type: auto`, multiagent configuration, and other retained unsupported
-parameters are rejected with 400. The registry lists each parameter and its
-supported parent scope; a type being available does not enable its behavior.
-Repository authentication, checkout, clone, forbidden and not-found errors are
-produced by computer preparation reports as Session-level `session.error` events
-with `repository_url`, `message` and `retry_status: {type: "retrying"}`.
-The seven `workflow_run.*` events, refusal event variants, and optional tool
-`evaluation` fields are not produced. Idle events emit
-`stop_details: null`; Thread-created events and Thread objects emit
-`workflow_run_id: null`. No workflow execution or refusal details are implied.
+#### Operations Engine refuses as unsupported
 
-The following resources and helpers are retained from upstream but have no
-supported Engine request path. This includes GA `client.organization`; it does
-not expose Engine API-key or identity administration through that upstream API.
+Engine answers 400 `invalid_request_error`.
 
-| Retained surface                                                         | Engine scope                                                      |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| `BetaToolRunner.addTools`                                                | Messages calls return 400; tool-runner orchestration unsupported. |
-| `BetaToolRunner.compactBeforeNextTurn`                                   | Messages calls return 400; tool-runner orchestration unsupported. |
-| `BetaToolRunner.deferToolCall`                                           | Messages calls return 400; tool-runner orchestration unsupported. |
-| `BetaToolRunner.removeTools`                                             | Messages calls return 400; tool-runner orchestration unsupported. |
-| `beta/deployment-runs (DeploymentRuns)`                                  | 400 `invalid_request_error`: unsupported SDK surface.             |
-| `beta/deployments (Deployments)`                                         | 400 `invalid_request_error`: unsupported SDK surface.             |
-| `beta/environments/work (Work)`                                          | 400 `invalid_request_error`: unsupported SDK surface.             |
-| `beta/messages/batches (Batches)`                                        | 400 `invalid_request_error`: unsupported SDK surface.             |
-| `beta/organization/analytics/apps/chat/projects (Projects)`              | No public Engine route for this resource.                         |
-| `beta/organization/analytics/artifacts (Artifacts)`                      | No public Engine route for this resource.                         |
-| `beta/organization/analytics/connectors (Connectors)`                    | No public Engine route for this resource.                         |
-| `beta/organization/analytics/cost-report (CostReport)`                   | No public Engine route for this resource.                         |
-| `beta/organization/analytics/plugins (Plugins)`                          | No public Engine route for this resource.                         |
-| `beta/organization/analytics/skills (Skills)`                            | No public Engine route for this resource.                         |
-| `beta/organization/analytics/summaries (Summaries)`                      | No public Engine route for this resource.                         |
-| `beta/organization/analytics/usage-report (UsageReport)`                 | No public Engine route for this resource.                         |
-| `beta/organization/analytics/user-cost-report (UserCostReport)`          | No public Engine route for this resource.                         |
-| `beta/organization/analytics/user-usage-report (UserUsageReport)`        | No public Engine route for this resource.                         |
-| `beta/organization/analytics/users (Users)`                              | No public Engine route for this resource.                         |
-| `beta/organization/compliance-settings (ComplianceSettings)`             | No public Engine route for this resource.                         |
-| `beta/organization/plugin-marketplaces (PluginMarketplaces)`             | No public Engine route for this resource.                         |
-| `beta/organization/plugins/installation-settings (InstallationSettings)` | No public Engine route for this resource.                         |
-| `beta/organization/plugins/plugins (Plugins)`                            | No public Engine route for this resource.                         |
-| `beta/organization/plugins/shares (Shares)`                              | No public Engine route for this resource.                         |
-| `beta/organization/plugins/versions (Versions)`                          | No public Engine route for this resource.                         |
-| `beta/organization/rbac-groups/members (Members)`                        | No public Engine route for this resource.                         |
-| `beta/organization/rbac-groups/rbac-groups (RBACGroups)`                 | No public Engine route for this resource.                         |
-| `beta/organization/rbac-roles/permissions (Permissions)`                 | No public Engine route for this resource.                         |
-| `beta/organization/rbac-roles/rbac-roles (RBACRoles)`                    | No public Engine route for this resource.                         |
-| `beta/organization/spend-limits/effective (Effective)`                   | No public Engine route for this resource.                         |
-| `beta/organization/spend-limits/increase-requests (IncreaseRequests)`    | No public Engine route for this resource.                         |
-| `beta/organization/spend-limits/spend-limits (SpendLimits)`              | No public Engine route for this resource.                         |
-| `completions (Completions)`                                              | No public Engine route for this resource.                         |
-| `messages/batches (Batches)`                                             | 400 `invalid_request_error`: unsupported SDK surface.             |
-| `organization/api-keys (APIKeys)`                                        | No public Engine route for this resource.                         |
-| `organization/compliance-settings (ComplianceSettings)`                  | No public Engine route for this resource.                         |
-| `organization/external-keys (ExternalKeys)`                              | No public Engine route for this resource.                         |
-| `organization/federation/issuers (Issuers)`                              | No public Engine route for this resource.                         |
-| `organization/federation/rules/rules (Rules)`                            | No public Engine route for this resource.                         |
-| `organization/federation/rules/workspaces (Workspaces)`                  | No public Engine route for this resource.                         |
-| `organization/invites (Invites)`                                         | No public Engine route for this resource.                         |
-| `organization/organization (Organization)`                               | No public Engine route for this resource.                         |
-| `organization/rate-limits (RateLimits)`                                  | No public Engine route for this resource.                         |
-| `organization/service-accounts/service-accounts (ServiceAccounts)`       | No public Engine route for this resource.                         |
-| `organization/service-accounts/workspaces (Workspaces)`                  | No public Engine route for this resource.                         |
-| `organization/users (Users)`                                             | No public Engine route for this resource.                         |
-| `organization/workspaces/members (Members)`                              | No public Engine route for this resource.                         |
-| `organization/workspaces/rate-limits (RateLimits)`                       | No public Engine route for this resource.                         |
-| `organization/workspaces/service-accounts (ServiceAccounts)`             | No public Engine route for this resource.                         |
-| `organization/workspaces/workspaces (Workspaces)`                        | No public Engine route for this resource.                         |
+- `/v1/deployment_runs`: GET
+- `/v1/deployment_runs/{deployment_run_id}`: GET
+- `/v1/deployments`: GET, POST
+- `/v1/deployments/{deployment_id}`: GET, POST
+- `/v1/deployments/{deployment_id}/archive`: POST
+- `/v1/deployments/{deployment_id}/pause`: POST
+- `/v1/deployments/{deployment_id}/run`: POST
+- `/v1/deployments/{deployment_id}/unpause`: POST
+- `/v1/environments/{environment_id}/work`: GET
+- `/v1/environments/{environment_id}/work/poll`: GET
+- `/v1/environments/{environment_id}/work/stats`: GET
+- `/v1/environments/{environment_id}/work/{work_id}`: GET, POST
+- `/v1/environments/{environment_id}/work/{work_id}/ack`: POST
+- `/v1/environments/{environment_id}/work/{work_id}/heartbeat`: POST
+- `/v1/environments/{environment_id}/work/{work_id}/stop`: POST
+- `/v1/messages`: POST
+- `/v1/messages/batches`: GET, POST
+- `/v1/messages/batches/{message_batch_id}`: DELETE, GET
+- `/v1/messages/batches/{message_batch_id}/cancel`: POST
+- `/v1/messages/batches/{message_batch_id}/results`: GET
+- `/v1/messages/count_tokens`: POST
+- `/v1/user_profiles`: GET, POST
+- `/v1/user_profiles/{user_profile_id}`: GET, POST
+- `/v1/user_profiles/{user_profile_id}/enrollment_url`: POST
+
+#### Operations Engine does not have
+
+Engine answers 404, or 405 where it has the path with other methods only.
+
+- `/v1/complete`: POST
+- `/v1/dreams`: GET, POST
+- `/v1/dreams/{dream_id}`: GET
+- `/v1/dreams/{dream_id}/archive`: POST
+- `/v1/dreams/{dream_id}/cancel`: POST
+- `/v1/organizations/analytics/apps/chat/projects`: GET
+- `/v1/organizations/analytics/artifacts`: GET
+- `/v1/organizations/analytics/connectors`: GET
+- `/v1/organizations/analytics/cost_report`: GET
+- `/v1/organizations/analytics/plugins`: GET
+- `/v1/organizations/analytics/skills`: GET
+- `/v1/organizations/analytics/summaries`: GET
+- `/v1/organizations/analytics/usage_report`: GET
+- `/v1/organizations/analytics/user_cost_report`: GET
+- `/v1/organizations/analytics/user_usage_report`: GET
+- `/v1/organizations/analytics/users`: GET
+- `/v1/organizations/api_keys`: GET
+- `/v1/organizations/api_keys/{api_key_id}`: GET, POST
+- `/v1/organizations/compliance_settings`: GET, POST
+- `/v1/organizations/cost_report`: GET
+- `/v1/organizations/external_keys`: GET, POST
+- `/v1/organizations/external_keys/{external_key_id}`: DELETE, GET, POST
+- `/v1/organizations/external_keys/{external_key_id}/validate`: POST
+- `/v1/organizations/federation_issuers`: GET, POST
+- `/v1/organizations/federation_issuers/{federation_issuer_id}`: GET, POST
+- `/v1/organizations/federation_issuers/{federation_issuer_id}/archive`: POST
+- `/v1/organizations/federation_rules`: GET, POST
+- `/v1/organizations/federation_rules/{federation_rule_id}`: GET, POST
+- `/v1/organizations/federation_rules/{federation_rule_id}/archive`: POST
+- `/v1/organizations/federation_rules/{federation_rule_id}/workspaces`: GET, POST
+- `/v1/organizations/federation_rules/{federation_rule_id}/workspaces/{workspace_id}`: DELETE
+- `/v1/organizations/invites`: GET, POST
+- `/v1/organizations/invites/{invite_id}`: DELETE, GET
+- `/v1/organizations/me`: GET
+- `/v1/organizations/plugin_marketplaces`: GET
+- `/v1/organizations/plugin_marketplaces/validate_archive`: POST
+- `/v1/organizations/plugin_marketplaces/validate_repository`: POST
+- `/v1/organizations/plugin_marketplaces/{marketplace_id}`: GET, POST
+- `/v1/organizations/plugins`: GET, POST
+- `/v1/organizations/plugins/{plugin_id}`: DELETE, GET, POST
+- `/v1/organizations/plugins/{plugin_id}/installation_settings`: GET
+- `/v1/organizations/plugins/{plugin_id}/installation_settings/{target}`: DELETE, POST
+- `/v1/organizations/plugins/{plugin_id}/shares`: GET
+- `/v1/organizations/plugins/{plugin_id}/versions`: GET, POST
+- `/v1/organizations/plugins/{plugin_id}/versions/{version}`: GET
+- `/v1/organizations/plugins/{plugin_id}/versions/{version}/content`: GET
+- `/v1/organizations/rate_limits`: GET
+- `/v1/organizations/rbac_groups`: GET, POST
+- `/v1/organizations/rbac_groups/{rbac_group_id}`: DELETE, GET, POST
+- `/v1/organizations/rbac_groups/{rbac_group_id}/members`: GET, POST
+- `/v1/organizations/rbac_groups/{rbac_group_id}/members/{user_id}`: DELETE
+- `/v1/organizations/rbac_roles`: GET
+- `/v1/organizations/rbac_roles/{rbac_role_id}`: GET
+- `/v1/organizations/rbac_roles/{rbac_role_id}/permissions`: GET
+- `/v1/organizations/service_accounts`: GET, POST
+- `/v1/organizations/service_accounts/{service_account_id}`: GET, POST
+- `/v1/organizations/service_accounts/{service_account_id}/archive`: POST
+- `/v1/organizations/service_accounts/{service_account_id}/workspaces`: GET, POST
+- `/v1/organizations/service_accounts/{service_account_id}/workspaces/{workspace_id}`: DELETE
+- `/v1/organizations/spend_limit_increase_requests`: GET
+- `/v1/organizations/spend_limit_increase_requests/{spend_limit_increase_request_id}`: GET
+- `/v1/organizations/spend_limit_increase_requests/{spend_limit_increase_request_id}/approve`: POST
+- `/v1/organizations/spend_limit_increase_requests/{spend_limit_increase_request_id}/deny`: POST
+- `/v1/organizations/spend_limits`: GET, POST
+- `/v1/organizations/spend_limits/effective`: GET
+- `/v1/organizations/spend_limits/{spend_limit_id}`: DELETE, GET
+- `/v1/organizations/tunnels`: GET
+- `/v1/organizations/tunnels/{tunnel_id}`: GET
+- `/v1/organizations/tunnels/{tunnel_id}/archive`: POST
+- `/v1/organizations/tunnels/{tunnel_id}/certificates`: GET, POST
+- `/v1/organizations/tunnels/{tunnel_id}/certificates/{certificate_id}`: GET
+- `/v1/organizations/tunnels/{tunnel_id}/certificates/{certificate_id}/archive`: POST
+- `/v1/organizations/tunnels/{tunnel_id}/reveal_token`: POST
+- `/v1/organizations/tunnels/{tunnel_id}/rotate_token`: POST
+- `/v1/organizations/usage_report/claude_code`: GET
+- `/v1/organizations/usage_report/messages`: GET
+- `/v1/organizations/users`: GET
+- `/v1/organizations/users/{user_id}`: DELETE, GET, POST
+- `/v1/organizations/workspaces`: GET, POST
+- `/v1/organizations/workspaces/{workspace_id}`: GET, POST
+- `/v1/organizations/workspaces/{workspace_id}/archive`: POST
+- `/v1/organizations/workspaces/{workspace_id}/members`: GET, POST
+- `/v1/organizations/workspaces/{workspace_id}/members/{user_id}`: DELETE, GET, POST
+- `/v1/organizations/workspaces/{workspace_id}/rate_limits`: GET
+- `/v1/organizations/workspaces/{workspace_id}/service_accounts`: GET, POST
+- `/v1/organizations/workspaces/{workspace_id}/service_accounts/{service_account_id}`: DELETE, GET, POST
+- `/v1/tunnels`: GET, POST
+- `/v1/tunnels/{tunnel_id}`: GET
+- `/v1/tunnels/{tunnel_id}/archive`: POST
+- `/v1/tunnels/{tunnel_id}/certificates`: GET, POST
+- `/v1/tunnels/{tunnel_id}/certificates/{certificate_id}`: GET
+- `/v1/tunnels/{tunnel_id}/certificates/{certificate_id}/archive`: POST
+- `/v1/tunnels/{tunnel_id}/reveal_token`: POST
+- `/v1/tunnels/{tunnel_id}/rotate_token`: POST
+
+#### Operations Engine serves only with `beta=true`
+
+The SDK also has these without the `beta=true` query; Engine requires it.
+
+- `/v1/files`: GET, POST
+- `/v1/files/{file_id}`: DELETE, GET
+- `/v1/files/{file_id}/content`: GET
+- `/v1/skills`: GET, POST
+- `/v1/skills/{skill_id}`: DELETE, GET
+- `/v1/skills/{skill_id}/versions`: GET, POST
+- `/v1/skills/{skill_id}/versions/{version}`: DELETE, GET
+
+#### Request parameters, fields and values Engine refuses
+
+- `body.agent` member `agent_with_overrides`: `POST /v1/sessions`
+- `body.agent.tools[]` members `agent_toolset_20260401`, `custom`: `POST /v1/sessions/{session_id}`
+- `body.agent.tools[]<mcp_toolset>.configs[].permission_policy` member `auto`: `POST /v1/sessions/{session_id}`
+- `body.agent.tools[]<mcp_toolset>.configs[].permission_policy` value `null`: `POST /v1/sessions/{session_id}`
+- `body.agent.tools[]<mcp_toolset>.default_config` value `null`: `POST /v1/sessions/{session_id}`
+- `body.agent.tools[]<mcp_toolset>.default_config.permission_policy` member `auto`: `POST /v1/sessions/{session_id}`
+- `body.agent.tools[]<mcp_toolset>.default_config.permission_policy` value `null`: `POST /v1/sessions/{session_id}`
+- `body.auth` member `environment_variable`: `POST /v1/vaults/{vault_id}/credentials`, `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.auth<mcp_oauth>.access_token` value `null`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.auth<mcp_oauth>.refresh.refresh_token` value `null`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.auth<mcp_oauth>.refresh.token_endpoint_auth<client_secret_basic>.client_secret` value `null`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.auth<mcp_oauth>.refresh.token_endpoint_auth<client_secret_post>.client_secret` value `null`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.auth<static_bearer>.token` value `null`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.budget`: `POST /v1/sessions`, `POST /v1/sessions/{session_id}`
+- `body.config` member `self_hosted`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config` value `null`: `POST /v1/environments`
+- `body.config<cloud>.networking` member `limited`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.networking` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages<packages>.apt` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages<packages>.cargo` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages<packages>.gem` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages<packages>.go` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages<packages>.npm` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.config<cloud>.packages<packages>.pip` value `null`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.content` value `null`: `POST /v1/memory_stores/{memory_store_id}/memories`, `POST /v1/memory_stores/{memory_store_id}/memories/{memory_id}`
+- `body.display_name` value `null`: `POST /v1/skills`, `POST /v1/vaults/{vault_id}`, `POST /v1/vaults/{vault_id}/credentials`
+- `body.events[]` members `system.message`, `user.custom_tool_result`, `user.define_outcome`, `user.tool_result`: `POST /v1/sessions/{session_id}/events`
+- `body.events[]<user.interrupt>.session_thread_id` value `null`: `POST /v1/sessions/{session_id}/events`
+- `body.events[]<user.message>.content[]` member `redacted`: `POST /v1/sessions/{session_id}/events`
+- `body.events[]<user.message>.content[]<document>.context`: `POST /v1/sessions/{session_id}/events`
+- `body.events[]<user.message>.content[]<document>.source` members `base64`, `text`, `url`: `POST /v1/sessions/{session_id}/events`
+- `body.events[]<user.message>.content[]<document>.title`: `POST /v1/sessions/{session_id}/events`
+- `body.events[]<user.message>.content[]<image>.source` members `base64`, `url`: `POST /v1/sessions/{session_id}/events`
+- `body.expires_in_seconds`: `POST /v1/files`
+- `body.initial_events`: `POST /v1/sessions`
+- `body.model.effort`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.model.id` values `claude-fable-5`, `claude-fable-5-1`, `claude-haiku-4-5`, `claude-haiku-4-5-20251001`, `claude-haiku-5-5`, `claude-opus-4-5`, `claude-opus-4-5-20251101`, `claude-opus-4-6`, `claude-opus-4-7`, `claude-opus-4-8`, `claude-opus-5`, `claude-opus-5-5`, `claude-sonnet-4-5`, `claude-sonnet-4-5-20250929`, `claude-sonnet-4-6`, `claude-sonnet-5`, `claude-sonnet-5-5`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.model.inference_geo`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.model.speed` values `fast`, `null`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.multiagent` other than `null`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.name` value `null`: `POST /v1/memory_stores/{memory_store_id}`
+- `body.path` value `null`: `POST /v1/memory_stores/{memory_store_id}/memories/{memory_id}`
+- `body.resources[]<github_repository>.checkout` value `null`: `POST /v1/sessions`
+- `body.scope`: `POST /v1/environments`, `POST /v1/environments/{environment_id}`
+- `body.skills[]` member `anthropic`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.tools` value `null`: `POST /v1/agents/{agent_id}`
+- `body.tools[]` members `agent_toolset_20260401`, `custom`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.tools[]<mcp_toolset>.configs[].permission_policy` member `auto`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.tools[]<mcp_toolset>.configs[].permission_policy` value `null`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.tools[]<mcp_toolset>.default_config` value `null`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.tools[]<mcp_toolset>.default_config.permission_policy` member `auto`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.tools[]<mcp_toolset>.default_config.permission_policy` value `null`: `POST /v1/agents`, `POST /v1/agents/{agent_id}`
+- `body.vault_ids`: `POST /v1/sessions/{session_id}`
+- `query event_deltas[]`: `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `query ids[]`: `GET /v1/files`
+- `query lifecycle[]`: `GET /v1/models`
+- `query service_account_id`: `GET /v1/memory_stores/{memory_store_id}/memory_versions`
+- `query statuses[]`: `GET /v1/sessions/{session_id}/threads`
+
+#### Request fields Engine requires
+
+The upstream types leave these optional; Engine refuses a request without them.
+
+- `body.auth<mcp_oauth>.refresh.token_endpoint_auth<client_secret_basic>.client_secret`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.auth<mcp_oauth>.refresh.token_endpoint_auth<client_secret_post>.client_secret`: `POST /v1/vaults/{vault_id}/credentials/{credential_id}`
+- `body.precondition<content_sha256>.content_sha256`: `POST /v1/memory_stores/{memory_store_id}/memories/{memory_id}`
+- `body.resources[]<github_repository>.authorization_token`: `POST /v1/sessions`
+- `body.tools`: `POST /v1/agents`
+- `body.vault_ids`: `POST /v1/sessions`
+- `body.version`: `POST /v1/agents/{agent_id}`
+
+#### Answer and event members, fields and values Engine never sends
+
+- `answer` members `system.message`, `user.custom_tool_result`, `user.define_outcome`, `user.tool_result`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer` members `agent.custom_tool_use`, `session.usage`, `span.outcome_evaluation_end`, `span.outcome_evaluation_ongoing`, `span.outcome_evaluation_start`, `workflow_run.created`, `workflow_run.error`, `workflow_run.phase_ended`, `workflow_run.phase_started`, `workflow_run.status_ended`, `workflow_run.status_idle`, `workflow_run.status_running`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer` members `event_delta`, `event_start`: `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer.prev_page`: `GET /v1/sessions`
+- `answer<agent.mcp_tool_result>.content[]` members `document`, `image`, `search_result`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.mcp_tool_use>.evaluation`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.mcp_tool_use>.session_thread_id`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.message>.content[]` member `redacted`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.thread_message_received>.content[]` members `document`, `image`, `redacted`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.thread_message_sent>.content[]` members `document`, `image`, `redacted`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.tool_result>.content[]` members `document`, `image`, `search_result`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.tool_use>.evaluation`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent.tool_use>.session_thread_id`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<agent>.model.effort`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.model.id` values `claude-fable-5`, `claude-fable-5-1`, `claude-haiku-4-5`, `claude-haiku-4-5-20251001`, `claude-haiku-5-5`, `claude-opus-4-5`, `claude-opus-4-5-20251101`, `claude-opus-4-6`, `claude-opus-4-7`, `claude-opus-4-8`, `claude-opus-5`, `claude-opus-5-5`, `claude-sonnet-4-5`, `claude-sonnet-4-5-20250929`, `claude-sonnet-4-6`, `claude-sonnet-5`, `claude-sonnet-5-5`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.model.inference_geo`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.model.speed`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.multiagent` other than `null`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.skills[]` member `anthropic`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.tools[]` members `agent_toolset_20260401`, `custom`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.tools[]<mcp_toolset>.configs[].permission_policy` member `auto`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<agent>.tools[]<mcp_toolset>.default_config.permission_policy` member `auto`: `GET /v1/agents`, `GET /v1/agents/{agent_id}`, `GET /v1/agents/{agent_id}/versions`, `POST /v1/agents`, `POST /v1/agents/{agent_id}`, `POST /v1/agents/{agent_id}/archive`
+- `answer<environment>.config` member `self_hosted`: `GET /v1/environments`, `GET /v1/environments/{environment_id}`, `POST /v1/environments`, `POST /v1/environments/{environment_id}`, `POST /v1/environments/{environment_id}/archive`
+- `answer<environment>.config<cloud>.networking` member `limited`: `GET /v1/environments`, `GET /v1/environments/{environment_id}`, `POST /v1/environments`, `POST /v1/environments/{environment_id}`, `POST /v1/environments/{environment_id}/archive`
+- `answer<environment>.scope`: `GET /v1/environments`, `GET /v1/environments/{environment_id}`, `POST /v1/environments`, `POST /v1/environments/{environment_id}`, `POST /v1/environments/{environment_id}/archive`
+- `answer<file>.expires_at`: `GET /v1/files`, `GET /v1/files/{file_id}`, `POST /v1/files`
+- `answer<model>.allowed_fallback_models` other than `null`: `GET /v1/models`, `GET /v1/models/{model_id}`
+- `answer<model>.capabilities` other than `null`: `GET /v1/models`, `GET /v1/models/{model_id}`
+- `answer<model>.deprecated_at` other than `null`: `GET /v1/models`, `GET /v1/models/{model_id}`
+- `answer<model>.lifecycle` values `deprecated`, `retired`: `GET /v1/models`, `GET /v1/models/{model_id}`
+- `answer<model>.line` values `haiku`, `mythos`, `sonnet`: `GET /v1/models`, `GET /v1/models/{model_id}`
+- `answer<model>.retires_at` other than `null`: `GET /v1/models`, `GET /v1/models/{model_id}`
+- `answer<session.error>.error` members `billing_error`, `credential_host_unreachable_error`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.status_idle>.stop_details` other than `null`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.status_idle>.stop_reason` members `budget_reached`, `refusal`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.thread_created>.workflow_run_id` other than `null`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.thread_status_idle>.stop_details` other than `null`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.thread_status_idle>.stop_reason` members `budget_reached`, `refusal`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.updated>.agent`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.updated>.budget`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.updated>.metadata`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session.updated>.title`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<session>.agent<agent>.model.effort`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.model.id` values `claude-fable-5`, `claude-fable-5-1`, `claude-haiku-4-5`, `claude-haiku-4-5-20251001`, `claude-haiku-5-5`, `claude-opus-4-5`, `claude-opus-4-5-20251101`, `claude-opus-4-6`, `claude-opus-4-7`, `claude-opus-4-8`, `claude-opus-5`, `claude-opus-5-5`, `claude-sonnet-4-5`, `claude-sonnet-4-5-20250929`, `claude-sonnet-4-6`, `claude-sonnet-5`, `claude-sonnet-5-5`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.model.inference_geo`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.model.speed`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.multiagent` other than `null`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.skills[]` member `anthropic`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.tools[]` members `agent_toolset_20260401`, `custom`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.tools[]<mcp_toolset>.configs[].permission_policy` member `auto`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.agent<agent>.tools[]<mcp_toolset>.default_config.permission_policy` member `auto`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.budget` other than `null`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.deployment_id` other than `null`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.usage.active_seconds`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session>.usage.list_cost`: `GET /v1/sessions`, `GET /v1/sessions/{session_id}`, `POST /v1/sessions`, `POST /v1/sessions/{session_id}`, `POST /v1/sessions/{session_id}/archive`
+- `answer<session_thread>.agent` members `advisor`, `inline`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.model.effort`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.model.id` values `claude-fable-5`, `claude-fable-5-1`, `claude-haiku-4-5`, `claude-haiku-4-5-20251001`, `claude-haiku-5-5`, `claude-opus-4-5`, `claude-opus-4-5-20251101`, `claude-opus-4-6`, `claude-opus-4-7`, `claude-opus-4-8`, `claude-opus-5`, `claude-opus-5-5`, `claude-sonnet-4-5`, `claude-sonnet-4-5-20250929`, `claude-sonnet-4-6`, `claude-sonnet-5`, `claude-sonnet-5-5`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.model.inference_geo`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.model.speed`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.skills[]` member `anthropic`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.tools[]` members `agent_toolset_20260401`, `custom`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.tools[]<mcp_toolset>.configs[].permission_policy` member `auto`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.agent<agent>.tools[]<mcp_toolset>.default_config.permission_policy` member `auto`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.stats` other than `null`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.usage.active_seconds`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.usage.list_cost`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.usage.server_tool_use`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<session_thread>.workflow_run_id` other than `null`: `GET /v1/sessions/{session_id}/threads`, `GET /v1/sessions/{session_id}/threads/{thread_id}`, `POST /v1/sessions/{session_id}/threads/{thread_id}/archive`
+- `answer<skill>.source` members `anthropic`, `anthropic_example`, `plugin`: `GET /v1/skills`, `GET /v1/skills/{skill_id}`, `POST /v1/skills`
+- `answer<span.model_request_end>.model_usage.speed` other than `null`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`
+- `answer<user.interrupt>.session_thread_id`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<user.message>.content[]` member `redacted`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<user.message>.content[]<document>.context`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<user.message>.content[]<document>.source` members `base64`, `text`, `url`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<user.message>.content[]<document>.title`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<user.message>.content[]<image>.source` members `base64`, `url`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<user.tool_confirmation>.session_thread_id`: `GET /v1/sessions/{session_id}/events`, `GET /v1/sessions/{session_id}/events/stream`, `GET /v1/sessions/{session_id}/threads/{thread_id}/events`, `GET /v1/sessions/{session_id}/threads/{thread_id}/stream`, `POST /v1/sessions/{session_id}/events`
+- `answer<vault_credential>.auth` member `environment_variable`: `GET /v1/vaults/{vault_id}/credentials`, `GET /v1/vaults/{vault_id}/credentials/{credential_id}`, `POST /v1/vaults/{vault_id}/credentials`, `POST /v1/vaults/{vault_id}/credentials/{credential_id}`, `POST /v1/vaults/{vault_id}/credentials/{credential_id}/archive`
+
+<!-- generated by scripts/compatibility-list.cjs: end -->
 
 ## 5. Authentication And Upstream Sync
 
@@ -351,4 +532,4 @@ Upstream sync runs as small rolling merges — on each upstream release or biwee
 1. Merge the upstream SDK changes.
 2. Run full CI.
 3. Classify every new surface as retained unsupported by default until Tetral explicitly supports it.
-4. Run the integration suite when a Tetral engine is available.
+4. Update the SDK's copy of Engine's OpenAPI file and regenerate the list in §4, as [CONTRIBUTING.md](CONTRIBUTING.md) describes.

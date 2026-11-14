@@ -203,17 +203,7 @@ export class Sessions extends APIResource {
    *   await client.beta.sessions.create({
    *     agent: 'agent_011CZkYpogX7uDKUyvBTophP',
    *     environment_id: 'env_011CZkZ9X2dpNyB7HsEFoRfW',
-   *     initial_events: [
-   *       {
-   *         type: 'user.message',
-   *         content: [
-   *           {
-   *             type: 'text',
-   *             text: 'Where is my order #1234?',
-   *           },
-   *         ],
-   *       },
-   *     ],
+   *     vault_ids: [],
    *   });
    * ```
    */
@@ -521,14 +511,16 @@ export interface BetaManagedAgentsBudgetLimit {
  */
 export interface BetaManagedAgentsCacheCreationUsage {
   /**
-   * Tokens used to create 1-hour ephemeral cache entries.
+   * Tokens used to create 1-hour ephemeral cache entries; `null` until the first
+   * model request of the Session, or of the thread, has settled.
    */
-  ephemeral_1h_input_tokens?: number;
+  ephemeral_1h_input_tokens: number | null;
 
   /**
-   * Tokens used to create 5-minute ephemeral cache entries.
+   * Tokens used to create 5-minute ephemeral cache entries; `null` until the
+   * first model request of the Session, or of the thread, has settled.
    */
-  ephemeral_5m_input_tokens?: number;
+  ephemeral_5m_input_tokens: number | null;
 }
 
 export interface BetaManagedAgentsCommitCheckout {
@@ -790,6 +782,11 @@ export interface BetaManagedAgentsSession {
    * The drives the Session binds, in `drive_id` order.
    */
   drives: Array<SessionDrivesAPI.BetaSessionDrive>;
+
+  /**
+   * The credential the Session uses for each model provider, by provider ID.
+   */
+  providers: TetralSessionProviderSelectors;
 
   /**
    * The Environment of the first attached cloud computer, and `""` when the
@@ -1269,24 +1266,6 @@ export interface SessionCreateParamsBase {
   agent: string | BetaManagedAgentsAgentParams;
 
   /**
-   * Body param: Enforced spend ceiling for the session. Omit to create an uncapped
-   * session. Every model the session can run — the agent's model and each callable
-   * agent's model — must have a public list price, or the request is rejected with
-   * reason `model_not_budgetable`.
-   */
-  budget?: BetaManagedAgentsBudgetLimit;
-
-  /**
-   * Body param: Initial events to send to the `session` at creation, processed in
-   * order. Supports `user.message` and `user.define_outcome` events. Maximum 50
-   * events.
-   */
-  initial_events?: Array<
-    | EventsAPI.BetaManagedAgentsUserMessageEventParams
-    | EventsAPI.BetaManagedAgentsUserDefineOutcomeEventParams
-  >;
-
-  /**
    * Body param: Arbitrary key-value metadata attached to the session. Maximum 16
    * pairs, keys up to 64 chars, values up to 512 chars.
    */
@@ -1415,8 +1394,6 @@ export interface SessionUpdateParams {
    * Body param: Human-readable session title.
    */
   title?: string | null;
-
-  providers?: TetralSessionProviderSelectors;
 
   /**
    * Body param: Vault IDs (`vlt_*`) to attach to the session. Not yet supported;
