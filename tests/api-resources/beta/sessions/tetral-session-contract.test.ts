@@ -83,6 +83,30 @@ describe('Tetral Session SDK contract', () => {
     });
   });
 
+  test('an update with vault_ids, which Engine refuses, is sent as written and the 400 answer is parsed', async () => {
+    const captured: { url: string; body: unknown }[] = [];
+    const client = contractClient(
+      {
+        apiKey: 'test-tetral-key',
+        baseURL: 'https://api.tetral.example',
+        fetch: async (url: any, init?: RequestInit) => {
+          captured.push({ url: String(url), body: parseJSONBody(init) });
+          return errorResponse(400, 'invalid_request_error', 'vault_ids cannot be updated');
+        },
+      },
+      { requestOutsideContract: 'body/: undeclared field "vault_ids"' },
+    );
+
+    await expect(client.beta.sessions.update('sesn_123', { vault_ids: ['vlt_123'] })).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+    });
+
+    expect(captured).toEqual([
+      { url: 'https://api.tetral.example/v1/sessions/sesn_123?beta=true', body: { vault_ids: ['vlt_123'] } },
+    ]);
+  });
+
   test('archive posts to the Session and parses the archived Session', async () => {
     const captured: { method: string | undefined; url: string }[] = [];
     const archived = { ...SESSION_ANSWER, archived_at: '2026-10-05T00:00:00Z' };
