@@ -1,11 +1,12 @@
-// Test-only bridge for Engine's native OIDC composition. Import source directly:
-// a clean checkout needs no dist, and the awaited responses retain SDK types.
-import type Anthropic from '../../../src/index';
+// Typed reads of a Memory version that compare the received actor with the one
+// expected. The awaited responses keep their SDK types, so a caller narrows
+// `created_by` and `redacted_by` without a cast.
+import type Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsActor,
   MemoryVersionRetrieveParams,
   MemoryVersionRedactParams,
-} from '../../../src/resources/beta/memory-stores/memory-versions';
+} from '@tetral-ai/sdk/resources/beta/memory-stores/memory-versions';
 
 function actorIdentity(actor: BetaManagedAgentsActor): string {
   switch (actor.type) {
@@ -28,7 +29,7 @@ function assertActor(actual: BetaManagedAgentsActor | null, expected: BetaManage
     actual.type !== expected.type ||
     actorIdentity(actual) !== actorIdentity(expected)
   ) {
-    // Keep identities and credentials out of the child process's diagnostic output.
+    // The message names no identity.
     throw new Error('Received Memory attribution does not match the fixture identity');
   }
 }

@@ -7,7 +7,8 @@ import type {
   TetralGitIdentity,
 } from '@tetral-ai/sdk/resources/beta/sessions';
 import type { ResourceUpdateParams } from '@tetral-ai/sdk/resources/beta/sessions/resources';
-import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { SESSION_ANSWER, jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 // All documented public import paths must expose the same identity contract.
 const identity: TetralGitIdentity & BetaGitIdentity & Anthropic.Beta.TetralGitIdentity = {
@@ -32,8 +33,8 @@ describe('Session Git identity HTTP contract', () => {
       ...(declared ? { git_identity: identity } : {}),
     };
     const captured: { url: string; body: unknown }[] = [];
-    const responses = [{ id: 'sesn_git', resources: [resource] }, resource];
-    const client = new Anthropic({
+    const responses = [{ ...SESSION_ANSWER, id: 'sesn_git', resources: [resource] }, resource];
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url, init) => {

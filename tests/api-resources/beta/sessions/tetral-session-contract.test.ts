@@ -1,3 +1,5 @@
+// Layer 1: a handler inside the test answers every request, and each request and
+// answer is checked against the SDK's copy of Engine's OpenAPI file.
 import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsEventParams,
@@ -5,63 +7,18 @@ import type {
   SessionUpdateParams,
   TetralSessionProviderSelectors,
 } from '@tetral-ai/sdk/resources/beta/sessions';
-import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
-
-const SESSION_RESPONSE = {
-  id: 'sesn_123',
-  type: 'session',
-  agent: {
-    id: 'agent_123',
-    description: null,
-    mcp_servers: [],
-    approval_mode: 'ask_for_approval',
-    model: { id: 'openai/gpt-5.5' },
-    multiagent: null,
-    name: 'Tetral Agent',
-    skills: [],
-    system: null,
-    tools: [
-      {
-        type: 'tetral_agent_toolset',
-        family: 'gpt',
-        configs: [],
-        default_config: { enabled: true, permission_policy: { type: 'always_ask' } },
-      },
-    ],
-    type: 'agent',
-    version: 1,
-  },
-  archived_at: null,
-  created_at: '2026-01-01T00:00:00Z',
-  updated_at: '2026-01-01T00:00:00Z',
-  environment_id: 'env_123',
-  metadata: {},
-  outcome_evaluations: [],
-  resources: [],
-  stats: {},
-  status: 'idle',
-  title: null,
-  usage: {
-    input_tokens: 12,
-    output_tokens: 7,
-    server_tool_use: {
-      web_fetch_requests: 1,
-      web_search_requests: 2,
-    },
-  },
-  vault_ids: [],
-  deployment_id: null,
-};
+import { SESSION_ANSWER, errorResponse, jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 describe('Tetral Session SDK contract', () => {
   test('create serializes explicit vault_ids and provider selectors', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
-        return jsonResponse(SESSION_RESPONSE);
+        return jsonResponse(SESSION_ANSWER);
       },
     });
 
@@ -98,19 +55,18 @@ describe('Tetral Session SDK contract', () => {
     });
   });
 
-  test('update serializes providers clearing without mutating vault_ids locally', async () => {
+  test('update serializes the Session-local approval mode and title, and nothing else', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
         captured.push({ url: String(url), body: parseJSONBody(init) });
-        return jsonResponse(SESSION_RESPONSE);
+        return jsonResponse(SESSION_ANSWER);
       },
     });
 
     await client.beta.sessions.update('sesn_123', {
-      providers: {},
       agent: {
         approval_mode: 'approve_for_me',
       },
@@ -120,7 +76,6 @@ describe('Tetral Session SDK contract', () => {
     expect(captured).toHaveLength(1);
     expect(captured[0]!.url).toBe('https://api.tetral.example/v1/sessions/sesn_123?beta=true');
     expect(captured[0]!.body).toEqual({
-      providers: {},
       agent: {
         approval_mode: 'approve_for_me',
       },
@@ -128,11 +83,53 @@ describe('Tetral Session SDK contract', () => {
     });
   });
 
-  test('parses session usage.server_tool_use counters from response fixtures', async () => {
-    const client = new Anthropic({
+  test('an update with vault_ids, which Engine refuses, is sent as written and the 400 answer is parsed', async () => {
+    const captured: { url: string; body: unknown }[] = [];
+    const client = contractClient(
+      {
+        apiKey: 'test-tetral-key',
+        baseURL: 'https://api.tetral.example',
+        fetch: async (url: any, init?: RequestInit) => {
+          captured.push({ url: String(url), body: parseJSONBody(init) });
+          return errorResponse(400, 'invalid_request_error', 'vault_ids cannot be updated');
+        },
+      },
+      { requestOutsideContract: 'body/: undeclared field "vault_ids"' },
+    );
+
+    await expect(client.beta.sessions.update('sesn_123', { vault_ids: ['vlt_123'] })).rejects.toMatchObject({
+      status: 400,
+      type: 'invalid_request_error',
+    });
+
+    expect(captured).toEqual([
+      { url: 'https://api.tetral.example/v1/sessions/sesn_123?beta=true', body: { vault_ids: ['vlt_123'] } },
+    ]);
+  });
+
+  test('archive posts to the Session and parses the archived Session', async () => {
+    const captured: { method: string | undefined; url: string }[] = [];
+    const archived = { ...SESSION_ANSWER, archived_at: '2026-10-05T00:00:00Z' };
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
-      fetch: async () => jsonResponse(SESSION_RESPONSE),
+      fetch: async (url: any, init?: RequestInit) => {
+        captured.push({ method: init?.method, url: String(url) });
+        return jsonResponse(archived);
+      },
+    });
+
+    await expect(client.beta.sessions.archive('sesn_123')).resolves.toEqual(archived);
+    expect(captured).toEqual([
+      { method: 'POST', url: 'https://api.tetral.example/v1/sessions/sesn_123/archive?beta=true' },
+    ]);
+  });
+
+  test('parses session usage.server_tool_use counters from response fixtures', async () => {
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async () => jsonResponse(SESSION_ANSWER),
     });
 
     const session = await client.beta.sessions.retrieve('sesn_123');
@@ -158,20 +155,17 @@ describe('Tetral Session SDK contract', () => {
     'sends unsupported event variant %s through the normal request path and parses backend 400',
     async (event) => {
       const captured: unknown[] = [];
-      const client = new Anthropic({
-        apiKey: 'test-tetral-key',
-        baseURL: 'https://api.tetral.example',
-        fetch: async (_url: any, init?: RequestInit) => {
-          captured.push(parseJSONBody(init));
-          return jsonResponse(
-            {
-              type: 'error',
-              error: { type: 'invalid_request_error', message: `${event.type} is unsupported` },
-            },
-            400,
-          );
+      const client = contractClient(
+        {
+          apiKey: 'test-tetral-key',
+          baseURL: 'https://api.tetral.example',
+          fetch: async (_url: any, init?: RequestInit) => {
+            captured.push(parseJSONBody(init));
+            return errorResponse(400, 'invalid_request_error', `${event.type} is unsupported`);
+          },
         },
-      });
+        { requestOutsideContract: `body/events/0: type "${event.type}" is not a member of the union` },
+      );
 
       await expect(client.beta.sessions.events.send('sesn_123', { events: [event] })).rejects.toMatchObject({
         status: 400,
@@ -197,7 +191,8 @@ describe('Tetral Session SDK contract', () => {
       environment_id: 'env_123',
       vault_ids: [],
     };
-    const updateClearingProviders: SessionUpdateParams = {
+    const updateWithProviders: SessionUpdateParams = {
+      // @ts-expect-error Provider selectors are fixed when the Session is created.
       providers: {},
     };
     const retainedVaultUpdateCompatibility: SessionUpdateParams = {
@@ -210,23 +205,22 @@ describe('Tetral Session SDK contract', () => {
       memory_store_id: 'memstore_123',
     });
     expect(createWithNoVaults.vault_ids).toEqual([]);
-    expect(updateClearingProviders.providers).toEqual({});
+    void updateWithProviders;
     expect(retainedVaultUpdateCompatibility.vault_ids).toEqual(['vlt_123']);
   });
 
   test('list forward pagination is unchanged under BidirectionalPageCursor and prev_page degrades to null', async () => {
     const captured: string[] = [];
-    const pages = [
-      { data: [SESSION_RESPONSE], next_page: 'cursor_page_2' },
-      { data: [SESSION_RESPONSE], next_page: null },
-    ];
-    const client = new Anthropic({
+    const first = { data: [SESSION_ANSWER], next_page: 'cursor_page_2' };
+    const last = { data: [SESSION_ANSWER], next_page: null };
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any) => {
-        const urlStr = String(url);
-        captured.push(urlStr);
-        return jsonResponse(urlStr.includes('page=') ? pages[1]! : pages[0]!);
+        captured.push(String(url));
+        // One read of the first page, then the iteration. From the third request on there is no
+        // further page, so an iteration that loses its cursor ends and fails below.
+        return jsonResponse(captured.length <= 2 ? first : last);
       },
     });
 
@@ -248,6 +242,67 @@ describe('Tetral Session SDK contract', () => {
     expect(captured[captured.length - 1]).toBe(
       'https://api.tetral.example/v1/sessions?beta=true&limit=1&page=cursor_page_2',
     );
+  });
+
+  test.each([
+    {
+      list: 'Session events, newest first',
+      read: (client: Anthropic) => client.beta.sessions.events.list('sesn_123', { limit: 1, order: 'desc' }),
+      first: '/v1/sessions/sesn_123/events?beta=true&limit=1&order=desc',
+    },
+    {
+      list: 'thread events',
+      read: (client: Anthropic) =>
+        client.beta.sessions.threads.events.list('sthr_123', { session_id: 'sesn_123', limit: 1 }),
+      first: '/v1/sessions/sesn_123/threads/sthr_123/events?beta=true&limit=1',
+    },
+  ])('a list of $list sends its query and follows next_page', async ({ read, first }) => {
+    const event = (id: string) => ({
+      id,
+      type: 'agent.message',
+      content: [{ type: 'text', text: id }],
+      processed_at: '2026-10-04T00:00:00Z',
+    });
+    const captured: string[] = [];
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      fetch: async (url) => {
+        const { pathname, search } = new URL(url);
+        captured.push(pathname + search);
+        // Only the first request gets a cursor, so a list that loses it ends and fails below.
+        return jsonResponse(
+          captured.length === 1 ?
+            { data: [event('sevt_1')], next_page: 'cursor_page_2' }
+          : { data: [event('sevt_2')], next_page: null },
+        );
+      },
+    });
+
+    const ids = [];
+    for await (const item of read(client)) ids.push(item.id);
+
+    expect(ids).toEqual(['sevt_1', 'sevt_2']);
+    expect(captured).toEqual([first, `${first}&page=cursor_page_2`]);
+  });
+
+  test("the edge's answer while Engine cannot be reached is tried again, then raised with its status, type and request id", async () => {
+    let requests = 0;
+    const client = contractClient({
+      apiKey: 'test-tetral-key',
+      baseURL: 'https://api.tetral.example',
+      maxRetries: 1,
+      fetch: async () => {
+        requests++;
+        return errorResponse(503, 'api_error', 'no healthy upstream');
+      },
+    });
+
+    const failure = await client.beta.sessions.retrieve('sesn_123').catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(Anthropic.InternalServerError);
+    expect(failure).toMatchObject({ status: 503, type: 'api_error', requestID: 'req_123' });
+    expect(requests).toBe(2);
   });
 });
 

@@ -4,7 +4,7 @@ import { APIPromise } from '../core/api-promise';
 import { Page, type PageParams, PagePromise } from '../core/pagination';
 import { buildHeaders } from '../internal/headers';
 import { RequestOptions } from '../internal/request-options';
-import { path } from '../internal/utils/path';
+import { restOfPath } from '../internal/utils/path';
 
 export class Models extends APIResource {
   /**
@@ -24,7 +24,7 @@ export class Models extends APIResource {
     options?: RequestOptions,
   ): APIPromise<ModelInfo> {
     const { betas, workspace_id } = params ?? {};
-    return this._client.get(path`/v1/models/${modelID}`, {
+    return this._client.get(restOfPath`/v1/models/${modelID}`, {
       ...options,
       headers: buildHeaders([
         {

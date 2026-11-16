@@ -1,4 +1,3 @@
-import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaEnvironment,
   BetaEnvironmentNetworking,
@@ -7,7 +6,8 @@ import type {
   EnvironmentCreateParams,
   EnvironmentUpdateParams,
 } from '@tetral-ai/sdk/resources/beta/environments';
-import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { errorResponse, jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const ENVIRONMENT_RESPONSE: BetaEnvironment = {
   id: 'env_123',
@@ -25,7 +25,6 @@ const ENVIRONMENT_RESPONSE: BetaEnvironment = {
       go: [],
       npm: [],
       pip: [],
-      type: 'packages',
     },
   },
   created_at: '2026-01-01T00:00:00Z',
@@ -39,7 +38,7 @@ const ENVIRONMENT_RESPONSE: BetaEnvironment = {
 describe('Tetral Environment SDK contract', () => {
   test('create serializes cidr_allow_list networking without hostname translation', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -75,7 +74,7 @@ describe('Tetral Environment SDK contract', () => {
 
   test('update serializes blocked networking', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -108,7 +107,11 @@ describe('Tetral Environment SDK contract', () => {
   });
 
   test.each([
-    ['self_hosted config', { name: 'self-host compat', config: { type: 'self_hosted' } }],
+    [
+      'self_hosted config',
+      { name: 'self-host compat', config: { type: 'self_hosted' } },
+      'body/config/type: must be equal to one of the allowed values ["cloud"]',
+    ],
     [
       'host allowlist networking',
       {
@@ -123,26 +126,24 @@ describe('Tetral Environment SDK contract', () => {
           },
         },
       },
+      'body/config/networking: type "limited" is not a member of the union',
     ],
-    ['account scope', { name: 'scoped compat', scope: 'organization' }],
-  ] satisfies Array<[string, EnvironmentCreateParams]>)(
+    ['account scope', { name: 'scoped compat', scope: 'organization' }, 'body/: undeclared field "scope"'],
+  ] satisfies Array<[string, EnvironmentCreateParams, string]>)(
     'sends retained unsupported Environment create shape %s through normal HTTP and parses backend 400',
-    async (_name, params) => {
+    async (_name, params, refusal) => {
       const captured: unknown[] = [];
-      const client = new Anthropic({
-        apiKey: 'test-tetral-key',
-        baseURL: 'https://api.tetral.example',
-        fetch: async (_url: any, init?: RequestInit) => {
-          captured.push(parseJSONBody(init));
-          return jsonResponse(
-            {
-              type: 'error',
-              error: { type: 'invalid_request_error', message: 'unsupported environment shape' },
-            },
-            400,
-          );
+      const client = contractClient(
+        {
+          apiKey: 'test-tetral-key',
+          baseURL: 'https://api.tetral.example',
+          fetch: async (_url: any, init?: RequestInit) => {
+            captured.push(parseJSONBody(init));
+            return errorResponse(400, 'invalid_request_error', 'unsupported environment shape');
+          },
         },
-      });
+        { requestOutsideContract: refusal },
+      );
 
       await expect(client.beta.environments.create(params)).rejects.toMatchObject({
         status: 400,
@@ -154,20 +155,17 @@ describe('Tetral Environment SDK contract', () => {
 
   test('retained work API sends normal request and parses backend 400', async () => {
     const captured: string[] = [];
-    const client = new Anthropic({
-      apiKey: 'test-tetral-key',
-      baseURL: 'https://api.tetral.example',
-      fetch: async (url: any) => {
-        captured.push(String(url));
-        return jsonResponse(
-          {
-            type: 'error',
-            error: { type: 'invalid_request_error', message: 'environment work is unsupported' },
-          },
-          400,
-        );
+    const client = contractClient(
+      {
+        apiKey: 'test-tetral-key',
+        baseURL: 'https://api.tetral.example',
+        fetch: async (url: any) => {
+          captured.push(String(url));
+          return errorResponse(400, 'invalid_request_error', 'environment work is unsupported');
+        },
       },
-    });
+      { requestOutsideContract: 'the copy declares no such operation' },
+    );
 
     await expect(client.beta.environments.work.poll('env_123')).rejects.toMatchObject({
       status: 400,

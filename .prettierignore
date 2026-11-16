@@ -6,3 +6,6 @@ CHANGELOG.md
 # don't format tsc output, will break source maps
 /dist
 /packages/*/dist
+
+# Engine's OpenAPI file is kept byte-identical to its source
+/api/engine-v1.openapi.json

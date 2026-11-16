@@ -1,7 +1,8 @@
-import Anthropic, { toFile } from '@tetral-ai/sdk';
+import { toFile } from '@tetral-ai/sdk';
 import type { ResourceAddParams } from '@tetral-ai/sdk/resources/beta/sessions/resources';
 import { SDK_HELPER_SYMBOL } from '../../../src/internal/stainless-helper-header';
 import { jsonResponse, parseJSONBody, getHeader } from './tetral-contract-helpers';
+import { contractClient } from '../../engine-contract/contract-fetch';
 
 const FILE_METADATA_RESPONSE = {
   id: 'file_123',
@@ -25,7 +26,7 @@ const SESSION_FILE_RESOURCE_RESPONSE = {
 describe('Tetral Files and Session Resources SDK contract', () => {
   test('files.upload sends multipart Uploadable input and helper telemetry headers', async () => {
     const captured: { url: string; helper: string | null; body: string }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -56,7 +57,7 @@ describe('Tetral Files and Session Resources SDK contract', () => {
 
   test('sessions.resources.add references an existing file_id and never uploads bytes', async () => {
     const captured: { url: string; body: unknown; contentType: string | null }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {

@@ -1,5 +1,5 @@
-import Anthropic from '@tetral-ai/sdk';
 import { watchDriveChanges } from '../examples/drive-changes';
+import { contractClient } from './engine-contract/contract-fetch';
 
 test('watch example drains on an open-stream notice and before reopening ended or failed streams', async () => {
   const requests: string[] = [];
@@ -13,7 +13,7 @@ test('watch example drains on an open-stream notice and before reopening ended o
   });
   const abort = new AbortController();
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
-  const client = new Anthropic({
+  const client = contractClient({
     apiKey: 'fixture',
     baseURL: 'https://example.test',
     fetch: async (url) => {

@@ -751,7 +751,7 @@ export interface BetaManagedAgentsProviderAPIKeyCreateParams {
 export interface BetaManagedAgentsProviderAPIKeyUpdateParams {
   type: 'provider_api_key';
 
-  token?: string | null;
+  token?: string;
 }
 
 export interface BetaManagedAgentsProviderOAuthAuthResponse {
@@ -787,11 +787,11 @@ export interface BetaManagedAgentsProviderOAuthCreateParams {
 export interface BetaManagedAgentsProviderOAuthUpdateParams {
   type: 'provider_oauth';
 
-  access_token?: string | null;
+  access_token?: string;
 
-  expires_at?: string | null;
+  expires_at?: string;
 
-  refresh_token?: string | null;
+  refresh_token?: string;
 }
 
 /**

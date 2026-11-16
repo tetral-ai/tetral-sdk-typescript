@@ -339,39 +339,35 @@ export type BetaManagedAgentsTetralAgentToolsetParams =
 export interface BetaManagedAgentsTetralClaudeToolConfig {
   enabled: boolean;
 
-  name: BetaManagedAgentsTetralClaudeToolName;
+  /**
+   * A tool of the family. Engine may name a tool this version does not know.
+   */
+  name: BetaManagedAgentsTetralClaudeToolName | (string & {});
 
   permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
-}
-
-export interface BetaManagedAgentsTetralClaudeToolConfigParams {
-  name: BetaManagedAgentsTetralClaudeToolName;
-
-  enabled?: boolean | null;
-
-  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
 }
 
 export interface BetaManagedAgentsTetralGPTToolConfig {
   enabled: boolean;
 
-  name: BetaManagedAgentsTetralGPTToolName;
+  /**
+   * A tool of the family. Engine may name a tool this version does not know.
+   */
+  name: BetaManagedAgentsTetralGPTToolName | (string & {});
 
   permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
-}
-
-export interface BetaManagedAgentsTetralGPTToolConfigParams {
-  name: BetaManagedAgentsTetralGPTToolName;
-
-  enabled?: boolean | null;
-
-  permission_policy?: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy | null;
 }
 
 export interface BetaManagedAgentsTetralClaudeAgentToolset {
   configs: Array<BetaManagedAgentsTetralClaudeToolConfig>;
 
-  default_config: BetaManagedAgentsAgentToolsetDefaultConfig;
+  /**
+   * What applies to a tool that `configs` does not name.
+   */
+  default_config: {
+    enabled: boolean;
+    permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+  };
 
   family: 'claude';
 
@@ -382,16 +378,18 @@ export interface BetaManagedAgentsTetralClaudeAgentToolsetParams {
   type: 'tetral_agent_toolset';
 
   family: 'claude';
-
-  configs?: Array<BetaManagedAgentsTetralClaudeToolConfigParams>;
-
-  default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
 }
 
 export interface BetaManagedAgentsTetralGPTAgentToolset {
   configs: Array<BetaManagedAgentsTetralGPTToolConfig>;
 
-  default_config: BetaManagedAgentsAgentToolsetDefaultConfig;
+  /**
+   * What applies to a tool that `configs` does not name.
+   */
+  default_config: {
+    enabled: boolean;
+    permission_policy: BetaManagedAgentsAlwaysAllowPolicy | BetaManagedAgentsAlwaysAskPolicy;
+  };
 
   family: 'gpt';
 
@@ -402,10 +400,6 @@ export interface BetaManagedAgentsTetralGPTAgentToolsetParams {
   type: 'tetral_agent_toolset';
 
   family: 'gpt';
-
-  configs?: Array<BetaManagedAgentsTetralGPTToolConfigParams>;
-
-  default_config?: BetaManagedAgentsAgentToolsetDefaultConfigParams | null;
 }
 
 export interface BetaManagedAgentsAgentToolset20260401 {
@@ -2236,12 +2230,10 @@ export declare namespace Agents {
     type BetaManagedAgentsTetralClaudeAgentToolset as BetaManagedAgentsTetralClaudeAgentToolset,
     type BetaManagedAgentsTetralClaudeAgentToolsetParams as BetaManagedAgentsTetralClaudeAgentToolsetParams,
     type BetaManagedAgentsTetralClaudeToolConfig as BetaManagedAgentsTetralClaudeToolConfig,
-    type BetaManagedAgentsTetralClaudeToolConfigParams as BetaManagedAgentsTetralClaudeToolConfigParams,
     type BetaManagedAgentsTetralClaudeToolName as BetaManagedAgentsTetralClaudeToolName,
     type BetaManagedAgentsTetralGPTAgentToolset as BetaManagedAgentsTetralGPTAgentToolset,
     type BetaManagedAgentsTetralGPTAgentToolsetParams as BetaManagedAgentsTetralGPTAgentToolsetParams,
     type BetaManagedAgentsTetralGPTToolConfig as BetaManagedAgentsTetralGPTToolConfig,
-    type BetaManagedAgentsTetralGPTToolConfigParams as BetaManagedAgentsTetralGPTToolConfigParams,
     type BetaManagedAgentsTetralGPTToolName as BetaManagedAgentsTetralGPTToolName,
     type BetaManagedAgentsTetralPlatformToolName as BetaManagedAgentsTetralPlatformToolName,
     type BetaManagedAgentsAgentToolset20260401 as BetaManagedAgentsAgentToolset20260401,

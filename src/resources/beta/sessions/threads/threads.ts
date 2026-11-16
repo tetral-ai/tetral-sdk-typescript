@@ -325,6 +325,7 @@ export type BetaManagedAgentsStreamSessionThreadEvents =
   | EventsAPI.BetaManagedAgentsSessionThreadStatusTerminatedEvent
   | SessionsAPI.BetaManagedAgentsUserToolResultEvent
   | EventsAPI.BetaManagedAgentsSessionThreadStatusRescheduledEvent
+  | EventsAPI.BetaManagedAgentsSessionComputerReplacedEvent
   | SessionsAPI.BetaManagedAgentsSessionUpdatedEvent
   | SessionsAPI.BetaManagedAgentsStartEvent
   | SessionsAPI.BetaManagedAgentsDeltaEvent

@@ -1,4 +1,3 @@
-import Anthropic from '@tetral-ai/sdk';
 import type {
   BetaManagedAgentsCredential,
   BetaManagedAgentsMCPOAuthCreateParams,
@@ -15,7 +14,8 @@ import type {
   CredentialUpdateParams,
 } from '@tetral-ai/sdk/resources/beta/vaults';
 import type { SessionCreateParams } from '@tetral-ai/sdk/resources/beta/sessions';
-import { jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { errorResponse, jsonResponse, parseJSONBody } from '../tetral-contract-helpers';
+import { contractClient } from '../../../engine-contract/contract-fetch';
 
 const PROVIDER_API_KEY_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
   id: 'vcrd_provider_api_key',
@@ -55,7 +55,7 @@ const PROVIDER_OAUTH_CREDENTIAL_RESPONSE: BetaManagedAgentsCredential = {
 describe('Tetral Vault credential SDK contract', () => {
   test('create serializes provider_api_key secrets and parses redacted provider metadata', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -95,7 +95,7 @@ describe('Tetral Vault credential SDK contract', () => {
 
   test('update serializes provider_oauth rotation fields and parses redacted provider metadata', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
+    const client = contractClient({
       apiKey: 'test-tetral-key',
       baseURL: 'https://api.tetral.example',
       fetch: async (url: any, init?: RequestInit) => {
@@ -137,25 +137,23 @@ describe('Tetral Vault credential SDK contract', () => {
     expect('refresh_token' in credential.auth).toBe(false);
   });
 
-  test('environment_variable credential create reaches the mock server and parses backend 400', async () => {
+  test('environment_variable credential create is sent as written and the 400 answer is parsed', async () => {
     const captured: { url: string; body: unknown }[] = [];
-    const client = new Anthropic({
-      apiKey: 'test-tetral-key',
-      baseURL: 'https://api.tetral.example',
-      fetch: async (url: any, init?: RequestInit) => {
-        captured.push({ url: String(url), body: parseJSONBody(init) });
-        return jsonResponse(
-          {
-            type: 'error',
-            error: {
-              type: 'invalid_request_error',
-              message: 'environment_variable credentials are not supported by Tetral',
-            },
-          },
-          400,
-        );
+    const client = contractClient(
+      {
+        apiKey: 'test-tetral-key',
+        baseURL: 'https://api.tetral.example',
+        fetch: async (url: any, init?: RequestInit) => {
+          captured.push({ url: String(url), body: parseJSONBody(init) });
+          return errorResponse(
+            400,
+            'invalid_request_error',
+            'environment_variable credentials are not supported by Tetral',
+          );
+        },
       },
-    });
+      { requestOutsideContract: 'body/auth: type "environment_variable" is not a member of the union' },
+    );
 
     await expect(
       client.beta.vaults.credentials.create('vlt_123', {

@@ -98,6 +98,38 @@ To format and fix all lint issues automatically:
 $ pnpm fix
 ```
 
+## Engine's OpenAPI file
+
+`api/engine-v1.openapi.json` is the SDK's copy of Tetral Engine's OpenAPI file, byte for byte.
+`api/engine-v1.source.json` names the Engine commit the copy was taken from and the Git blob ID of the file.
+The SDK is checked against the copy and against nothing else of Engine: the Tetral contract tests check
+every request they send and every answer they are given, `tests/engine-contract/` checks the hand-written
+types, and the generated list in `COMPATIBILITY.md` is derived from it.
+
+The copy is updated on the SDK's own schedule. A change to Engine's file changes nothing here until then.
+To update it:
+
+1. Take the file from the Engine repository at the commit you sync to, with a command that writes its
+   bytes unchanged. In an Engine checkout:
+   `git show <commit>:api/engine-v1.openapi.json > <SDK checkout>/api/engine-v1.openapi.json`.
+2. Write that commit and the blob ID Engine has for the file at it to `api/engine-v1.source.json`. Take
+   the blob ID from the Engine checkout, `git rev-parse <commit>:api/engine-v1.openapi.json`, and not
+   from the copy: the test then fails if step 1 changed a byte.
+3. Run `node scripts/compatibility-list.cjs` to rewrite the generated list in `COMPATIBILITY.md`.
+4. Run the tests and fix what they show. A hand-written type follows the copy; a fixture of a contract
+   test answers what the copy declares.
+5. Read the hand-written sections of `COMPATIBILITY.md` and the unreleased entry of `CHANGELOG.md`
+   against what changed in the copy. No test reads their prose.
+
+The test in `tests/engine-contract/copy.test.ts` compares the copy's bytes with the recorded blob ID. It
+reads nothing of Engine, so it cannot tell whether the recorded commit holds that blob; the command of
+step 2 is that check.
+
+At a release, the person releasing takes the copy from the Engine version the release is meant for. The
+release names that version by the Engine commit its copy was taken from, which `api/engine-v1.source.json`
+records and the generated list in `COMPATIBILITY.md` repeats, or by Engine's release tag once Engine tags
+its releases.
+
 ## Publishing and releases
 
 The Tetral fork releases `@tetral-ai/sdk` through the **Publish SDK** GitHub
@@ -105,7 +137,9 @@ Actions workflow. A release includes the npm package, an annotated Git tag
 `v<version>`, and a GitHub Release, all tied to the same source commit.
 
 1. Update `package.json`, `src/version.ts`, `.release-please-manifest.json`, and
-   the version entry in `CHANGELOG.md` together in a PR.
+   the version entry in `CHANGELOG.md` together in a PR. The same PR brings the
+   copy of [Engine's OpenAPI file](#engines-openapi-file) to the Engine version
+   the release is meant for.
 2. Merge after required checks pass, then wait for CI on the resulting `main`
    commit to pass.
 3. Run [Publish SDK](https://github.com/tetral-ai/tetral-sdk-typescript/actions/workflows/publish.yml)
